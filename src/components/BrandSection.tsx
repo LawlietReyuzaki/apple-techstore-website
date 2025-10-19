@@ -1,14 +1,19 @@
 import { Card } from "@/components/ui/card";
+import appleDevices from "@/assets/brands/apple-devices.jpg";
+import samsungPhones from "@/assets/brands/samsung-phones.jpg";
+import googlePixel from "@/assets/brands/google-pixel.jpg";
+import xiaomiPhone from "@/assets/brands/xiaomi-phone.jpg";
+import smartphoneGeneric from "@/assets/brands/smartphone-generic.jpg";
 
 const brands = [
-  { name: "Apple", logo: "🍎" },
-  { name: "Samsung", logo: "📱" },
-  { name: "Google", logo: "G" },
-  { name: "Xiaomi", logo: "Mi" },
-  { name: "Huawei", logo: "H" },
-  { name: "Oppo", logo: "O" },
-  { name: "Vivo", logo: "V" },
-  { name: "OnePlus", logo: "1+" },
+  { name: "Apple", logo: appleDevices },
+  { name: "Samsung", logo: samsungPhones },
+  { name: "Google", logo: googlePixel },
+  { name: "Xiaomi", logo: xiaomiPhone },
+  { name: "Huawei", logo: smartphoneGeneric },
+  { name: "Oppo", logo: smartphoneGeneric },
+  { name: "Vivo", logo: smartphoneGeneric },
+  { name: "OnePlus", logo: smartphoneGeneric },
 ];
 
 export const BrandSection = () => {
@@ -28,14 +33,20 @@ export const BrandSection = () => {
           {brands.map((brand) => (
             <Card 
               key={brand.name}
-              className="aspect-square flex flex-col items-center justify-center hover:shadow-lg transition-shadow cursor-pointer group"
+              className="aspect-square flex flex-col items-center justify-center hover:shadow-lg transition-all cursor-pointer group overflow-hidden bg-card"
             >
-              <div className="text-3xl md:text-4xl mb-2 group-hover:scale-110 transition-transform">
-                {brand.logo}
+              <div className="w-full h-full p-2 flex flex-col items-center justify-center">
+                <div className="w-full h-16 mb-2 flex items-center justify-center overflow-hidden rounded-md">
+                  <img 
+                    src={brand.logo} 
+                    alt={brand.name}
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300"
+                  />
+                </div>
+                <span className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  {brand.name}
+                </span>
               </div>
-              <span className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                {brand.name}
-              </span>
             </Card>
           ))}
         </div>
