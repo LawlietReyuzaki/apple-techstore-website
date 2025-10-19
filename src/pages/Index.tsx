@@ -12,6 +12,8 @@ import { BrandSection } from "@/components/BrandSection";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { supabase } from "@/integrations/supabase/client";
