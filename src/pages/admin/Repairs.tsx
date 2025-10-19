@@ -298,6 +298,24 @@ export default function AdminRepairs() {
                 )}
               </div>
 
+              {/* Display images if available */}
+              {selectedRepair.images && Array.isArray(selectedRepair.images) && selectedRepair.images.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Uploaded Images</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {selectedRepair.images.map((img: string, idx: number) => (
+                      <div key={idx} className="relative aspect-square rounded-md overflow-hidden border">
+                        <img
+                          src={img}
+                          alt={`Repair image ${idx + 1}`}
+                          className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {isAdmin && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Update Status</label>
