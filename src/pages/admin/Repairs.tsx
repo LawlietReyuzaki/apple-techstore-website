@@ -53,20 +53,36 @@ export default function AdminRepairs() {
     queryFn: async () => {
       let query = supabase
         .from("repairs")
-        .select(`
-          *,
-          customer_profile:profiles!repairs_user_id_fkey(full_name, phone),
-          assigned_tech:technicians!repairs_assigned_to_fkey(name, email)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      const { data: repairsData, error: repairsError } = await query;
+      if (repairsError) throw repairsError;
+
+      // Fetch related profiles
+      const userIds = repairsData?.map(r => r.user_id).filter(Boolean) || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .in("id", userIds);
+
+      // Fetch related technicians
+      const techIds = repairsData?.map(r => r.assigned_to).filter(Boolean) || [];
+      const { data: technicians } = await supabase
+        .from("technicians")
+        .select("id, name, email")
+        .in("id", techIds);
+
+      // Combine data
+      return repairsData?.map(repair => ({
+        ...repair,
+        customer_profile: profiles?.find(p => p.id === repair.user_id),
+        assigned_tech: technicians?.find(t => t.id === repair.assigned_to),
+      }));
     },
     enabled: isAdmin || isTechnician,
   });
@@ -149,17 +165,26 @@ export default function AdminRepairs() {
     queryFn: async () => {
       if (!selectedRepair) return [];
 
-      const { data, error } = await supabase
+      const { data: notesData, error: notesError } = await supabase
         .from("repair_notes")
-        .select(`
-          *,
-          note_author:profiles!repair_notes_user_id_fkey(full_name)
-        `)
+        .select("*")
         .eq("repair_id", selectedRepair.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (notesError) throw notesError;
+
+      // Fetch user profiles for note authors
+      const userIds = notesData?.map(n => n.user_id).filter(Boolean) || [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      // Combine data
+      return notesData?.map(note => ({
+        ...note,
+        note_author: profiles?.find(p => p.id === note.user_id),
+      }));
     },
     enabled: !!selectedRepair,
   });
