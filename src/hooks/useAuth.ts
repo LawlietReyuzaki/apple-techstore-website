@@ -6,15 +6,24 @@ export interface Profile {
   id: string;
   full_name: string | null;
   phone: string | null;
-  role: string;
   created_at: string;
   updated_at: string;
+}
+
+export type AppRole = 'admin' | 'technician' | 'customer';
+
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: AppRole;
+  created_at: string;
 }
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,14 +61,24 @@ export function useAuth() {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileError) throw profileError;
+      setProfile(profileData);
+
+      // Fetch user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (rolesError) throw rolesError;
+      setRoles(rolesData?.map(r => r.role as AppRole) || []);
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -121,13 +140,15 @@ export function useAuth() {
     user,
     session,
     profile,
+    roles,
     loading,
     signIn,
     signUp,
     signOut,
     updateProfile,
     isAuthenticated: !!user,
-    isAdmin: profile?.role === "admin",
-    isTechnician: profile?.role === "technician",
+    isAdmin: roles.includes("admin"),
+    isTechnician: roles.includes("technician"),
+    hasRole: (role: AppRole) => roles.includes(role),
   };
 }

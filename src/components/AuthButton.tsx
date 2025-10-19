@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { User, LogOut, Package, Settings, Shield } from "lucide-react";
 
 export const AuthButton = () => {
-  const { user, profile, signOut, loading } = useAuth();
+  const { user, profile, signOut, loading, isAdmin, isTechnician } = useAuth();
 
   if (loading) {
     return (
@@ -72,7 +72,7 @@ export const AuthButton = () => {
             <span>Track Repairs</span>
           </DropdownMenuItem>
         </Link>
-        {(profile?.role === "admin" || profile?.role === "technician") && (
+        {(isAdmin || isTechnician) && (
           <Link to="/admin">
             <DropdownMenuItem>
               <Shield className="mr-2 h-4 w-4" />

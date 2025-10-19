@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Account = () => {
-  const { user, profile, updateProfile, loading } = useAuth();
+  const { user, profile, updateProfile, loading, roles } = useAuth();
   const [updating, setUpdating] = useState(false);
   const [repairs, setRepairs] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -206,7 +206,9 @@ const Account = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Role:</span>
-                      <span className="font-medium capitalize">{profile?.role}</span>
+                      <span className="font-medium capitalize">
+                        {roles.length > 0 ? roles.join(", ") : "customer"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Member since:</span>

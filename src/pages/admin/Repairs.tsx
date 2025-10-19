@@ -1,0 +1,366 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function AdminRepairs() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isAdmin, isTechnician, loading: authLoading, user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedRepair, setSelectedRepair] = useState<any>(null);
+  const [newNote, setNewNote] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin && !isTechnician) {
+      toast.error("Access denied");
+      navigate("/");
+    }
+  }, [isAdmin, isTechnician, authLoading, navigate]);
+
+  const { data: repairs, isLoading } = useQuery({
+    queryKey: ["admin-repairs", statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from("repairs")
+        .select(`
+          *,
+          customer_profile:profiles!repairs_user_id_fkey(full_name, phone),
+          assigned_tech:technicians!repairs_assigned_to_fkey(name, email)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin || isTechnician,
+  });
+
+  const { data: technicians } = useQuery({
+    queryKey: ["technicians"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("technicians")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+
+  const updateRepairMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { error } = await supabase
+        .from("repairs")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Add note for status change
+      if (updates.status) {
+        await supabase.from("repair_notes").insert({
+          repair_id: id,
+          user_id: user?.id,
+          note: `Status changed to ${updates.status}`,
+          type: "status_change",
+        });
+      }
+
+      // Add note for technician assignment
+      if (updates.assigned_to) {
+        await supabase.from("repair_notes").insert({
+          repair_id: id,
+          user_id: user?.id,
+          note: `Technician assigned`,
+          type: "assignment",
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });
+      toast.success("Repair updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update repair");
+    },
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ repairId, note }: { repairId: string; note: string }) => {
+      const { error } = await supabase.from("repair_notes").insert({
+        repair_id: repairId,
+        user_id: user?.id,
+        note,
+        type: "note",
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNewNote("");
+      toast.success("Note added successfully");
+      queryClient.invalidateQueries({ queryKey: ["repair-notes"] });
+    },
+    onError: () => {
+      toast.error("Failed to add note");
+    },
+  });
+
+  const { data: repairNotes } = useQuery({
+    queryKey: ["repair-notes", selectedRepair?.id],
+    queryFn: async () => {
+      if (!selectedRepair) return [];
+
+      const { data, error } = await supabase
+        .from("repair_notes")
+        .select(`
+          *,
+          note_author:profiles!repair_notes_user_id_fkey(full_name)
+        `)
+        .eq("repair_id", selectedRepair.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedRepair,
+  });
+
+  const filteredRepairs = repairs?.filter(repair =>
+    repair.device_make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repair.device_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repair.customer_profile?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      created: "secondary",
+      in_progress: "default",
+      delivered: "outline",
+    };
+    return <Badge variant={variants[status] || "default"}>{status}</Badge>;
+  };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAdmin && !isTechnician) return null;
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage Repairs</CardTitle>
+          <div className="flex gap-4 mt-4">
+            <Input
+              placeholder="Search by customer or device..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="created">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="delivered">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Device</TableHead>
+                <TableHead>Issue</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Technician</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRepairs?.map((repair) => (
+                <TableRow key={repair.id}>
+                  <TableCell>{repair.customer_profile?.full_name || "N/A"}</TableCell>
+                  <TableCell>{`${repair.device_make} ${repair.device_model}`}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{repair.issue}</TableCell>
+                  <TableCell>{getStatusBadge(repair.status)}</TableCell>
+                  <TableCell>{repair.assigned_tech?.name || "Unassigned"}</TableCell>
+                  <TableCell>{format(new Date(repair.created_at), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      onClick={() => setSelectedRepair(repair)}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!selectedRepair} onOpenChange={() => setSelectedRepair(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Repair Details</DialogTitle>
+          </DialogHeader>
+          {selectedRepair && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold">Customer: {selectedRepair.customer_profile?.full_name}</h4>
+                <p className="text-sm text-muted-foreground">Phone: {selectedRepair.customer_profile?.phone}</p>
+                <p className="text-sm text-muted-foreground">Tracking: {selectedRepair.tracking_code}</p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Device Information</h4>
+                <p>{selectedRepair.device_make} {selectedRepair.device_model}</p>
+                <p className="text-sm">{selectedRepair.issue}</p>
+                {selectedRepair.description && (
+                  <p className="text-sm text-muted-foreground mt-1">{selectedRepair.description}</p>
+                )}
+              </div>
+
+              {isAdmin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Update Status</label>
+                  <Select
+                    value={selectedRepair.status}
+                    onValueChange={(value) =>
+                      updateRepairMutation.mutate({
+                        id: selectedRepair.id,
+                        updates: { status: value },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="delivered">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Assign Technician</label>
+                  <Select
+                    value={selectedRepair.assigned_to || ""}
+                    onValueChange={(value) =>
+                      updateRepairMutation.mutate({
+                        id: selectedRepair.id,
+                        updates: { assigned_to: value },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select technician" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicians?.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <h4 className="font-semibold">Activity Timeline</h4>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {repairNotes?.map((note) => (
+                    <div key={note.id} className="border-l-2 pl-3 py-2">
+                      <p className="text-sm">{note.note}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {note.note_author?.full_name} • {format(new Date(note.created_at), "MMM dd, HH:mm")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Add Note</label>
+                <Textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  rows={3}
+                />
+                <Button
+                  onClick={() =>
+                    addNoteMutation.mutate({
+                      repairId: selectedRepair.id,
+                      note: newNote,
+                    })
+                  }
+                  disabled={!newNote.trim()}
+                >
+                  Add Note
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
