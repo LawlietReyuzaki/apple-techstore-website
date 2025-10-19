@@ -25,19 +25,29 @@ const BookRepair = () => {
     setLoading(true);
 
     try {
+      // Check if user is logged in and get their ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Generate unique tracking code
       const trackingCode = `R-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
+      const insertData: any = {
+        tracking_code: trackingCode,
+        device_make: formData.deviceMake,
+        device_model: formData.deviceModel,
+        issue: formData.issue,
+        description: formData.description,
+        status: "created",
+      };
+
+      // Add user_id if logged in
+      if (user) {
+        insertData.user_id = user.id;
+      }
+
       const { data, error } = await supabase
         .from("repairs")
-        .insert({
-          tracking_code: trackingCode,
-          device_make: formData.deviceMake,
-          device_model: formData.deviceModel,
-          issue: formData.issue,
-          description: formData.description,
-          status: "created",
-        })
+        .insert(insertData)
         .select()
         .single();
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CartDrawer } from "@/components/CartDrawer";
+import { AuthButton } from "@/components/AuthButton";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { TrustBar } from "@/components/TrustBar";
 import { BrandSection } from "@/components/BrandSection";
@@ -122,6 +123,7 @@ const Index = () => {
                 Repairs
               </Button>
             </Link>
+            <AuthButton />
             <CartDrawer />
             <Sheet>
               <SheetTrigger asChild>
