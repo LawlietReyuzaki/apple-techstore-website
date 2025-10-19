@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Phone, Wrench, Tag } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const slides = [
   {
@@ -68,9 +69,19 @@ export const HeroCarousel = () => {
                 <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
                   {slide.subtitle}
                 </p>
-                <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
-                  {slide.cta}
-                </Button>
+                {slide.id === 2 ? (
+                  <Link to="/book-repair">
+                    <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                      {slide.cta}
+                    </Button>
+                  </Link>
+                ) : (
+                  <a href="#products">
+                    <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                      {slide.cta}
+                    </Button>
+                  </a>
+                )}
               </div>
             </div>
           </div>

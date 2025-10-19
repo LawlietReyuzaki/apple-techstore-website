@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const ContactSection = () => {
   return (
@@ -73,18 +74,20 @@ export const ContactSection = () => {
               </div>
               
               <div className="space-y-3">
-                <Button variant="secondary" className="w-full" size="lg">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call Us Now
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20" 
-                  size="lg"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Message
-                </Button>
+                <Link to="/book-repair">
+                  <Button variant="secondary" className="w-full" size="lg">
+                    Book a Repair
+                  </Button>
+                </Link>
+                <Link to="/track-repair">
+                  <Button 
+                    variant="outline" 
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20" 
+                    size="lg"
+                  >
+                    Track Your Repair
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

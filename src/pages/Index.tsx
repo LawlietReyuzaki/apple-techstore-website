@@ -116,10 +116,12 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden md:flex">
-              <Wrench className="h-4 w-4 mr-2" />
-              Repairs
-            </Button>
+            <Link to="/book-repair">
+              <Button variant="outline" size="sm" className="hidden md:flex">
+                <Wrench className="h-4 w-4 mr-2" />
+                Repairs
+              </Button>
+            </Link>
             <CartDrawer />
             <Sheet>
               <SheetTrigger asChild>
@@ -137,10 +139,12 @@ const Index = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                  <Button className="w-full" variant="outline">
-                    <Wrench className="h-4 w-4 mr-2" />
-                    Book Repair
-                  </Button>
+                  <Link to="/book-repair">
+                    <Button className="w-full" variant="outline">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Book Repair
+                    </Button>
+                  </Link>
                 </div>
               </SheetContent>
             </Sheet>
@@ -305,7 +309,9 @@ const Index = () => {
               <p className="text-muted-foreground mb-4">
                 Professional repair services for all phone brands. Screen replacement, battery, and more.
               </p>
-              <Button variant="outline">Book Repair</Button>
+              <Link to="/book-repair">
+                <Button variant="outline">Book Repair</Button>
+              </Link>
             </Card>
 
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">

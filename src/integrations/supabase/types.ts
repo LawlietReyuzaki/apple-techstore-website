@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      repairs: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          device_make: string
+          device_model: string
+          estimated_cost: number | null
+          final_cost: number | null
+          id: string
+          images: Json | null
+          issue: string
+          notes: Json | null
+          status: string
+          tracking_code: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          device_make: string
+          device_model: string
+          estimated_cost?: number | null
+          final_cost?: number | null
+          id?: string
+          images?: Json | null
+          issue: string
+          notes?: Json | null
+          status?: string
+          tracking_code: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          device_make?: string
+          device_model?: string
+          estimated_cost?: number | null
+          final_cost?: number | null
+          id?: string
+          images?: Json | null
+          issue?: string
+          notes?: Json | null
+          status?: string
+          tracking_code?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
