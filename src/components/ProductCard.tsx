@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Package } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
+import { WishlistButton } from "./WishlistButton";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Product {
   id: string;
@@ -22,6 +24,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const { user } = useAuth();
   const addItem = useProductCartStore(state => state.addItem);
   const hasWholesale = product.wholesale_price && product.wholesale_price < product.price;
   const displayPrice = hasWholesale ? product.wholesale_price : product.price;
@@ -54,6 +57,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       <Card className="group hover:shadow-lg transition-all duration-200 hover-scale overflow-hidden">
         <CardContent className="p-0">
           <div className="relative aspect-square bg-secondary/20 overflow-hidden">
+            <div className="absolute top-2 right-2 z-10">
+              <WishlistButton productId={product.id} userId={user?.id} />
+            </div>
+            
             {product.images && product.images.length > 0 ? (
               <img
                 src={product.images[0]}
@@ -73,11 +80,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             )}
             
             {product.featured && product.stock > 0 && (
-              <Badge className="absolute top-2 right-2 bg-primary">Featured</Badge>
+              <Badge className="absolute top-2 left-2 bg-primary">Featured</Badge>
             )}
             
             {hasWholesale && product.stock > 0 && (
-              <Badge className="absolute top-2 left-2 bg-green-600">Wholesale</Badge>
+              <Badge className="absolute bottom-2 left-2 bg-green-600">Wholesale</Badge>
             )}
           </div>
           

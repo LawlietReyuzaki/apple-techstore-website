@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 const Index = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [localProducts, setLocalProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +150,7 @@ const Index = () => {
                 Repairs
               </Button>
             </Link>
+            <NotificationBell userId={user?.id} />
             <AuthButton />
             <ProductCartButton />
             <CartDrawer />

@@ -23,6 +23,7 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import AccountOrders from "./pages/AccountOrders";
+import Wishlist from "./pages/Wishlist";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/book-repair" element={<BookRepair />} />
           <Route path="/track-repair" element={<TrackRepair />} />
           <Route path="/login" element={<Login />} />

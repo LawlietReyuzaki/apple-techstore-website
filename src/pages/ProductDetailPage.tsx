@@ -10,10 +10,14 @@ import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { WishlistButton } from "@/components/WishlistButton";
+import { ProductReviews } from "@/components/ProductReviews";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const addItem = useProductCartStore(state => state.addItem);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -151,12 +155,17 @@ export default function ProductDetailPage() {
           {/* Details */}
           <div className="space-y-6 animate-fade-in">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline">{product.brand}</Badge>
-                {product.featured && <Badge>Featured</Badge>}
-                {hasWholesale && <Badge className="bg-green-600">Wholesale Price</Badge>}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline">{product.brand}</Badge>
+                    {product.featured && <Badge>Featured</Badge>}
+                    {hasWholesale && <Badge className="bg-green-600">Wholesale Price</Badge>}
+                  </div>
+                  <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name}</h1>
+                </div>
+                <WishlistButton productId={product.id} userId={user?.id} />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{product.name}</h1>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Package className="h-4 w-4" />
                 <span>{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span>
@@ -238,6 +247,11 @@ export default function ProductDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <ProductReviews productId={product.id} userId={user?.id} />
         </div>
       </div>
     </div>

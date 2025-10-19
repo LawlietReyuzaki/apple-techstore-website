@@ -4,6 +4,7 @@ import { useProductCartStore } from "@/stores/productCartStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { sendOrderConfirmationEmail, notifyAdminNewOrder } from "@/utils/emailNotifications";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,6 +85,10 @@ export default function Checkout() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // Send notifications
+      await sendOrderConfirmationEmail(order.id);
+      await notifyAdminNewOrder(order.id);
 
       // Clear cart
       clearCart();
