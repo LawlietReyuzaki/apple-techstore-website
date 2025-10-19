@@ -1,0 +1,111 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Phone, Wrench, Tag } from "lucide-react";
+
+const slides = [
+  {
+    id: 1,
+    title: "Wholesale Phones at Best Prices",
+    subtitle: "Every brand • Every model • Best rates in Pakistan",
+    cta: "Shop Now",
+    icon: Phone,
+    gradient: "from-primary via-blue-500 to-primary",
+  },
+  {
+    id: 2,
+    title: "Expert Repair Services",
+    subtitle: "Professional repairs • Quick turnaround • Warranty included",
+    cta: "Book Repair",
+    icon: Wrench,
+    gradient: "from-secondary via-orange-500 to-secondary",
+  },
+  {
+    id: 3,
+    title: "Used Phone Shopping Event",
+    subtitle: "Premium refurbished phones • Tested & certified • Best deals",
+    cta: "Browse Deals",
+    icon: Tag,
+    gradient: "from-primary via-purple-500 to-secondary",
+  },
+];
+
+export const HeroCarousel = () => {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const next = () => setCurrent((prev) => (prev + 1) % slides.length);
+  const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+
+  return (
+    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-2xl">
+      {slides.map((slide, index) => {
+        const Icon = slide.icon;
+        return (
+          <div
+            key={slide.id}
+            className={`absolute inset-0 transition-all duration-700 ${
+              index === current
+                ? "opacity-100 translate-x-0"
+                : index < current
+                ? "opacity-0 -translate-x-full"
+                : "opacity-0 translate-x-full"
+            }`}
+          >
+            <div className={`w-full h-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}>
+              <div className="container mx-auto px-4 text-center text-white">
+                <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm">
+                  <Icon className="w-10 h-10" />
+                </div>
+                <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                  {slide.title}
+                </h2>
+                <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+                  {slide.subtitle}
+                </p>
+                <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                  {slide.cta}
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Navigation */}
+      <button
+        onClick={prev}
+        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+        aria-label="Previous slide"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+      <button
+        onClick={next}
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+        aria-label="Next slide"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </button>
+
+      {/* Indicators */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrent(index)}
+            className={`h-2 rounded-full transition-all ${
+              index === current ? "w-8 bg-white" : "w-2 bg-white/50"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};

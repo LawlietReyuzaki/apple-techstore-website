@@ -204,6 +204,40 @@ const ProductDetail = () => {
               </div>
             )}
 
+            {/* Wholesale Pricing */}
+            <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <Badge variant="secondary">Wholesale Pricing</Badge>
+                </h3>
+                <div className="space-y-2 text-sm mb-4">
+                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                    <span>Buy 1-4 units</span>
+                    <span className="font-semibold">
+                      {selectedVariant?.price.currencyCode} {parseFloat(selectedVariant?.price.amount || '0').toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                    <span>Buy 5-9 units</span>
+                    <span className="font-semibold text-secondary">
+                      {selectedVariant?.price.currencyCode} {(parseFloat(selectedVariant?.price.amount || '0') * 0.95).toFixed(2)}
+                      <span className="text-xs ml-1">(5% off)</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                    <span>Buy 10+ units</span>
+                    <span className="font-semibold text-secondary">
+                      {selectedVariant?.price.currencyCode} {(parseFloat(selectedVariant?.price.amount || '0') * 0.90).toFixed(2)}
+                      <span className="text-xs ml-1">(10% off)</span>
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  💡 Contact us for bulk orders of 50+ units for even better rates
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Add to Cart */}
             <Card>
               <CardContent className="p-6 space-y-4">
@@ -228,7 +262,7 @@ const ProductDetail = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
-                    <span>Quality assured</span>
+                    <span>Quality assured & tested</span>
                   </div>
                 </div>
               </CardContent>

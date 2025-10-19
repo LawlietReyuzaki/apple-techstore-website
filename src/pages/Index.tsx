@@ -1,17 +1,37 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CartDrawer } from "@/components/CartDrawer";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { TrustBar } from "@/components/TrustBar";
+import { BrandSection } from "@/components/BrandSection";
+import { ProductFilters } from "@/components/ProductFilters";
+import { ContactSection } from "@/components/ContactSection";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
-import { Phone, MapPin, Truck, Shield, Star, Zap, ShoppingBag } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Phone, ShoppingBag, Search, Menu, Wrench, Filter } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    brands: [] as string[],
+    conditions: [] as string[],
+    priceRange: [0, 200000] as [number, number],
+  });
   const addItem = useCartStore(state => state.addItem);
 
   useEffect(() => {
@@ -20,8 +40,10 @@ const Index = () => {
 
   const fetchProducts = async () => {
     try {
-      const data = await storefrontApiRequest(GET_PRODUCTS_QUERY, { first: 50 });
-      setProducts(data?.data?.products?.edges || []);
+      const data = await storefrontApiRequest(GET_PRODUCTS_QUERY, { first: 20 });
+      if (data?.data?.products?.edges) {
+        setProducts(data.data.products.edges);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -48,299 +70,302 @@ const Index = () => {
     });
   };
 
-  const brands = ["Apple", "Samsung", "Google", "Huawei", "Xiaomi", "Vivo", "Oppo"];
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.node.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const price = parseFloat(product.node.priceRange.minVariantPrice.amount);
+    const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1];
+    
+    return matchesSearch && matchesPrice;
+  });
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Bar */}
+      <div className="bg-primary text-white py-2">
+        <div className="container mx-auto px-4 flex items-center justify-between text-sm">
+          <span>🎉 Welcome to Dilbar Mobiles - Wholesale Rates & Expert Repairs</span>
+          <span className="hidden md:block">📞 Free Home Delivery in Bahria Phase 7</span>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Phone className="h-6 w-6 text-white" />
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+              <Phone className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Dilbar Mobile</h1>
-              <p className="text-xs text-muted-foreground">Repair Shop</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Dilbar Mobiles
+              </h1>
+              <p className="text-xs text-muted-foreground">Wholesale & Repair Shop</p>
             </div>
-          </Link>
+          </div>
           
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">Home</Link>
-            <Link to="#products" className="text-sm font-medium hover:text-primary transition-colors">Products</Link>
-            <Link to="#services" className="text-sm font-medium hover:text-primary transition-colors">Services</Link>
-            <Link to="#contact" className="text-sm font-medium hover:text-primary transition-colors">Contact</Link>
-          </nav>
+          <div className="hidden md:flex flex-1 max-w-xl mx-8">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search phones, brands, models..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="hidden md:flex">
-              <Phone className="h-4 w-4 mr-2" />
-              Call Us
+            <Button variant="outline" size="sm" className="hidden md:flex">
+              <Wrench className="h-4 w-4 mr-2" />
+              Repairs
             </Button>
             <CartDrawer />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <Input
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Button className="w-full" variant="outline">
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Book Repair
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <Badge className="mb-4" variant="secondary">
-              <Star className="h-3 w-3 mr-1" />
-              Best Repair Shop in Bahria Phase 7
-            </Badge>
-            
-            <h2 className="text-4xl md:text-6xl font-bold leading-tight">
-              Your Trusted
-              <span className="block text-primary">Mobile Repair Expert</span>
-            </h2>
-            
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Professional repair services & wholesale rate phones. Home delivery available across Bahria Phase 7.
-            </p>
+      {/* Hero Carousel */}
+      <div className="container mx-auto px-4 py-6">
+        <HeroCarousel />
+      </div>
 
-            <div className="flex flex-wrap gap-4 justify-center pt-6">
-              <Button size="lg" className="gap-2">
-                <ShoppingBag className="h-5 w-5" />
-                Shop Now
-              </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                <Phone className="h-5 w-5" />
-                Book Repair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Trust Bar */}
+      <TrustBar />
 
-      {/* Features */}
-      <section className="py-16 border-b">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="p-6 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <Truck className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Home Delivery</h3>
-                <p className="text-sm text-muted-foreground">Free delivery in Bahria Phase 7</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="p-6 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto">
-                  <Zap className="h-6 w-6 text-secondary" />
-                </div>
-                <h3 className="font-semibold">Wholesale Rates</h3>
-                <p className="text-sm text-muted-foreground">Best prices guaranteed</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="p-6 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Quality Assured</h3>
-                <p className="text-sm text-muted-foreground">Certified technicians</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="p-6 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto">
-                  <MapPin className="h-6 w-6 text-secondary" />
-                </div>
-                <h3 className="font-semibold">Bahria Phase 7</h3>
-                <p className="text-sm text-muted-foreground">Convenient location</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Supported Brands */}
-      <section className="py-12 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <h3 className="text-2xl font-bold text-center mb-8">We Support All Major Brands</h3>
-          <div className="flex flex-wrap justify-center gap-6">
-            {brands.map((brand) => (
-              <Badge key={brand} variant="outline" className="px-6 py-3 text-base">
-                {brand}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Brand Section */}
+      <BrandSection />
 
       {/* Products Section */}
-      <section id="products" className="py-16">
+      <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Products</h2>
-            <p className="text-muted-foreground">Browse our collection of quality phones at wholesale rates</p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                Our Products
+              </h2>
+              <p className="text-muted-foreground">
+                {filteredProducts.length} products available at wholesale rates
+              </p>
+            </div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Filter Products</SheetTitle>
+                  <SheetDescription>
+                    Refine your search by brand, condition, and price
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <ProductFilters filters={filters} onFilterChange={setFilters} />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Desktop Filters */}
+            <div className="hidden md:block">
+              <ProductFilters filters={filters} onFilterChange={setFilters} />
             </div>
-          ) : products.length === 0 ? (
-            <Card className="p-12 text-center">
-              <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No products found</h3>
-              <p className="text-muted-foreground mb-6">
-                We're currently setting up our inventory. Check back soon!
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Want to add a product? Tell us what you need in the chat!
-              </p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <Card key={product.node.id} className="group overflow-hidden hover:shadow-lg transition-shadow">
-                  <Link to={`/product/${product.node.handle}`}>
-                    <div className="aspect-square bg-muted overflow-hidden">
-                      {product.node.images.edges[0]?.node && (
-                        <img
-                          src={product.node.images.edges[0].node.url}
-                          alt={product.node.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      )}
-                    </div>
-                  </Link>
-                  <CardContent className="p-4 space-y-3">
-                    <Link to={`/product/${product.node.handle}`}>
-                      <h3 className="font-semibold hover:text-primary transition-colors line-clamp-1">
-                        {product.node.title}
-                      </h3>
-                    </Link>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {product.node.description || "Quality product at wholesale rate"}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-primary">
-                        {product.node.priceRange.minVariantPrice.currencyCode}{' '}
-                        {parseFloat(product.node.priceRange.minVariantPrice.amount).toFixed(2)}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleAddToCart(product)}
-                        className="gap-2"
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        Add
-                      </Button>
-                    </div>
-                  </CardContent>
+
+            {/* Products Grid */}
+            <div className="md:col-span-3">
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <div className="aspect-square bg-muted animate-pulse" />
+                      <CardContent className="p-4 space-y-2">
+                        <div className="h-4 bg-muted rounded animate-pulse" />
+                        <div className="h-6 bg-muted rounded animate-pulse w-1/2" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <Phone className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
+                  <p className="text-muted-foreground mb-6">
+                    We haven't added any products yet. Tell us what phones you need!
+                  </p>
+                  <Button>Contact Us</Button>
                 </Card>
-              ))}
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map((product) => (
+                    <Card 
+                      key={product.node.id} 
+                      className="group overflow-hidden hover:shadow-xl transition-all duration-300"
+                    >
+                      <Link to={`/product/${product.node.handle}`}>
+                        <div className="aspect-square bg-muted overflow-hidden">
+                          {product.node.images.edges[0]?.node && (
+                            <img
+                              src={product.node.images.edges[0].node.url}
+                              alt={product.node.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          )}
+                        </div>
+                      </Link>
+                      <CardContent className="p-4">
+                        <div className="mb-3">
+                          <Badge variant="secondary" className="mb-2">
+                            Wholesale Rate
+                          </Badge>
+                          <Link to={`/product/${product.node.handle}`}>
+                            <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                              {product.node.title}
+                            </h3>
+                          </Link>
+                        </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-2xl font-bold text-primary">
+                            {product.node.priceRange.minVariantPrice.currencyCode}{' '}
+                            {parseFloat(product.node.priceRange.minVariantPrice.amount).toFixed(2)}
+                          </span>
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          Add to Cart
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-16 bg-muted/30">
+      <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
-            <p className="text-muted-foreground">Professional repair services for all devices</p>
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              Our Services
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              More than just a phone shop
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Phone className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold">Screen Repair</h3>
-                <p className="text-muted-foreground">
-                  Expert screen replacement for all phone models. Same-day service available.
-                </p>
-              </CardContent>
+          
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Wholesale Phones</h3>
+              <p className="text-muted-foreground mb-4">
+                New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
+              </p>
+              <Button variant="outline">Shop Now</Button>
             </Card>
 
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-secondary" />
-                </div>
-                <h3 className="text-xl font-semibold">Battery Replacement</h3>
-                <p className="text-muted-foreground">
-                  Genuine battery replacements with warranty. Get your phone back to full power.
-                </p>
-              </CardContent>
+            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                <Wrench className="w-8 h-8 text-secondary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Expert Repairs</h3>
+              <p className="text-muted-foreground mb-4">
+                Professional repair services for all phone brands. Screen replacement, battery, and more.
+              </p>
+              <Button variant="outline">Book Repair</Button>
             </Card>
 
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold">Water Damage</h3>
-                <p className="text-muted-foreground">
-                  Professional water damage recovery. Save your device and data.
-                </p>
-              </CardContent>
+            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="w-8 h-8 text-accent" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Sell Your Phone</h3>
+              <p className="text-muted-foreground mb-4">
+                Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
+              </p>
+              <Button variant="outline">Get Quote</Button>
             </Card>
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-16">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="p-8 space-y-6">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold mb-2">Get In Touch</h2>
-                <p className="text-muted-foreground">Visit us or call for inquiries</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <MapPin className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Location</h4>
-                    <p className="text-muted-foreground">Bahria Phase 7, Rawalpindi</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <Phone className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Phone</h4>
-                    <p className="text-muted-foreground">Contact us for best deals</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <Truck className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-1">Home Delivery</h4>
-                    <p className="text-muted-foreground">Free delivery within Bahria Phase 7</p>
-                  </div>
-                </div>
-              </div>
-
-              <Button className="w-full" size="lg">
-                <Phone className="h-5 w-5 mr-2" />
-                Call Now
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <ContactSection />
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>© 2024 Dilbar Mobile Repair Shop. Best in Bahria Phase 7.</p>
+      <footer className="bg-foreground text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="font-bold text-lg mb-4">Dilbar Mobiles</h3>
+              <p className="text-white/80 text-sm">
+                Your trusted partner for wholesale phones and professional repairs in Bahria Phase 7.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Shop</h4>
+              <ul className="space-y-2 text-sm text-white/80">
+                <li><a href="#" className="hover:text-white">New Phones</a></li>
+                <li><a href="#" className="hover:text-white">Used Phones</a></li>
+                <li><a href="#" className="hover:text-white">Accessories</a></li>
+                <li><a href="#" className="hover:text-white">Parts</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Services</h4>
+              <ul className="space-y-2 text-sm text-white/80">
+                <li><a href="#" className="hover:text-white">Phone Repair</a></li>
+                <li><a href="#" className="hover:text-white">Screen Replacement</a></li>
+                <li><a href="#" className="hover:text-white">Battery Service</a></li>
+                <li><a href="#" className="hover:text-white">Sell Your Phone</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Contact</h4>
+              <ul className="space-y-2 text-sm text-white/80">
+                <li>Bahria Phase 7, Rawalpindi</li>
+                <li>Phone: +92 XXX XXXXXXX</li>
+                <li>Email: info@dilbarmobiles.pk</li>
+                <li>Mon-Sat: 10AM - 10PM</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-white/20 pt-6 text-center text-sm text-white/60">
+            <p>&copy; 2024 Dilbar Mobiles. All rights reserved. • Best repair shop in Bahria Phase 7</p>
+          </div>
         </div>
       </footer>
     </div>
