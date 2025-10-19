@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { toast } from "sonner";
 import { Loader2, Package } from "lucide-react";
 
@@ -271,6 +272,11 @@ export default function Checkout() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Payment Methods Strip */}
+        <div className="mt-12">
+          <PaymentMethodsStrip />
         </div>
       </div>
     </div>

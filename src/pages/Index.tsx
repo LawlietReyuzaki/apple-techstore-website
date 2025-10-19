@@ -13,6 +13,9 @@ import { ProductFilters } from "@/components/ProductFilters";
 import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
+import { PromoSection } from "@/components/PromoSection";
+import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -185,10 +188,16 @@ const Index = () => {
         </div>
       </header>
 
+      {/* Wholesale Hero Banner */}
+      <WholesaleBanner />
+
       {/* Hero Carousel */}
       <div className="container mx-auto px-4 py-6">
         <HeroCarousel />
       </div>
+
+      {/* Promo Section with Repair & Parts Banners */}
+      <PromoSection />
 
       {/* Trust Bar */}
       <TrustBar />
@@ -387,6 +396,9 @@ const Index = () => {
 
       {/* Contact Section */}
       <ContactSection />
+
+      {/* Payment Methods */}
+      <PaymentMethodsStrip />
 
       {/* Footer */}
       <footer className="bg-foreground text-white py-12">

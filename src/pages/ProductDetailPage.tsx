@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { WishlistButton } from "@/components/WishlistButton";
 import { ProductReviews } from "@/components/ProductReviews";
+import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProductDetailPage() {
@@ -118,7 +119,7 @@ export default function ProductDetailPage() {
           Back
         </Button>
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
           {/* Images */}
           <div className="space-y-4 animate-fade-in">
             <div className="aspect-square bg-secondary/20 rounded-lg overflow-hidden">
@@ -246,6 +247,11 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* Recommendations Sidebar */}
+          <div className="hidden md:block">
+            <RecommendationsCard currentProductId={product.id} categoryId={product.category_id} />
           </div>
         </div>
 
