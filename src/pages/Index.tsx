@@ -4,16 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CartDrawer } from "@/components/CartDrawer";
+import { ProductCartButton } from "@/components/ProductCartButton";
 import { AuthButton } from "@/components/AuthButton";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { TrustBar } from "@/components/TrustBar";
 import { BrandSection } from "@/components/BrandSection";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ContactSection } from "@/components/ContactSection";
+import { ProductCard } from "@/components/ProductCard";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Phone, ShoppingBag, Search, Menu, Wrench, Filter } from "lucide-react";
+import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -26,6 +29,7 @@ import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [localProducts, setLocalProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -37,7 +41,23 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchLocalProducts();
   }, []);
+
+  const fetchLocalProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("featured", true)
+        .limit(4);
+
+      if (error) throw error;
+      setLocalProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching local products:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -117,6 +137,12 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/shop">
+              <Button variant="outline" size="sm" className="hidden md:flex">
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Shop
+              </Button>
+            </Link>
             <Link to="/book-repair">
               <Button variant="outline" size="sm" className="hidden md:flex">
                 <Wrench className="h-4 w-4 mr-2" />
@@ -124,6 +150,7 @@ const Index = () => {
               </Button>
             </Link>
             <AuthButton />
+            <ProductCartButton />
             <CartDrawer />
             <Sheet>
               <SheetTrigger asChild>
@@ -165,7 +192,31 @@ const Index = () => {
       {/* Brand Section */}
       <BrandSection />
 
-      {/* Products Section */}
+      {/* Featured Products from Local Inventory */}
+      {localProducts.length > 0 && (
+        <section className="py-12 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-2">Featured Deals</h2>
+                <p className="text-muted-foreground">Wholesale prices on premium phones</p>
+              </div>
+              <Link to="/shop">
+                <Button variant="outline">
+                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {localProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Shopify Products Section */}
       <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
