@@ -16,6 +16,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
+import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -190,6 +191,9 @@ const Index = () => {
 
       {/* Wholesale Hero Banner */}
       <WholesaleBanner />
+
+      {/* Features Strip */}
+      <FeaturesStrip />
 
       {/* Hero Carousel */}
       <div className="container mx-auto px-4 py-6">
