@@ -2,18 +2,21 @@ import { Card } from "@/components/ui/card";
 import appleDevices from "@/assets/brands/apple-devices.jpg";
 import samsungPhones from "@/assets/brands/samsung-phones.jpg";
 import googlePixel from "@/assets/brands/google-pixel.jpg";
-import xiaomiPhone from "@/assets/brands/xiaomi-phone.jpg";
-import smartphoneGeneric from "@/assets/brands/smartphone-generic.jpg";
+import xiaomiPhone from "@/assets/brands/xiaomi-new.jpg";
+import huaweiPhone from "@/assets/brands/huawei.jpg";
+import oppoPhone from "@/assets/brands/oppo.jpg";
+import vivoPhone from "@/assets/brands/vivo.jpg";
+import oneplusPhone from "@/assets/brands/oneplus.jpg";
 
 const brands = [
   { name: "Apple", logo: appleDevices },
   { name: "Samsung", logo: samsungPhones },
   { name: "Google", logo: googlePixel },
   { name: "Xiaomi", logo: xiaomiPhone },
-  { name: "Huawei", logo: smartphoneGeneric },
-  { name: "Oppo", logo: smartphoneGeneric },
-  { name: "Vivo", logo: smartphoneGeneric },
-  { name: "OnePlus", logo: smartphoneGeneric },
+  { name: "Huawei", logo: huaweiPhone },
+  { name: "Oppo", logo: oppoPhone },
+  { name: "Vivo", logo: vivoPhone },
+  { name: "OnePlus", logo: oneplusPhone },
 ];
 
 export const BrandSection = () => {
