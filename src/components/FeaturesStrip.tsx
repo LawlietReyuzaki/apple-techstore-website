@@ -10,7 +10,7 @@ const features = [
 
 export const FeaturesStrip = () => {
   return (
-    <div className="bg-primary text-primary-foreground py-3 overflow-hidden relative">
+    <div className="bg-black text-white py-3 overflow-hidden relative">
       <div className="flex animate-scroll-left">
         {/* First set */}
         {features.map((feature, index) => (
