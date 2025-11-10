@@ -173,6 +173,7 @@ export type Database = {
           featured: boolean | null
           id: string
           images: string[] | null
+          links: string[] | null
           name: string
           price: number
           stock: number | null
@@ -187,6 +188,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          links?: string[] | null
           name: string
           price: number
           stock?: number | null
@@ -201,6 +203,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          links?: string[] | null
           name?: string
           price?: number
           stock?: number | null
