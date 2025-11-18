@@ -1,3 +1,11 @@
+import huaweiPura70 from "@/assets/products/huawei-pura-70.jpg";
+import huaweiPura80Pro from "@/assets/products/huawei-pura-80-pro.webp";
+import iphone16ProMax from "@/assets/products/iphone-16-pro-max.jpg";
+import vivoPhone from "@/assets/brands/vivo.jpg";
+import xiaomiPhone from "@/assets/brands/xiaomi-new.jpg";
+import oneplusPhone from "@/assets/brands/oneplus.jpg";
+import oppoPhone from "@/assets/brands/oppo.jpg";
+
 export interface Device {
   id: string;
   brand: string;
@@ -11,6 +19,26 @@ export interface Device {
 }
 
 export const devices: Device[] = [
+  // Apple
+  {
+    id: "iphone-16-pro-max",
+    brand: "Apple",
+    model: "iPhone 16 Pro Max",
+    price: 499999,
+    currency: "PKR",
+    description: "The ultimate iPhone with titanium design and pro camera system",
+    keySpecs: [
+      "6.9″ Super Retina XDR Display",
+      "A18 Pro Chip",
+      "Up to 1TB Storage",
+      "Pro Camera System (48MP)",
+      "Action Button",
+      "Titanium Design"
+    ],
+    image: iphone16ProMax,
+    available: true
+  },
+  
   // Huawei
   {
     id: "huawei-pura-70",
@@ -27,7 +55,7 @@ export const devices: Device[] = [
       "4,900 mAh Battery",
       "IP68 Water Resistant"
     ],
-    image: "/src/assets/brands/huawei.jpg",
+    image: huaweiPura70,
     available: true
   },
   {
@@ -45,7 +73,7 @@ export const devices: Device[] = [
       "Triple Rear Camera System",
       "Premium Design"
     ],
-    image: "/src/assets/brands/huawei.jpg",
+    image: huaweiPura80Pro,
     available: true
   },
   
@@ -65,7 +93,7 @@ export const devices: Device[] = [
       "5G Capable",
       "1TB Storage Option"
     ],
-    image: "/src/assets/brands/vivo.jpg",
+    image: vivoPhone,
     available: true
   },
   
@@ -85,7 +113,7 @@ export const devices: Device[] = [
       "5,410 mAh Battery",
       "Premium Build Quality"
     ],
-    image: "/src/assets/brands/xiaomi-new.jpg",
+    image: xiaomiPhone,
     available: true
   },
   
@@ -105,7 +133,7 @@ export const devices: Device[] = [
       "Value Performance",
       "OxygenOS Experience"
     ],
-    image: "/src/assets/brands/oneplus.jpg",
+    image: oneplusPhone,
     available: true
   },
   {
@@ -123,7 +151,7 @@ export const devices: Device[] = [
       "Premium Display",
       "5G Connectivity"
     ],
-    image: "/src/assets/brands/oneplus.jpg",
+    image: oneplusPhone,
     available: false
   },
   
@@ -143,7 +171,7 @@ export const devices: Device[] = [
       "5G Connectivity",
       "Premium Design"
     ],
-    image: "/src/assets/brands/oppo.jpg",
+    image: oppoPhone,
     available: true
   },
   {
@@ -161,7 +189,7 @@ export const devices: Device[] = [
       "5,000 mAh Battery",
       "Android 14"
     ],
-    image: "/src/assets/brands/oppo.jpg",
+    image: oppoPhone,
     available: true
   }
 ];
