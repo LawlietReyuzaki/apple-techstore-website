@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Phone, Wrench, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
+import expertRepairImg from "@/assets/expert-repair-services.png";
 
 const slides = [
   {
@@ -11,6 +12,7 @@ const slides = [
     cta: "Shop Now",
     icon: Phone,
     gradient: "from-primary via-blue-500 to-primary",
+    type: "gradient" as const,
   },
   {
     id: 2,
@@ -18,7 +20,8 @@ const slides = [
     subtitle: "Professional repairs • Quick turnaround • Warranty included",
     cta: "Book Repair",
     icon: Wrench,
-    gradient: "from-secondary via-orange-500 to-secondary",
+    type: "image" as const,
+    image: expertRepairImg,
   },
   {
     id: 3,
@@ -27,6 +30,7 @@ const slides = [
     cta: "Browse Deals",
     icon: Tag,
     gradient: "from-primary via-purple-500 to-secondary",
+    type: "gradient" as const,
   },
 ];
 
@@ -58,32 +62,43 @@ export const HeroCarousel = () => {
                 : "opacity-0 translate-x-full"
             }`}
           >
-            <div className={`w-full h-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}>
-              <div className="container mx-auto px-4 text-center text-white">
-                <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm">
-                  <Icon className="w-10 h-10" />
-                </div>
-                <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
-                  {slide.title}
-                </h2>
-                <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
-                  {slide.subtitle}
-                </p>
-                {slide.id === 2 ? (
-                  <Link to="/book-repair">
-                    <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
-                      {slide.cta}
-                    </Button>
-                  </Link>
-                ) : (
-                  <a href="#products">
-                    <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
-                      {slide.cta}
-                    </Button>
-                  </a>
-                )}
+            {slide.type === "image" ? (
+              <div className="relative w-full h-full">
+                <img 
+                  src={slide.image} 
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/20" />
               </div>
-            </div>
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}>
+                <div className="container mx-auto px-4 text-center text-white">
+                  <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm">
+                    <Icon className="w-10 h-10" />
+                  </div>
+                  <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                    {slide.title}
+                  </h2>
+                  <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+                    {slide.subtitle}
+                  </p>
+                  {slide.id === 2 ? (
+                    <Link to="/book-repair">
+                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                        {slide.cta}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <a href="#products">
+                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                        {slide.cta}
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
