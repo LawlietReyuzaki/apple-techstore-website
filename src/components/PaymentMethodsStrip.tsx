@@ -1,13 +1,18 @@
 import { Card } from "@/components/ui/card";
-import { CreditCard, Wallet, Banknote, Building2, Truck } from "lucide-react";
+import { Banknote } from "lucide-react";
+import easypaisaLogo from "@/assets/payment-icons/easypaisa.jpg";
+import jazzcashLogo from "@/assets/payment-icons/jazzcash.jpg";
+import meezanLogo from "@/assets/payment-icons/meezan-bank.png";
+import nayapayLogo from "@/assets/payment-icons/nayapay.jpg";
+import tcsLogo from "@/assets/payment-icons/tcs.png";
 
 const paymentMethods = [
-  { name: "Easypaisa", icon: Wallet, color: "text-green-600" },
-  { name: "JazzCash", icon: Wallet, color: "text-orange-600" },
-  { name: "Meezan Bank", icon: Building2, color: "text-blue-600" },
-  { name: "NayaPay", icon: CreditCard, color: "text-purple-600" },
-  { name: "TCS", icon: Truck, color: "text-red-600" },
-  { name: "Cash on Delivery", icon: Banknote, color: "text-yellow-600" },
+  { name: "Easypaisa", logo: easypaisaLogo },
+  { name: "JazzCash", logo: jazzcashLogo },
+  { name: "Meezan Bank", logo: meezanLogo },
+  { name: "NayaPay", logo: nayapayLogo },
+  { name: "TCS", logo: tcsLogo },
+  { name: "Cash on Delivery", logo: null },
 ];
 
 export const PaymentMethodsStrip = () => {
@@ -21,10 +26,18 @@ export const PaymentMethodsStrip = () => {
           {paymentMethods.map((method) => (
             <Card
               key={method.name}
-              className="p-4 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-shadow"
+              className="p-4 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-shadow bg-card"
             >
-              <method.icon className={`h-6 w-6 ${method.color}`} />
-              <span className="text-xs font-medium text-center">{method.name}</span>
+              {method.logo ? (
+                <img 
+                  src={method.logo} 
+                  alt={method.name}
+                  className="h-10 w-auto object-contain"
+                />
+              ) : (
+                <Banknote className="h-10 w-10 text-yellow-600" />
+              )}
+              <span className="text-xs font-medium text-center text-foreground">{method.name}</span>
             </Card>
           ))}
         </div>
