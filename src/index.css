@@ -108,7 +108,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, hsl(220 30% 5%), hsl(217 100% 15%), hsl(220 25% 8%));
+    background: linear-gradient(135deg, hsl(270 60% 8%), hsl(280 70% 15%), hsl(260 50% 10%), hsl(275 65% 12%));
     background-attachment: fixed;
   }
 }
