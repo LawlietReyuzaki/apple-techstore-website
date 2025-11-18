@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Phone, Wrench, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
-import expertRepairImg from "@/assets/expert-repair-services.png";
-import wholesalePhonesImg from "@/assets/wholesale-phones.png";
+import wholesalePhonesImg from "@/assets/hero-wholesale-phones.png";
+import expertRepairImg from "@/assets/hero-expert-repair.png";
+import usedPhonesImg from "@/assets/hero-used-phones.png";
 
 const slides = [
   {
@@ -30,8 +31,8 @@ const slides = [
     subtitle: "Premium refurbished phones • Tested & certified • Best deals",
     cta: "Browse Deals",
     icon: Tag,
-    gradient: "from-primary via-purple-500 to-secondary",
-    type: "gradient" as const,
+    type: "image" as const,
+    image: usedPhonesImg,
   },
 ];
 
@@ -96,7 +97,7 @@ export const HeroCarousel = () => {
                 </div>
               </div>
             ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}>
+              <div className={`w-full h-full bg-gradient-to-br from-primary via-purple-500 to-secondary flex items-center justify-center`}>
                 <div className="container mx-auto px-4 text-center text-white">
                   <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm">
                     <Icon className="w-10 h-10" />
