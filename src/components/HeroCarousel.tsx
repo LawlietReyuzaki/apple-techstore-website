@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Phone, Wrench, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import expertRepairImg from "@/assets/expert-repair-services.png";
+import wholesalePhonesImg from "@/assets/wholesale-phones.png";
 
 const slides = [
   {
@@ -11,8 +12,8 @@ const slides = [
     subtitle: "Every brand • Every model • Best rates in Pakistan",
     cta: "Shop Now",
     icon: Phone,
-    gradient: "from-primary via-blue-500 to-primary",
-    type: "gradient" as const,
+    type: "image" as const,
+    image: wholesalePhonesImg,
   },
   {
     id: 2,
@@ -69,7 +70,30 @@ export const HeroCarousel = () => {
                   alt={slide.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/20" />
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="container mx-auto px-4 text-center text-white">
+                    <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                      {slide.title}
+                    </h2>
+                    <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto drop-shadow-md">
+                      {slide.subtitle}
+                    </p>
+                    {slide.id === 2 ? (
+                      <Link to="/book-repair">
+                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                          {slide.cta}
+                        </Button>
+                      </Link>
+                    ) : (
+                      <a href="#products">
+                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                          {slide.cta}
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center`}>
