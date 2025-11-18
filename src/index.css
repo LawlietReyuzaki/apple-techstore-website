@@ -8,23 +8,23 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 270 50% 5%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
 
-    --card: 270 40% 12% / 0.6;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 5%;
 
-    --popover: 270 40% 12% / 0.95;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
 
     --primary: 280 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 270 30% 15%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 270 30% 18% / 0.5;
-    --muted-foreground: 280 20% 75%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
 
     --accent: 280 100% 65%;
     --accent-foreground: 0 0% 100%;
@@ -32,26 +32,26 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 280 30% 25% / 0.3;
-    --input: 270 30% 20% / 0.5;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
     --ring: 280 100% 60%;
 
     --radius: 0.75rem;
 
-    --gradient-hero: linear-gradient(135deg, hsl(270 60% 10%), hsl(280 70% 20%));
+    --gradient-hero: linear-gradient(135deg, hsl(280 100% 97%), hsl(260 100% 98%));
     --gradient-accent: linear-gradient(135deg, hsl(280 100% 60%), hsl(290 100% 70%));
-    --gradient-glass: linear-gradient(135deg, hsl(270 40% 15% / 0.4), hsl(280 40% 20% / 0.2));
-    --shadow-glow: 0 0 60px hsl(280 100% 60% / 0.3);
-    --shadow-card: 0 8px 32px hsl(270 50% 5% / 0.5);
-    --shadow-hover: 0 12px 48px hsl(280 100% 60% / 0.4);
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.8), hsl(0 0% 100% / 0.6));
+    --shadow-glow: 0 0 40px hsl(280 100% 60% / 0.15);
+    --shadow-card: 0 2px 12px hsl(240 6% 10% / 0.08);
+    --shadow-hover: 0 8px 24px hsl(280 100% 60% / 0.2);
 
-    --sidebar-background: 270 40% 12%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 280 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 30% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 280 30% 25% / 0.3;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 240 6% 90%;
     --sidebar-ring: 280 100% 60%;
   }
 
@@ -108,19 +108,68 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .dark body {
     background: linear-gradient(135deg, hsl(270 60% 8%), hsl(280 70% 15%), hsl(260 50% 10%), hsl(275 65% 12%));
+    background-attachment: fixed;
+  }
+  
+  .light body {
+    background: linear-gradient(135deg, hsl(0 0% 100%), hsl(240 100% 99%), hsl(260 100% 98%));
     background-attachment: fixed;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+    @apply bg-card backdrop-blur-xl border border-border shadow-lg;
+    transition: all 0.3s ease;
+  }
+  
+  .dark .glass-card {
     background: linear-gradient(135deg, hsl(270 40% 15% / 0.6), hsl(280 40% 18% / 0.4));
+  }
+  
+  .light .glass-card {
+    background: linear-gradient(135deg, hsl(0 0% 100% / 0.9), hsl(0 0% 98% / 0.8));
   }
   
   .glass-effect {
     @apply backdrop-blur-md border border-border/50;
+    transition: all 0.3s ease;
+  }
+  
+  .dark .glass-effect {
     background: linear-gradient(135deg, hsl(270 40% 10% / 0.7), hsl(280 40% 15% / 0.5));
+  }
+  
+  .light .glass-effect {
+    background: linear-gradient(135deg, hsl(0 0% 100% / 0.95), hsl(0 0% 98% / 0.9));
+  }
+  
+  /* Responsive Container */
+  .container {
+    @apply mx-auto px-4;
+    max-width: 1400px;
+  }
+  
+  @media (min-width: 640px) {
+    .container {
+      @apply px-6;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container {
+      @apply px-8;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .container {
+      @apply px-12;
+    }
   }
 }

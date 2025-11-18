@@ -27,6 +27,7 @@ import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Sheet,
   SheetContent,
@@ -154,47 +155,48 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
-      <div className="bg-black/40 backdrop-blur-md text-white py-2 border-b border-primary/20">
-        <div className="container mx-auto px-4 flex items-center justify-between text-sm">
-          <span>🎉 Welcome to Dilbar Mart - Wholesale Rates & Expert Repairs</span>
-          <span className="hidden md:block">📞 Free Home Delivery in Bahria Phase 7</span>
+      <div className="glass-effect text-foreground py-2 border-b">
+        <div className="container flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
+          <span className="truncate">🎉 Welcome to Dilbar Mart - Wholesale Rates & Expert Repairs</span>
+          <span className="hidden sm:block truncate">📞 Free Home Delivery in Bahria Phase 7</span>
         </div>
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-effect border-b border-primary/20 shadow-lg shadow-primary/5">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Dilbar Mart" className="h-12 w-12" />
-            <div>
-              <h1 className="text-2xl font-bold text-white">
+      <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
+        <div className="container h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img src={logo} alt="Dilbar Mart" className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
                 Dilbar Mart
               </h1>
-              <p className="text-xs text-primary">Wholesale & Repair Shop</p>
+              <p className="text-[10px] sm:text-xs text-primary truncate">Wholesale & Repair Shop</p>
             </div>
           </Link>
           
-          <div className="hidden md:flex flex-1 max-w-xl mx-8">
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-4">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search phones, brands, models..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link to="/shop">
-              <Button variant="outline" size="sm" className="hidden md:flex">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <ThemeToggle />
+            <Link to="/shop" className="hidden lg:block">
+              <Button variant="outline" size="sm">
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 Shop
               </Button>
             </Link>
-            <Link to="/book-repair">
-              <Button variant="outline" size="sm" className="hidden md:flex">
+            <Link to="/book-repair" className="hidden lg:block">
+              <Button variant="outline" size="sm">
                 <Wrench className="h-4 w-4 mr-2" />
                 Repairs
               </Button>
@@ -204,11 +206,11 @@ const Index = () => {
             <CartDrawer />
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
+                <Button variant="outline" size="icon" className="lg:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent>
+              <SheetContent className="w-[300px] sm:w-[400px]">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
@@ -218,7 +220,13 @@ const Index = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                  <Link to="/book-repair">
+                  <Link to="/shop" className="block">
+                    <Button className="w-full" variant="outline">
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Shop
+                    </Button>
+                  </Link>
+                  <Link to="/book-repair" className="block">
                     <Button className="w-full" variant="outline">
                       <Wrench className="h-4 w-4 mr-2" />
                       Book Repair
@@ -238,7 +246,7 @@ const Index = () => {
       <FeaturesStrip />
 
       {/* Hero Carousel */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container py-4 sm:py-6">
         <HeroCarousel />
       </div>
 
@@ -256,20 +264,20 @@ const Index = () => {
 
       {/* Featured Products from Local Inventory */}
       {localProducts.length > 0 && (
-        <section className="py-12 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
+        <section className="py-8 sm:py-12">
+          <div className="container">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-2">Featured Deals</h2>
-                <p className="text-muted-foreground">Wholesale prices on premium phones</p>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Featured Deals</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Wholesale prices on premium phones</p>
               </div>
               <Link to="/shop">
-                <Button variant="outline">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   View All <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {localProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -279,26 +287,26 @@ const Index = () => {
       )}
 
       {/* Our Products Section - Devices from Shop */}
-      <section className="py-12 md:py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
+      <section className="py-8 sm:py-12 md:py-16 bg-muted/30">
+        <div className="container">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-2">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
                 Our Products
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 {displayedDevices.length} premium devices with competitive pricing
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="md:hidden">
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-initial md:hidden">
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
                   </Button>
                 </SheetTrigger>
-                <SheetContent>
+                <SheetContent className="w-[300px]">
                   <SheetHeader>
                     <SheetTitle>Filter Products</SheetTitle>
                     <SheetDescription>
@@ -310,8 +318,8 @@ const Index = () => {
                   </div>
                 </SheetContent>
               </Sheet>
-              <Link to="/shop">
-                <Button variant="outline" size="sm">
+              <Link to="/shop" className="flex-1 sm:flex-initial">
+                <Button variant="outline" size="sm" className="w-full">
                   View All
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -319,7 +327,7 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-4 gap-4 sm:gap-6">
             {/* Desktop Filters */}
             <div className="hidden md:block">
               <ProductFilters filters={filters} onFilterChange={setFilters} />
@@ -328,10 +336,10 @@ const Index = () => {
             {/* Devices Grid */}
             <div className="md:col-span-3">
               {displayedDevices.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <Phone className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-2xl font-bold mb-2">No Devices Found</h3>
-                  <p className="text-muted-foreground mb-6">
+                <Card className="glass-card p-8 sm:p-12 text-center">
+                  <Phone className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">No Devices Found</h3>
+                  <p className="text-muted-foreground mb-6 text-sm sm:text-base">
                     Try adjusting your filters to see more devices
                   </p>
                   <Button onClick={() => setFilters({
@@ -343,7 +351,7 @@ const Index = () => {
                   </Button>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-fade-in">
                   {displayedDevices.map((device) => (
                     <DeviceCard key={device.id} device={device} />
                   ))}
@@ -355,51 +363,51 @@ const Index = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+      <section className="py-8 sm:py-12 md:py-16">
+        <div className="container">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
               Our Services
             </h2>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg">
               More than just a phone shop
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <Phone className="w-8 h-8 text-primary" />
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
+            <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
+                <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Wholesale Phones</h3>
-              <p className="text-muted-foreground mb-4">
+              <h3 className="text-lg sm:text-xl font-bold mb-2">Wholesale Phones</h3>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                 New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
               </p>
-              <Button variant="outline">Shop Now</Button>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">Shop Now</Button>
             </Card>
 
             <Link to="/book-repair" className="group">
-              <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  <Wrench className="w-8 h-8 text-primary" />
+              <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
+                  <Wrench className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Expert Repairs</h3>
-                <p className="text-muted-foreground mb-4">
+                <h3 className="text-lg sm:text-xl font-bold mb-2">Expert Repairs</h3>
+                <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                   Professional repairs, quick turnaround, and warranty included on all services.
                 </p>
-                <Button variant="outline" className="border-primary/50 hover:bg-primary hover:text-white">Book Repair</Button>
+                <Button variant="outline" size="sm" className="w-full sm:w-auto border-primary/50 hover:bg-primary hover:text-white">Book Repair</Button>
               </Card>
             </Link>
 
-            <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <ShoppingBag className="w-8 h-8 text-accent" />
+            <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group sm:col-span-2 md:col-span-1">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-accent" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Sell Your Phone</h3>
-              <p className="text-muted-foreground mb-4">
+              <h3 className="text-lg sm:text-xl font-bold mb-2">Sell Your Phone</h3>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                 Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
               </p>
-              <Button variant="outline">Get Quote</Button>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">Get Quote</Button>
             </Card>
           </div>
         </div>
@@ -412,45 +420,45 @@ const Index = () => {
       <PaymentMethodsStrip />
 
       {/* Footer */}
-      <footer className="bg-foreground text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="glass-effect border-t py-8 sm:py-12">
+        <div className="container">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">Dilbar Mobiles</h3>
-              <p className="text-white/80 text-sm">
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground">Dilbar Mart</h3>
+              <p className="text-muted-foreground text-xs sm:text-sm">
                 Your trusted partner for wholesale phones and professional repairs in Bahria Phase 7.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Shop</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="#" className="hover:text-white">New Phones</a></li>
-                <li><a href="#" className="hover:text-white">Used Phones</a></li>
-                <li><a href="#" className="hover:text-white">Accessories</a></li>
-                <li><a href="#" className="hover:text-white">Parts</a></li>
+              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Shop</h4>
+              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">New Phones</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Used Phones</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Accessories</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Parts</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Services</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="#" className="hover:text-white">Phone Repair</a></li>
-                <li><a href="#" className="hover:text-white">Screen Replacement</a></li>
-                <li><a href="#" className="hover:text-white">Battery Service</a></li>
-                <li><a href="#" className="hover:text-white">Sell Your Phone</a></li>
+              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Services</h4>
+              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Phone Repair</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Screen Replacement</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Battery Service</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Sell Your Phone</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Contact</h4>
-              <ul className="space-y-2 text-sm text-white/80">
+              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Contact</h4>
+              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
                 <li>Bahria Phase 7, Rawalpindi</li>
                 <li>Phone: +92 XXX XXXXXXX</li>
-                <li>Email: info@dilbarmobiles.pk</li>
+                <li>Email: info@dilbarmart.pk</li>
                 <li>Mon-Sat: 10AM - 10PM</li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/20 pt-6 text-center text-sm text-white/60">
-            <p>&copy; 2024 Dilbar Mobiles. All rights reserved. • Best repair shop in Bahria Phase 7</p>
+          <div className="border-t border-border pt-4 sm:pt-6 text-center text-xs sm:text-sm text-muted-foreground">
+            <p>&copy; 2024 Dilbar Mart. All rights reserved. • Best repair shop in Bahria Phase 7</p>
           </div>
         </div>
       </footer>

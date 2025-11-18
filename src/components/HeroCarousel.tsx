@@ -50,7 +50,7 @@ export const HeroCarousel = () => {
   const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
 
   return (
-    <div className="relative h-[500px] md:h-[600px] overflow-hidden rounded-2xl">
+    <div className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl">
       {slides.map((slide, index) => {
         const Icon = slide.icon;
         return (
@@ -71,24 +71,24 @@ export const HeroCarousel = () => {
                   alt={slide.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/30" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="container mx-auto px-4 text-center text-white">
-                    <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+                  <div className="container text-center text-white max-w-4xl">
+                    <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-lg">
                       {slide.title}
                     </h2>
-                    <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto drop-shadow-md">
+                    <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-6 md:mb-8 text-white/90 max-w-2xl mx-auto drop-shadow-md">
                       {slide.subtitle}
                     </p>
                     {slide.id === 2 ? (
                       <Link to="/book-repair">
-                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform text-sm sm:text-base">
                           {slide.cta}
                         </Button>
                       </Link>
                     ) : (
                       <a href="#products">
-                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                        <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform text-sm sm:text-base">
                           {slide.cta}
                         </Button>
                       </a>
@@ -97,26 +97,26 @@ export const HeroCarousel = () => {
                 </div>
               </div>
             ) : (
-              <div className={`w-full h-full bg-gradient-to-br from-primary via-purple-500 to-secondary flex items-center justify-center`}>
-                <div className="container mx-auto px-4 text-center text-white">
-                  <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm">
-                    <Icon className="w-10 h-10" />
+              <div className={`w-full h-full bg-gradient-to-br from-primary via-purple-500 to-secondary flex items-center justify-center p-4 sm:p-6`}>
+                <div className="container text-center text-white max-w-4xl">
+                  <div className="mb-4 sm:mb-6 inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/20 backdrop-blur-sm">
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                  <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-lg">
                     {slide.title}
                   </h2>
-                  <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+                  <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-6 md:mb-8 text-white/90 max-w-2xl mx-auto">
                     {slide.subtitle}
                   </p>
                   {slide.id === 2 ? (
                     <Link to="/book-repair">
-                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform text-sm sm:text-base">
                         {slide.cta}
                       </Button>
                     </Link>
                   ) : (
                     <a href="#products">
-                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform">
+                      <Button size="lg" variant="secondary" className="shadow-xl hover:scale-105 transition-transform text-sm sm:text-base">
                         {slide.cta}
                       </Button>
                     </a>
@@ -131,27 +131,27 @@ export const HeroCarousel = () => {
       {/* Navigation */}
       <button
         onClick={prev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
       <button
         onClick={next}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center justify-center text-white"
         aria-label="Next slide"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
       {/* Indicators */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrent(index)}
-            className={`h-2 rounded-full transition-all ${
-              index === current ? "w-8 bg-white" : "w-2 bg-white/50"
+            className={`h-1.5 sm:h-2 rounded-full transition-all ${
+              index === current ? "w-6 sm:w-8 bg-white" : "w-1.5 sm:w-2 bg-white/50"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
