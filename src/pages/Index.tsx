@@ -18,10 +18,12 @@ import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { DevicesCarousel } from "@/components/DevicesCarousel";
+import { DeviceCard } from "@/components/DeviceCard";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { supabase } from "@/integrations/supabase/client";
+import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
 import {
@@ -38,19 +40,60 @@ const Index = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [localProducts, setLocalProducts] = useState<any[]>([]);
+  const [displayedDevices, setDisplayedDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     brands: [] as string[],
-    conditions: [] as string[],
-    priceRange: [0, 200000] as [number, number],
+    availability: "all" as "all" | "available" | "coming-soon",
+    priceRange: [0, 500000] as [number, number],
   });
   const addItem = useCartStore(state => state.addItem);
+
+  // Shuffle array function
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   useEffect(() => {
     fetchProducts();
     fetchLocalProducts();
+    // Initialize with randomized devices
+    setDisplayedDevices(shuffleArray(devices).slice(0, 8));
   }, []);
+
+  // Apply filters to devices
+  useEffect(() => {
+    let filtered = [...devices];
+
+    // Apply brand filter
+    if (filters.brands.length > 0) {
+      filtered = filtered.filter(device => 
+        filters.brands.includes(device.brand)
+      );
+    }
+
+    // Apply availability filter
+    if (filters.availability === "available") {
+      filtered = filtered.filter(device => device.available);
+    } else if (filters.availability === "coming-soon") {
+      filtered = filtered.filter(device => !device.available);
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter(device => 
+      device.price >= filters.priceRange[0] && 
+      device.price <= filters.priceRange[1]
+    );
+
+    // Randomize and limit to 8 devices
+    setDisplayedDevices(shuffleArray(filtered).slice(0, 8));
+  }, [filters]);
 
   const fetchLocalProducts = async () => {
     try {
@@ -237,7 +280,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Shopify Products Section */}
+      {/* Our Products Section - Devices from Shop */}
       <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
@@ -246,28 +289,36 @@ const Index = () => {
                 Our Products
               </h2>
               <p className="text-muted-foreground">
-                {filteredProducts.length} products available at wholesale rates
+                {displayedDevices.length} premium devices with competitive pricing
               </p>
             </div>
-            <Sheet>
-              <SheetTrigger asChild>
+            <div className="flex gap-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="md:hidden">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Filter Products</SheetTitle>
+                    <SheetDescription>
+                      Refine your search by brand, availability, and price range
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <ProductFilters filters={filters} onFilterChange={setFilters} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <Link to="/shop">
                 <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
+                  View All
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filter Products</SheetTitle>
-                  <SheetDescription>
-                    Refine your search by brand, condition, and price
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <ProductFilters filters={filters} onFilterChange={setFilters} />
-                </div>
-              </SheetContent>
-            </Sheet>
+              </Link>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-4 gap-6">
@@ -276,73 +327,27 @@ const Index = () => {
               <ProductFilters filters={filters} onFilterChange={setFilters} />
             </div>
 
-            {/* Products Grid */}
+            {/* Devices Grid */}
             <div className="md:col-span-3">
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <div className="aspect-square bg-muted animate-pulse" />
-                      <CardContent className="p-4 space-y-2">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                        <div className="h-6 bg-muted rounded animate-pulse w-1/2" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredProducts.length === 0 ? (
+              {displayedDevices.length === 0 ? (
                 <Card className="p-12 text-center">
                   <Phone className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
+                  <h3 className="text-2xl font-bold mb-2">No Devices Found</h3>
                   <p className="text-muted-foreground mb-6">
-                    We haven't added any products yet. Tell us what phones you need!
+                    Try adjusting your filters to see more devices
                   </p>
-                  <Button>Contact Us</Button>
+                  <Button onClick={() => setFilters({
+                    brands: [],
+                    availability: "all",
+                    priceRange: [0, 500000]
+                  })}>
+                    Reset Filters
+                  </Button>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProducts.map((product) => (
-                    <Card 
-                      key={product.node.id} 
-                      className="group overflow-hidden hover:shadow-xl transition-all duration-300"
-                    >
-                      <Link to={`/product/${product.node.handle}`}>
-                        <div className="aspect-square bg-muted overflow-hidden">
-                          {product.node.images.edges[0]?.node && (
-                            <img
-                              src={product.node.images.edges[0].node.url}
-                              alt={product.node.title}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            />
-                          )}
-                        </div>
-                      </Link>
-                      <CardContent className="p-4">
-                        <div className="mb-3">
-                          <Badge variant="secondary" className="mb-2">
-                            Wholesale Rate
-                          </Badge>
-                          <Link to={`/product/${product.node.handle}`}>
-                            <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                              {product.node.title}
-                            </h3>
-                          </Link>
-                        </div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-2xl font-bold text-primary">
-                            {product.node.priceRange.minVariantPrice.currencyCode}{' '}
-                            {parseFloat(product.node.priceRange.minVariantPrice.amount).toFixed(2)}
-                          </span>
-                        </div>
-                        <Button 
-                          className="w-full" 
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <ShoppingBag className="h-4 w-4 mr-2" />
-                          Add to Cart
-                        </Button>
-                      </CardContent>
-                    </Card>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 animate-fade-in">
+                  {displayedDevices.map((device) => (
+                    <DeviceCard key={device.id} device={device} />
                   ))}
                 </div>
               )}

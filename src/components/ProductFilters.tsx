@@ -3,14 +3,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { devices } from "@/data/devices";
 
-const brands = ["Apple", "Samsung", "Google", "Xiaomi", "Huawei", "Oppo", "Vivo"];
-const conditions = ["New", "Used", "Refurbished"];
+// Get unique brands from devices data
+const brands = Array.from(new Set(devices.map(d => d.brand))).sort();
 
 interface ProductFiltersProps {
   filters: {
     brands: string[];
-    conditions: string[];
+    availability: "all" | "available" | "coming-soon";
     priceRange: [number, number];
   };
   onFilterChange: (filters: any) => void;
@@ -24,11 +26,8 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
     onFilterChange({ ...filters, brands: newBrands });
   };
 
-  const handleConditionToggle = (condition: string) => {
-    const newConditions = filters.conditions.includes(condition)
-      ? filters.conditions.filter((c) => c !== condition)
-      : [...filters.conditions, condition];
-    onFilterChange({ ...filters, conditions: newConditions });
+  const handleAvailabilityChange = (value: string) => {
+    onFilterChange({ ...filters, availability: value as "all" | "available" | "coming-soon" });
   };
 
   const handlePriceChange = (value: number[]) => {
@@ -44,7 +43,7 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
         {/* Brand Filter */}
         <div>
           <h3 className="font-semibold mb-3">Brand</h3>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {brands.map((brand) => (
               <div key={brand} className="flex items-center space-x-2">
                 <Checkbox
@@ -65,38 +64,41 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
 
         <Separator />
 
-        {/* Condition Filter */}
+        {/* Availability Filter */}
         <div>
-          <h3 className="font-semibold mb-3">Condition</h3>
-          <div className="space-y-2">
-            {conditions.map((condition) => (
-              <div key={condition} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`condition-${condition}`}
-                  checked={filters.conditions.includes(condition)}
-                  onCheckedChange={() => handleConditionToggle(condition)}
-                />
-                <Label
-                  htmlFor={`condition-${condition}`}
-                  className="text-sm cursor-pointer"
-                >
-                  {condition}
-                </Label>
-              </div>
-            ))}
-          </div>
+          <h3 className="font-semibold mb-3">Availability</h3>
+          <RadioGroup value={filters.availability} onValueChange={handleAvailabilityChange}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="availability-all" />
+              <Label htmlFor="availability-all" className="text-sm cursor-pointer">
+                All Devices
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="available" id="availability-available" />
+              <Label htmlFor="availability-available" className="text-sm cursor-pointer">
+                Available Now
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="coming-soon" id="availability-coming-soon" />
+              <Label htmlFor="availability-coming-soon" className="text-sm cursor-pointer">
+                Coming Soon
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
 
         <Separator />
 
         {/* Price Range */}
         <div>
-          <h3 className="font-semibold mb-3">Price Range</h3>
+          <h3 className="font-semibold mb-3">Price Range (PKR)</h3>
           <div className="space-y-4">
             <Slider
               min={0}
-              max={200000}
-              step={1000}
+              max={500000}
+              step={5000}
               value={filters.priceRange}
               onValueChange={handlePriceChange}
               className="w-full"
