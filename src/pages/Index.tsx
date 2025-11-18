@@ -202,7 +202,6 @@ const Index = () => {
             </Link>
             <NotificationBell userId={user?.id} />
             <AuthButton />
-            <ProductCartButton />
             <CartDrawer />
             <Sheet>
               <SheetTrigger asChild>
