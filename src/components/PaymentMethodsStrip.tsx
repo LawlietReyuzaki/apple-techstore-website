@@ -19,25 +19,30 @@ export const PaymentMethodsStrip = () => {
   return (
     <div className="bg-muted/30 py-8">
       <div className="container mx-auto px-4">
-        <h3 className="text-center text-sm font-semibold text-muted-foreground mb-4">
+        <h3 className="text-center text-sm font-semibold text-muted-foreground mb-6">
           WE ACCEPT
         </h3>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
           {paymentMethods.map((method) => (
             <Card
               key={method.name}
-              className="p-4 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-shadow bg-card"
+              className="p-6 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all hover:scale-105 bg-card border-2"
             >
               {method.logo ? (
-                <img 
-                  src={method.logo} 
-                  alt={method.name}
-                  className="h-10 w-auto object-contain"
-                />
+                <div className="w-full h-20 flex items-center justify-center">
+                  <img 
+                    src={method.logo} 
+                    alt={method.name}
+                    className="max-h-20 max-w-full w-auto h-auto object-contain"
+                    loading="lazy"
+                  />
+                </div>
               ) : (
-                <Banknote className="h-10 w-10 text-yellow-600" />
+                <div className="w-full h-20 flex items-center justify-center">
+                  <Banknote className="h-16 w-16 text-yellow-600" />
+                </div>
               )}
-              <span className="text-xs font-medium text-center text-foreground">{method.name}</span>
+              <span className="text-xs font-semibold text-center text-foreground leading-tight">{method.name}</span>
             </Card>
           ))}
         </div>
