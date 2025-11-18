@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
+import expertRepairImg from "@/assets/expert-repair-services.png";
 import {
   Sheet,
   SheetContent,
@@ -379,18 +380,17 @@ const Index = () => {
               <Button variant="outline">Shop Now</Button>
             </Card>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
-                <Wrench className="w-8 h-8 text-secondary" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Expert Repairs</h3>
-              <p className="text-muted-foreground mb-4">
-                Professional repair services for all phone brands. Screen replacement, battery, and more.
-              </p>
-              <Link to="/book-repair">
-                <Button variant="outline">Book Repair</Button>
-              </Link>
-            </Card>
+            <Link to="/book-repair" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+                <div className="relative h-full">
+                  <img 
+                    src={expertRepairImg} 
+                    alt="Expert Repair Services - Professional repairs, Quick turnaround, Warranty included" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              </Card>
+            </Link>
 
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
