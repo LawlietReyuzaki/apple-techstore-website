@@ -17,6 +17,7 @@ import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
+import { DevicesCarousel } from "@/components/DevicesCarousel";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -208,6 +209,9 @@ const Index = () => {
 
       {/* Brand Section */}
       <BrandSection />
+
+      {/* Premium Devices Carousel */}
+      <DevicesCarousel />
 
       {/* Featured Products from Local Inventory */}
       {localProducts.length > 0 && (
