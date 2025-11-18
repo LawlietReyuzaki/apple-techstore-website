@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { devices } from "@/data/devices";
-import { DeviceCard } from "@/components/DeviceCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { ProductCard } from "@/components/ProductCard";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,6 +13,7 @@ import {
 import { Search, Filter, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Shop() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,21 +21,34 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
-  const brands = Array.from(new Set(devices.map(d => d.brand)));
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-  const filteredDevices = devices.filter(device => {
-    const matchesSearch = device.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter === "all" || device.brand === brandFilter;
+  const brands = Array.from(new Set((products || []).map(p => p.brand)));
+
+  const filteredProducts = (products || []).filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesBrand = brandFilter === "all" || product.brand === brandFilter;
     const matchesAvailability = availabilityFilter === "all" || 
-                               (availabilityFilter === "available" && device.available) ||
-                               (availabilityFilter === "coming-soon" && !device.available);
+                               (availabilityFilter === "available" && product.stock > 0) ||
+                               (availabilityFilter === "out-of-stock" && product.stock <= 0);
     return matchesSearch && matchesBrand && matchesAvailability;
   }).sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "name") return a.model.localeCompare(b.model);
+    if (sortBy === "name") return a.name.localeCompare(b.name);
     if (sortBy === "brand") return a.brand.localeCompare(b.brand);
     return 0;
   });
@@ -119,18 +134,28 @@ export default function Shop() {
           </Select>
         </div>
 
-        {/* Devices Grid */}
-        {filteredDevices.length > 0 ? (
+        {/* Products Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="h-64 w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-              {filteredDevices.map((device) => (
-                <DeviceCard key={device.id} device={device} />
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
             
             <div className="text-center mt-12">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredDevices.length} {filteredDevices.length === 1 ? 'device' : 'devices'}
+                Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
               </p>
             </div>
           </>
@@ -139,7 +164,7 @@ export default function Shop() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
               <Smartphone className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="text-lg font-medium mb-2">No devices found</p>
+            <p className="text-lg font-medium mb-2">No products found</p>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filters
             </p>
