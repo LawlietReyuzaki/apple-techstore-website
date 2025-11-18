@@ -35,15 +35,15 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filters</CardTitle>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Filters</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {/* Brand Filter */}
         <div>
-          <h3 className="font-semibold mb-3">Brand</h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <h3 className="font-medium text-sm mb-2">Brand</h3>
+          <div className="space-y-1.5 max-h-36 overflow-y-auto">
             {brands.map((brand) => (
               <div key={brand} className="flex items-center space-x-2">
                 <Checkbox
@@ -53,7 +53,7 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
                 />
                 <Label
                   htmlFor={`brand-${brand}`}
-                  className="text-sm cursor-pointer"
+                  className="text-xs cursor-pointer"
                 >
                   {brand}
                 </Label>
@@ -66,23 +66,23 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
 
         {/* Availability Filter */}
         <div>
-          <h3 className="font-semibold mb-3">Availability</h3>
+          <h3 className="font-medium text-sm mb-2">Availability</h3>
           <RadioGroup value={filters.availability} onValueChange={handleAvailabilityChange}>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="all" id="availability-all" />
-              <Label htmlFor="availability-all" className="text-sm cursor-pointer">
+              <Label htmlFor="availability-all" className="text-xs cursor-pointer">
                 All Devices
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="available" id="availability-available" />
-              <Label htmlFor="availability-available" className="text-sm cursor-pointer">
+              <Label htmlFor="availability-available" className="text-xs cursor-pointer">
                 Available Now
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="coming-soon" id="availability-coming-soon" />
-              <Label htmlFor="availability-coming-soon" className="text-sm cursor-pointer">
+              <Label htmlFor="availability-coming-soon" className="text-xs cursor-pointer">
                 Coming Soon
               </Label>
             </div>
@@ -93,8 +93,8 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
 
         {/* Price Range */}
         <div>
-          <h3 className="font-semibold mb-3">Price Range (PKR)</h3>
-          <div className="space-y-4">
+          <h3 className="font-medium text-sm mb-2">Price Range (PKR)</h3>
+          <div className="space-y-3">
             <Slider
               min={0}
               max={500000}
@@ -103,7 +103,7 @@ export const ProductFilters = ({ filters, onFilterChange }: ProductFiltersProps)
               onValueChange={handlePriceChange}
               className="w-full"
             />
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>PKR {filters.priceRange[0].toLocaleString()}</span>
               <span>PKR {filters.priceRange[1].toLocaleString()}</span>
             </div>

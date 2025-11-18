@@ -64,7 +64,7 @@ const Index = () => {
     fetchProducts();
     fetchLocalProducts();
     // Initialize with randomized devices
-    setDisplayedDevices(shuffleArray(devices).slice(0, 8));
+    setDisplayedDevices(shuffleArray(devices).slice(0, 6));
   }, []);
 
   // Apply filters to devices
@@ -91,8 +91,8 @@ const Index = () => {
       device.price <= filters.priceRange[1]
     );
 
-    // Randomize and limit to 8 devices
-    setDisplayedDevices(shuffleArray(filtered).slice(0, 8));
+    // Randomize and limit to 6 devices
+    setDisplayedDevices(shuffleArray(filtered).slice(0, 6));
   }, [filters]);
 
   const fetchLocalProducts = async () => {
