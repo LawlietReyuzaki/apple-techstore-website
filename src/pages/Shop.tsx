@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ProductCard } from "@/components/ProductCard";
+import { devices } from "@/data/devices";
+import { DeviceCard } from "@/components/DeviceCard";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -11,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Filter, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 
@@ -20,32 +17,25 @@ export default function Shop() {
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
+  const brands = Array.from(new Set(devices.map(d => d.brand)));
 
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const brands = Array.from(new Set(products?.map(p => p.brand) || []));
-
-  const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter === "all" || product.brand === brandFilter;
-    return matchesSearch && matchesBrand;
+  const filteredDevices = devices.filter(device => {
+    const matchesSearch = device.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         device.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         device.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBrand = brandFilter === "all" || device.brand === brandFilter;
+    const matchesAvailability = availabilityFilter === "all" || 
+                               (availabilityFilter === "available" && device.available) ||
+                               (availabilityFilter === "coming-soon" && !device.available);
+    return matchesSearch && matchesBrand && matchesAvailability;
   }).sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "name") return a.name.localeCompare(b.name);
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy === "name") return a.model.localeCompare(b.model);
+    if (sortBy === "brand") return a.brand.localeCompare(b.brand);
+    return 0;
   });
 
   return (
@@ -68,9 +58,16 @@ export default function Shop() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold mb-2">Shop Phones</h1>
-          <p className="text-muted-foreground">Wholesale prices on premium smartphones</p>
+        <div className="mb-12 text-center animate-fade-in">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <Smartphone className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Shop Premium Phones
+          </h1>
+          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
+            Discover our curated collection of flagship smartphones with competitive pricing
+          </p>
         </div>
 
         {/* Filters */}
@@ -78,7 +75,7 @@ export default function Shop() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search products..."
+              placeholder="Search devices by brand, model, or specs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -98,38 +95,54 @@ export default function Shop() {
             </SelectContent>
           </Select>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
+          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
             <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Sort By" />
+              <SelectValue placeholder="Availability" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="all">All Devices</SelectItem>
+              <SelectItem value="available">Available Now</SelectItem>
+              <SelectItem value="coming-soon">Coming Soon</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="brand">Brand (A-Z)</SelectItem>
               <SelectItem value="price-low">Price: Low to High</SelectItem>
               <SelectItem value="price-high">Price: High to Low</SelectItem>
-              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Products Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="h-[400px] rounded-lg" />
-            ))}
-          </div>
-        ) : filteredProducts && filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+        {/* Devices Grid */}
+        {filteredDevices.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+              {filteredDevices.map((device) => (
+                <DeviceCard key={device.id} device={device} />
+              ))}
+            </div>
+            
+            <div className="text-center mt-12">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredDevices.length} {filteredDevices.length === 1 ? 'device' : 'devices'}
+              </p>
+            </div>
+          </>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-2xl text-muted-foreground mb-4">No products found</p>
-            <Button asChild>
-              <Link to="/admin/products">Add Products</Link>
-            </Button>
+          <div className="text-center py-16 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <Smartphone className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-medium mb-2">No devices found</p>
+            <p className="text-muted-foreground mb-4">
+              Try adjusting your search or filters
+            </p>
           </div>
         )}
       </div>
