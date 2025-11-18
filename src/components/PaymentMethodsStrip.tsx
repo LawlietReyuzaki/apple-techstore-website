@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Banknote } from "lucide-react";
-import easypaisaLogo from "@/assets/payment-icons/easypaisa.jpg";
+import easypaisaLogo from "@/assets/payment-icons/easypaisa.png";
 import jazzcashLogo from "@/assets/payment-icons/jazzcash.jpg";
 import meezanLogo from "@/assets/payment-icons/meezan-bank.png";
 import nayapayLogo from "@/assets/payment-icons/nayapay.jpg";
