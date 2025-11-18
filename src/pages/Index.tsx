@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
-import expertRepairImg from "@/assets/expert-repair-services.png";
+import logo from "@/assets/logo.png";
 import {
   Sheet,
   SheetContent,
@@ -154,27 +154,25 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
-      <div className="bg-primary text-white py-2">
+      <div className="bg-black/40 backdrop-blur-md text-white py-2 border-b border-primary/20">
         <div className="container mx-auto px-4 flex items-center justify-between text-sm">
-          <span>🎉 Welcome to Dilbar Mobiles - Wholesale Rates & Expert Repairs</span>
+          <span>🎉 Welcome to Dilbar Mart - Wholesale Rates & Expert Repairs</span>
           <span className="hidden md:block">📞 Free Home Delivery in Bahria Phase 7</span>
         </div>
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0 z-50 glass-effect border-b border-primary/20 shadow-lg shadow-primary/5">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Phone className="h-7 w-7 text-white" />
-            </div>
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logo} alt="Dilbar Mart" className="h-12 w-12" />
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Dilbar Mobiles
+              <h1 className="text-2xl font-bold text-white">
+                Dilbar Mart
               </h1>
-              <p className="text-xs text-muted-foreground">Wholesale & Repair Shop</p>
+              <p className="text-xs text-primary">Wholesale & Repair Shop</p>
             </div>
-          </div>
+          </Link>
           
           <div className="hidden md:flex flex-1 max-w-xl mx-8">
             <div className="relative w-full">
@@ -369,8 +367,8 @@ const Index = () => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <Phone className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-2">Wholesale Phones</h3>
@@ -381,19 +379,20 @@ const Index = () => {
             </Card>
 
             <Link to="/book-repair" className="group">
-              <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                <div className="relative h-full">
-                  <img 
-                    src={expertRepairImg} 
-                    alt="Expert Repair Services - Professional repairs, Quick turnaround, Warranty included" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+              <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <Wrench className="w-8 h-8 text-primary" />
                 </div>
+                <h3 className="text-xl font-bold mb-2">Expert Repairs</h3>
+                <p className="text-muted-foreground mb-4">
+                  Professional repairs, quick turnaround, and warranty included on all services.
+                </p>
+                <Button variant="outline" className="border-primary/50 hover:bg-primary hover:text-white">Book Repair</Button>
               </Card>
             </Link>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <Card className="glass-card text-center p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <ShoppingBag className="w-8 h-8 text-accent" />
               </div>
               <h3 className="text-xl font-bold mb-2">Sell Your Phone</h3>
