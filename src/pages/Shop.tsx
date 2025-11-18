@@ -14,6 +14,7 @@ import {
 import { Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { ProductCartButton } from "@/components/ProductCartButton";
 
 export default function Shop() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,12 +54,15 @@ export default function Shop() {
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-            <Link to="/shop" className="text-primary font-medium">Shop</Link>
-            <Link to="/book-repair" className="hover:text-primary transition-colors">Repair</Link>
-            <Link to="/track-repair" className="hover:text-primary transition-colors">Track</Link>
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="hidden md:flex items-center gap-6">
+              <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+              <Link to="/shop" className="text-primary font-medium">Shop</Link>
+              <Link to="/book-repair" className="hover:text-primary transition-colors">Repair</Link>
+              <Link to="/track-repair" className="hover:text-primary transition-colors">Track</Link>
+            </nav>
+            <ProductCartButton />
+          </div>
         </div>
       </header>
 
