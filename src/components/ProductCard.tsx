@@ -14,8 +14,6 @@ interface Product {
   brand: string;
   price: number;
   wholesale_price?: number;
-  sale_price?: number;
-  on_sale?: boolean;
   stock: number;
   images: string[];
   featured?: boolean;
@@ -28,12 +26,8 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { user } = useAuth();
   const addItem = useProductCartStore(state => state.addItem);
-  
-  // Determine display price: sale_price > wholesale_price > regular price
-  const hasSale = product.on_sale && product.sale_price && product.sale_price < product.price;
-  const hasWholesale = !hasSale && product.wholesale_price && product.wholesale_price < product.price;
-  const displayPrice = hasSale ? product.sale_price : (hasWholesale ? product.wholesale_price : product.price);
-  const showOriginalPrice = hasSale || hasWholesale;
+  const hasWholesale = product.wholesale_price && product.wholesale_price < product.price;
+  const displayPrice = hasWholesale ? product.wholesale_price : product.price;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,14 +79,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
             
-            {product.featured && product.stock > 0 && !hasSale && (
+            {product.featured && product.stock > 0 && (
               <Badge className="absolute top-2 left-2 bg-primary">Featured</Badge>
-            )}
-            
-            {hasSale && product.stock > 0 && (
-              <Badge className="absolute top-2 left-2 bg-red-600">
-                {Math.round(((product.price - product.sale_price!) / product.price) * 100)}% OFF
-              </Badge>
             )}
             
             {hasWholesale && product.stock > 0 && (
@@ -114,7 +102,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <span className="text-2xl font-bold">
                 Rs. {displayPrice?.toLocaleString()}
               </span>
-              {showOriginalPrice && (
+              {hasWholesale && (
                 <span className="text-sm text-muted-foreground line-through">
                   Rs. {product.price.toLocaleString()}
                 </span>
