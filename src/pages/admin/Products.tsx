@@ -57,8 +57,6 @@ interface ProductFormData {
   featured: boolean;
   availability_status: string;
   discount_percentage: string;
-  on_sale: boolean;
-  sale_price: string;
 }
 
 export default function AdminProducts() {
@@ -79,8 +77,6 @@ export default function AdminProducts() {
     featured: false,
     availability_status: "available",
     discount_percentage: "0",
-    on_sale: false,
-    sale_price: "",
   });
   const [newImageUrl, setNewImageUrl] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -132,8 +128,6 @@ export default function AdminProducts() {
         stock: parseInt(data.stock),
         images: data.images,
         featured: data.featured,
-        on_sale: data.on_sale,
-        sale_price: data.sale_price ? parseFloat(data.sale_price) : null,
       };
 
       if (editingProduct) {
@@ -186,10 +180,7 @@ export default function AdminProducts() {
       featured: false,
       availability_status: "available",
       discount_percentage: "0",
-      on_sale: false,
-      sale_price: "",
     });
-    setEditingProduct(null);
     setNewImageUrl("");
   };
 
@@ -207,8 +198,6 @@ export default function AdminProducts() {
       featured: product.featured || false,
       availability_status: product.stock > 0 ? "available" : "out_of_stock",
       discount_percentage: "0",
-      on_sale: product.on_sale || false,
-      sale_price: product.sale_price?.toString() || "",
     });
     setIsDialogOpen(true);
   };
@@ -426,33 +415,6 @@ export default function AdminProducts() {
                   />
                   <Label htmlFor="featured" className="cursor-pointer">Mark as Featured Product</Label>
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="on_sale"
-                    checked={formData.on_sale}
-                    onCheckedChange={(checked) => setFormData({ ...formData, on_sale: checked as boolean })}
-                  />
-                  <Label htmlFor="on_sale" className="cursor-pointer">Mark as On Sale (Flash Sale)</Label>
-                </div>
-
-                {formData.on_sale && (
-                  <div>
-                    <Label htmlFor="sale_price">Sale Price (PKR)</Label>
-                    <Input
-                      id="sale_price"
-                      type="number"
-                      min="0"
-                      placeholder="Enter discounted price"
-                      value={formData.sale_price}
-                      onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This will display in the Flash Sale section
-                    </p>
-                  </div>
-                )}
 
                 <Button type="submit" className="w-full" disabled={createOrUpdateMutation.isPending}>
                   {editingProduct ? "Update Product" : "Create Product"}

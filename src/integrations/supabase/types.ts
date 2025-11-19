@@ -175,9 +175,7 @@ export type Database = {
           images: string[] | null
           links: string[] | null
           name: string
-          on_sale: boolean | null
           price: number
-          sale_price: number | null
           stock: number | null
           updated_at: string | null
           wholesale_price: number | null
@@ -192,9 +190,7 @@ export type Database = {
           images?: string[] | null
           links?: string[] | null
           name: string
-          on_sale?: boolean | null
           price: number
-          sale_price?: number | null
           stock?: number | null
           updated_at?: string | null
           wholesale_price?: number | null
@@ -209,9 +205,7 @@ export type Database = {
           images?: string[] | null
           links?: string[] | null
           name?: string
-          on_sale?: boolean | null
           price?: number
-          sale_price?: number | null
           stock?: number | null
           updated_at?: string | null
           wholesale_price?: number | null
