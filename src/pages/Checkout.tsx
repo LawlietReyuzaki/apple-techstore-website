@@ -90,7 +90,7 @@ export default function Checkout() {
       // Send email notification via edge function
       try {
         await supabase.functions.invoke('send-order-email', {
-          body: { orderId: order.id }
+          body: { orderId: order.id, type: 'order' }
         });
       } catch (emailError) {
         console.error('Failed to send order email:', emailError);
