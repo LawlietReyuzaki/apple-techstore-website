@@ -32,7 +32,17 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, X, ImagePlus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProductFormData {
@@ -43,8 +53,10 @@ interface ProductFormData {
   price: string;
   wholesale_price: string;
   stock: string;
-  images: string;
+  images: string[];
   featured: boolean;
+  availability_status: string;
+  discount_percentage: string;
 }
 
 export default function AdminProducts() {
@@ -61,9 +73,13 @@ export default function AdminProducts() {
     price: "",
     wholesale_price: "",
     stock: "0",
-    images: "",
+    images: [],
     featured: false,
+    availability_status: "available",
+    discount_percentage: "0",
   });
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -110,7 +126,7 @@ export default function AdminProducts() {
         price: parseFloat(data.price),
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price) : null,
         stock: parseInt(data.stock),
-        images: data.images ? data.images.split('\n').filter(Boolean) : [],
+        images: data.images,
         featured: data.featured,
       };
 
@@ -160,9 +176,12 @@ export default function AdminProducts() {
       price: "",
       wholesale_price: "",
       stock: "0",
-      images: "",
+      images: [],
       featured: false,
+      availability_status: "available",
+      discount_percentage: "0",
     });
+    setNewImageUrl("");
   };
 
   const handleEdit = (product: any) => {
@@ -175,10 +194,34 @@ export default function AdminProducts() {
       price: product.price.toString(),
       wholesale_price: product.wholesale_price?.toString() || "",
       stock: product.stock.toString(),
-      images: product.images?.join('\n') || "",
+      images: product.images || [],
       featured: product.featured || false,
+      availability_status: product.stock > 0 ? "available" : "out_of_stock",
+      discount_percentage: "0",
     });
     setIsDialogOpen(true);
+  };
+
+  const handleAddImage = () => {
+    if (newImageUrl.trim()) {
+      setFormData({ ...formData, images: [...formData.images, newImageUrl.trim()] });
+      setNewImageUrl("");
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteMutation.mutate(deleteConfirmId);
+      setDeleteConfirmId(null);
+    }
   };
 
   const handleDialogClose = (open: boolean) => {
@@ -295,15 +338,73 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="images">Image URLs (one per line)</Label>
-                  <Textarea
-                    id="images"
-                    value={formData.images}
-                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                    placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                    rows={3}
-                  />
+                <div className="space-y-4">
+                  <Label>Product Images</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="Enter image URL"
+                    />
+                    <Button type="button" onClick={handleAddImage} variant="outline">
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {formData.images.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={url} 
+                          alt={`Product ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded border"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="availability">Availability Status</Label>
+                    <Select 
+                      value={formData.availability_status} 
+                      onValueChange={(value) => setFormData({ ...formData, availability_status: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="discount">Discount Percentage</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.discount_percentage}
+                      onChange={(e) => setFormData({ ...formData, discount_percentage: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -390,11 +491,7 @@ export default function AdminProducts() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => {
-                            if (confirm("Are you sure you want to delete this product?")) {
-                              deleteMutation.mutate(product.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteProduct(product.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -407,6 +504,21 @@ export default function AdminProducts() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
