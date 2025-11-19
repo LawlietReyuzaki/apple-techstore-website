@@ -42,6 +42,8 @@ const Index = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [localProducts, setLocalProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [displayedDevices, setDisplayedDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,37 +67,52 @@ const Index = () => {
   useEffect(() => {
     fetchProducts();
     fetchLocalProducts();
+    fetchAllProducts();
     // Initialize with randomized devices
     setDisplayedDevices(shuffleArray(devices).slice(0, 6));
   }, []);
 
-  // Apply filters to devices
+  // Apply filters to products in "Our Products" section
   useEffect(() => {
-    let filtered = [...devices];
+    let filtered = [...allProducts];
 
     // Apply brand filter
     if (filters.brands.length > 0) {
-      filtered = filtered.filter(device => 
-        filters.brands.includes(device.brand)
+      filtered = filtered.filter(product => 
+        filters.brands.includes(product.brand)
       );
     }
 
     // Apply availability filter
     if (filters.availability === "available") {
-      filtered = filtered.filter(device => device.available);
+      filtered = filtered.filter(product => product.stock > 0);
     } else if (filters.availability === "coming-soon") {
-      filtered = filtered.filter(device => !device.available);
+      filtered = filtered.filter(product => product.stock <= 0);
     }
 
     // Apply price range filter
-    filtered = filtered.filter(device => 
-      device.price >= filters.priceRange[0] && 
-      device.price <= filters.priceRange[1]
+    filtered = filtered.filter(product => 
+      product.price >= filters.priceRange[0] && 
+      product.price <= filters.priceRange[1]
     );
 
-    // Randomize and limit to 6 devices
-    setDisplayedDevices(shuffleArray(filtered).slice(0, 6));
-  }, [filters]);
+    setDisplayedProducts(filtered);
+  }, [filters, allProducts]);
+
+  const fetchAllProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setAllProducts(data || []);
+      setDisplayedProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
 
   const fetchLocalProducts = async () => {
     try {
@@ -286,7 +303,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Our Products Section - Devices from Shop */}
+      {/* Our Products Section - Products from Database */}
       <section className="py-8 sm:py-12 md:py-16 bg-muted/30">
         <div className="container">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
@@ -295,7 +312,7 @@ const Index = () => {
                 Our Products
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base">
-                {displayedDevices.length} premium devices with competitive pricing
+                {displayedProducts.length} premium devices with competitive pricing
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -333,14 +350,14 @@ const Index = () => {
               <ProductFilters filters={filters} onFilterChange={setFilters} />
             </div>
 
-            {/* Devices Grid */}
+            {/* Products Grid */}
             <div className="md:col-span-3">
-              {displayedDevices.length === 0 ? (
+              {displayedProducts.length === 0 ? (
                 <Card className="glass-card p-8 sm:p-12 text-center">
                   <Phone className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl sm:text-2xl font-bold mb-2">No Devices Found</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">No Products Found</h3>
                   <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-                    Try adjusting your filters to see more devices
+                    Try adjusting your filters to see more products
                   </p>
                   <Button onClick={() => setFilters({
                     brands: [],
@@ -351,9 +368,9 @@ const Index = () => {
                   </Button>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-fade-in">
-                  {displayedDevices.map((device) => (
-                    <DeviceCard key={device.id} device={device} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in">
+                  {displayedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
               )}
