@@ -57,6 +57,8 @@ interface ProductFormData {
   featured: boolean;
   availability_status: string;
   discount_percentage: string;
+  on_sale: boolean;
+  sale_price: string;
 }
 
 export default function AdminProducts() {
@@ -77,6 +79,8 @@ export default function AdminProducts() {
     featured: false,
     availability_status: "available",
     discount_percentage: "0",
+    on_sale: false,
+    sale_price: "",
   });
   const [newImageUrl, setNewImageUrl] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -128,6 +132,8 @@ export default function AdminProducts() {
         stock: parseInt(data.stock),
         images: data.images,
         featured: data.featured,
+        on_sale: data.on_sale,
+        sale_price: data.sale_price ? parseFloat(data.sale_price) : null,
       };
 
       if (editingProduct) {
@@ -180,6 +186,8 @@ export default function AdminProducts() {
       featured: false,
       availability_status: "available",
       discount_percentage: "0",
+      on_sale: false,
+      sale_price: "",
     });
     setNewImageUrl("");
   };
@@ -198,6 +206,8 @@ export default function AdminProducts() {
       featured: product.featured || false,
       availability_status: product.stock > 0 ? "available" : "out_of_stock",
       discount_percentage: "0",
+      on_sale: product.on_sale || false,
+      sale_price: product.sale_price?.toString() || "",
     });
     setIsDialogOpen(true);
   };
@@ -407,13 +417,38 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="featured"
-                    checked={formData.featured}
-                    onCheckedChange={(checked) => setFormData({ ...formData, featured: checked as boolean })}
-                  />
-                  <Label htmlFor="featured" className="cursor-pointer">Mark as Featured Product</Label>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="featured"
+                      checked={formData.featured}
+                      onCheckedChange={(checked) => setFormData({ ...formData, featured: checked as boolean })}
+                    />
+                    <Label htmlFor="featured" className="cursor-pointer">Mark as Featured Product</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="on_sale"
+                      checked={formData.on_sale}
+                      onCheckedChange={(checked) => setFormData({ ...formData, on_sale: checked as boolean })}
+                    />
+                    <Label htmlFor="on_sale" className="cursor-pointer">Mark as On Sale (Flash Sale)</Label>
+                  </div>
+
+                  {formData.on_sale && (
+                    <div>
+                      <Label htmlFor="sale_price">Sale Price (Rs.) *</Label>
+                      <Input
+                        id="sale_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.sale_price}
+                        onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
+                        placeholder="Enter sale price"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full" disabled={createOrUpdateMutation.isPending}>
@@ -477,6 +512,7 @@ export default function AdminProducts() {
                     </TableCell>
                     <TableCell>
                       {product.featured && <Badge className="mr-1">Featured</Badge>}
+                      {product.on_sale && <Badge className="mr-1 bg-red-600">Flash Sale</Badge>}
                       {product.stock <= 0 && <Badge variant="destructive">Out of Stock</Badge>}
                     </TableCell>
                     <TableCell>
