@@ -17,8 +17,7 @@ import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
-import { DevicesCarousel } from "@/components/DevicesCarousel";
-import { DeviceCard } from "@/components/DeviceCard";
+import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -44,7 +43,6 @@ const Index = () => {
   const [localProducts, setLocalProducts] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
-  const [displayedDevices, setDisplayedDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -68,8 +66,6 @@ const Index = () => {
     fetchProducts();
     fetchLocalProducts();
     fetchAllProducts();
-    // Initialize with randomized devices
-    setDisplayedDevices(shuffleArray(devices).slice(0, 6));
   }, []);
 
   // Apply filters to products in "Our Products" section
@@ -276,8 +272,8 @@ const Index = () => {
       {/* Brand Section */}
       <BrandSection />
 
-      {/* Premium Devices Carousel */}
-      <DevicesCarousel />
+      {/* Flash Sale Section */}
+      <FlashSaleSection />
 
       {/* Featured Products from Local Inventory */}
       {localProducts.length > 0 && (
