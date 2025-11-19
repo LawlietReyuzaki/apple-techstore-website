@@ -17,6 +17,7 @@ interface Product {
   stock: number;
   images: string[];
   featured?: boolean;
+  on_sale?: boolean;
 }
 
 interface ProductCardProps {
@@ -83,7 +84,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <Badge className="absolute top-2 left-2 bg-primary">Featured</Badge>
             )}
             
-            {hasWholesale && product.stock > 0 && (
+            {hasWholesale && product.stock > 0 && !product.on_sale && (
               <Badge className="absolute bottom-2 left-2 bg-green-600">Wholesale</Badge>
             )}
           </div>
