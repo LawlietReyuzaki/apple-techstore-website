@@ -90,9 +90,6 @@ export default function AdminOrders() {
         .eq("id", id);
 
       if (error) throw error;
-      
-      // Send notification
-      await sendOrderStatusUpdate(id, status);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
