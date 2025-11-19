@@ -87,9 +87,15 @@ export default function Checkout() {
 
       if (itemsError) throw itemsError;
 
-      // Send notifications
-      await sendOrderConfirmationEmail(order.id);
-      await notifyAdminNewOrder(order.id);
+      // Send email notification via edge function
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { orderId: order.id }
+        });
+      } catch (emailError) {
+        console.error('Failed to send order email:', emailError);
+        // Don't fail the order if email fails
+      }
 
       // Clear cart
       clearCart();
