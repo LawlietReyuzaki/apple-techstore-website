@@ -7,6 +7,7 @@ export interface CartProduct {
   brand: string;
   price: number;
   wholesale_price?: number;
+  sale_price?: number;
   images: string[];
 }
 
@@ -77,7 +78,12 @@ export const useProductCartStore = create<ProductCartStore>()(
       },
 
       getTotalPrice: () => {
-        return get().items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+        return get().items.reduce((sum, item) => {
+          const product = item.product;
+          // Use sale_price if available, otherwise wholesale_price, otherwise regular price
+          const effectivePrice = product.sale_price || product.wholesale_price || product.price;
+          return sum + (effectivePrice * item.quantity);
+        }, 0);
       }
     }),
     {

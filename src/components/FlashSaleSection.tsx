@@ -118,7 +118,12 @@ export const FlashSaleSection = () => {
               {/* Sale badge */}
               <div className="absolute -top-2 -right-2 z-10">
                 <Badge variant="destructive" className="animate-bounce">
-                  {Math.round(((product.price - product.sale_price) / product.price) * 100)}% OFF
+                  {(() => {
+                    const discount = product.sale_price && product.price > 0 
+                      ? Math.round(((product.price - product.sale_price) / product.price) * 100)
+                      : 0;
+                    return discount > 0 && discount < 100 ? `${discount}% OFF` : discount === 100 ? 'FREE' : 'SALE';
+                  })()}
                 </Badge>
               </div>
               <ProductCard product={product} />

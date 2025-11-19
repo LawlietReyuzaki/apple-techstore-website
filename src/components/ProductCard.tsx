@@ -14,9 +14,11 @@ interface Product {
   brand: string;
   price: number;
   wholesale_price?: number;
+  sale_price?: number;
   stock: number;
   images: string[];
   featured?: boolean;
+  on_sale?: boolean;
 }
 
 interface ProductCardProps {
@@ -26,8 +28,11 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { user } = useAuth();
   const addItem = useProductCartStore(state => state.addItem);
-  const hasWholesale = product.wholesale_price && product.wholesale_price < product.price;
-  const displayPrice = hasWholesale ? product.wholesale_price : product.price;
+  
+  // Prioritize sale_price over wholesale_price
+  const hasSale = product.on_sale && product.sale_price && product.sale_price < product.price;
+  const hasWholesale = !hasSale && product.wholesale_price && product.wholesale_price < product.price;
+  const displayPrice = hasSale ? product.sale_price : (hasWholesale ? product.wholesale_price : product.price);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -44,6 +49,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       brand: product.brand,
       price: product.price,
       wholesale_price: product.wholesale_price,
+      sale_price: product.sale_price,
       images: product.images,
     });
     
@@ -79,11 +85,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
             
-            {product.featured && product.stock > 0 && (
+            {product.featured && product.stock > 0 && !hasSale && (
               <Badge className="absolute top-2 left-2 bg-primary">Featured</Badge>
             )}
             
-            {hasWholesale && product.stock > 0 && (
+            {hasSale && product.stock > 0 && (
+              <Badge className="absolute bottom-2 left-2 bg-red-600">
+                {Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100)}% OFF
+              </Badge>
+            )}
+            
+            {hasWholesale && product.stock > 0 && !hasSale && (
               <Badge className="absolute bottom-2 left-2 bg-green-600">Wholesale</Badge>
             )}
           </div>
@@ -102,7 +114,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <span className="text-2xl font-bold">
                 Rs. {displayPrice?.toLocaleString()}
               </span>
-              {hasWholesale && (
+              {(hasSale || hasWholesale) && (
                 <span className="text-sm text-muted-foreground line-through">
                   Rs. {product.price.toLocaleString()}
                 </span>
