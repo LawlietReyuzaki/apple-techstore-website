@@ -59,9 +59,9 @@ export const FlashSaleSection = () => {
               <ProductCard
                 product={{
                   ...product,
-                  // Override price with sale price for display
-                  price: product.sale_price || product.price,
-                  wholesale_price: undefined, // Remove wholesale price during flash sale
+                  // Use wholesale_price slot to show sale price (reuses existing UI pattern)
+                  wholesale_price: product.sale_price,
+                  // Keep original price to show strikethrough
                 }}
               />
             </div>
