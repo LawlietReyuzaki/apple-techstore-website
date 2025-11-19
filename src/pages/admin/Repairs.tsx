@@ -31,6 +31,17 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { XCircle } from "lucide-react";
 
 export default function AdminRepairs() {
   const navigate = useNavigate();
@@ -40,6 +51,7 @@ export default function AdminRepairs() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRepair, setSelectedRepair] = useState<any>(null);
   const [newNote, setNewNote] = useState("");
+  const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin && !isTechnician) {
@@ -200,8 +212,24 @@ export default function AdminRepairs() {
       created: "secondary",
       in_progress: "default",
       delivered: "outline",
+      declined: "destructive",
     };
     return <Badge variant={variants[status] || "default"}>{status}</Badge>;
+  };
+
+  const handleDeclineRepair = (id: string) => {
+    setDeclineConfirmId(id);
+  };
+
+  const confirmDecline = () => {
+    if (declineConfirmId) {
+      updateRepairMutation.mutate({
+        id: declineConfirmId,
+        updates: { status: "declined" },
+      });
+      setDeclineConfirmId(null);
+      setSelectedRepair(null);
+    }
   };
 
   if (authLoading || isLoading) {
@@ -335,6 +363,7 @@ export default function AdminRepairs() {
                       <SelectItem value="created">Pending</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="delivered">Completed</SelectItem>
+                      <SelectItem value="declined">Declined</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -388,22 +417,50 @@ export default function AdminRepairs() {
                   placeholder="Add a note..."
                   rows={3}
                 />
-                <Button
-                  onClick={() =>
-                    addNoteMutation.mutate({
-                      repairId: selectedRepair.id,
-                      note: newNote,
-                    })
-                  }
-                  disabled={!newNote.trim()}
-                >
-                  Add Note
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                      addNoteMutation.mutate({
+                        repairId: selectedRepair.id,
+                        note: newNote,
+                      })
+                    }
+                    disabled={!newNote.trim()}
+                  >
+                    Add Note
+                  </Button>
+                  {isAdmin && selectedRepair.status !== "declined" && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDeclineRepair(selectedRepair.id)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Decline Request
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!declineConfirmId} onOpenChange={(open) => !open && setDeclineConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Decline Repair Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to decline this repair request? This action will mark the request as declined.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Decline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
