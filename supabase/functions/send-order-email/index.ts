@@ -8,10 +8,11 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined';
+  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update';
   visitDate?: string;
   customNote?: string;
   declineReason?: string;
+  newStatus?: string;
 }
 
 async function sendEmailViaSMTP(
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { orderId, repairId, type, visitDate, customNote, declineReason }: EmailRequest = await req.json();
+    const { orderId, repairId, type, visitDate, customNote, declineReason, newStatus }: EmailRequest = await req.json();
 
     if (!orderId && !repairId) {
       return new Response(
@@ -717,6 +718,155 @@ If you need help placing another order or have any questions, feel free to conta
 
 Warm regards,
 ${storeName} Support Team
+
+---
+This is an automated email. Please do not reply.`;
+
+      // Send to customer
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'order_status_update' && orderId && newStatus) {
+      // Fetch order details for status update
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!order.customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Customer email not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      const storeName = "Dilbar Mobiles";
+      
+      // Format status for display
+      const statusDisplay = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      
+      // Status-specific messages and colors
+      const statusInfo: Record<string, { message: string; color: string; emoji: string }> = {
+        pending: {
+          message: "Your order has been received and is awaiting review.",
+          color: "#f59e0b",
+          emoji: "⏳"
+        },
+        processing: {
+          message: "Great news! Your order is now being processed and prepared.",
+          color: "#3b82f6",
+          emoji: "📦"
+        },
+        shipped: {
+          message: "Exciting news! Your order has been shipped and is on its way to you.",
+          color: "#8b5cf6",
+          emoji: "🚚"
+        },
+        delivered: {
+          message: "Your order has been successfully delivered. We hope you enjoy your purchase!",
+          color: "#10b981",
+          emoji: "✅"
+        },
+        cancelled: {
+          message: "Your order has been cancelled. If you have any questions, please contact us.",
+          color: "#ef4444",
+          emoji: "❌"
+        }
+      };
+
+      const info = statusInfo[newStatus] || statusInfo.pending;
+
+      subject = `Order Status Update: ${statusDisplay} - #${orderId.slice(0, 8)}`;
+      
+      const itemsList = orderItems?.map(item => 
+        `<li style="margin: 8px 0;">${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal.toLocaleString()}</li>`
+      ).join('') || '';
+
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: ${info.color}; margin-bottom: 20px;">Order Status Update ${info.emoji}</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>We wanted to update you on your order <strong>#${orderId.slice(0, 8)}</strong>.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${info.color};">
+                <h3 style="margin-top: 0; color: ${info.color};">Current Status: ${statusDisplay}</h3>
+                <p style="margin: 10px 0 0 0;">${info.message}</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Order Summary</h3>
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                <ul style="padding-left: 20px;">
+                  ${itemsList}
+                </ul>
+                <p style="margin-top: 15px;"><strong>Total Amount:</strong> PKR ${order.total_amount.toLocaleString()}</p>
+              </div>
+              
+              <p>If you have any questions about your order, feel free to contact us.</p>
+              
+              <p style="margin-top: 30px;">Thank you for choosing <strong>${storeName}</strong>!</p>
+              
+              <p style="margin-top: 20px;">Warm regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const itemsListText = orderItems?.map(item => 
+        `${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal.toLocaleString()}`
+      ).join('\n') || '';
+
+      emailText = `Order Status Update: ${statusDisplay} - #${orderId.slice(0, 8)}
+
+Dear ${order.customer_name},
+
+We wanted to update you on your order #${orderId.slice(0, 8)}.
+
+Current Status: ${statusDisplay}
+${info.message}
+
+Order Summary:
+Order Number: #${orderId.slice(0, 8)}
+
+Products:
+${itemsListText}
+
+Total Amount: PKR ${order.total_amount.toLocaleString()}
+
+If you have any questions about your order, feel free to contact us.
+
+Thank you for choosing ${storeName}!
+
+Warm regards,
+${storeName} Team
 
 ---
 This is an automated email. Please do not reply.`;

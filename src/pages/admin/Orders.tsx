@@ -93,10 +93,19 @@ export default function AdminOrders() {
         .eq("id", id);
 
       if (error) throw error;
+      return { id, status };
     },
-    onSuccess: () => {
+    onSuccess: async ({ id, status }) => {
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { orderId: id, type: 'order_status_update', newStatus: status }
+        });
+        toast.success("Order status updated and email sent to customer");
+      } catch (emailError) {
+        console.error('Failed to send status update email:', emailError);
+        toast.warning("Order status updated but email failed to send");
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      toast.success("Order status updated");
     },
     onError: () => {
       toast.error("Failed to update order");
