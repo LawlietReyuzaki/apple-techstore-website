@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -22,13 +25,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Shield, UserCog } from "lucide-react";
+import { Shield, UserCog, Wallet, Save, Loader2 } from "lucide-react";
 import type { AppRole } from "@/hooks/useAuth";
 
 export default function AdminSettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin, loading: authLoading } = useAuth();
+  
+  // Payment settings state
+  const [paymentFormData, setPaymentFormData] = useState({
+    easypaisa_number: "",
+    easypaisa_qr_code_url: "",
+    jazzcash_number: "",
+    jazzcash_qr_code_url: "",
+    bank_account_name: "",
+    bank_account_number: "",
+    bank_name: "",
+    iban: "",
+    additional_instructions: "",
+    delivery_charges: 0,
+    wallet_transfer_charges: 0,
+    service_fees: 0,
+  });
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -36,6 +55,60 @@ export default function AdminSettings() {
       navigate("/");
     }
   }, [isAdmin, authLoading, navigate]);
+
+  // Fetch payment settings
+  const { data: paymentSettings, isLoading: paymentSettingsLoading } = useQuery({
+    queryKey: ["payment-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_settings")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setPaymentFormData({
+          easypaisa_number: data.easypaisa_number || "",
+          easypaisa_qr_code_url: data.easypaisa_qr_code_url || "",
+          jazzcash_number: data.jazzcash_number || "",
+          jazzcash_qr_code_url: data.jazzcash_qr_code_url || "",
+          bank_account_name: data.bank_account_name || "",
+          bank_account_number: data.bank_account_number || "",
+          bank_name: data.bank_name || "",
+          iban: data.iban || "",
+          additional_instructions: data.additional_instructions || "",
+          delivery_charges: data.delivery_charges || 0,
+          wallet_transfer_charges: data.wallet_transfer_charges || 0,
+          service_fees: data.service_fees || 0,
+        });
+      }
+      
+      return data;
+    },
+    enabled: isAdmin,
+  });
+
+  // Update payment settings mutation
+  const updatePaymentSettingsMutation = useMutation({
+    mutationFn: async (data: typeof paymentFormData) => {
+      const { error } = await supabase
+        .from("payment_settings")
+        .update(data)
+        .eq("id", paymentSettings?.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-settings"] });
+      toast.success("Payment settings updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to update settings", {
+        description: error.message,
+      });
+    },
+  });
 
   // Fetch all users with their roles
   const { data: users, isLoading } = useQuery({
@@ -120,6 +193,15 @@ export default function AdminSettings() {
     ));
   };
 
+  const handlePaymentFormChange = (field: string, value: string | number) => {
+    setPaymentFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePaymentFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updatePaymentSettingsMutation.mutate(paymentFormData);
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -131,8 +213,21 @@ export default function AdminSettings() {
   if (!isAdmin) return null;
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
-      <Card>
+    <div className="container mx-auto py-8 px-4">
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <UserCog className="h-4 w-4" />
+            User Management
+          </TabsTrigger>
+          <TabsTrigger value="payment" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Payment Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6">
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserCog className="h-5 w-5" />
@@ -241,6 +336,197 @@ export default function AdminSettings() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="payment" className="space-y-6">
+          <form onSubmit={handlePaymentFormSubmit} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Easypaisa Configuration</CardTitle>
+                <CardDescription>
+                  Set up Easypaisa wallet details for customer payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="easypaisa_number">Easypaisa Wallet Number</Label>
+                  <Input
+                    id="easypaisa_number"
+                    value={paymentFormData.easypaisa_number}
+                    onChange={(e) => handlePaymentFormChange("easypaisa_number", e.target.value)}
+                    placeholder="03XX-XXXXXXX"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="easypaisa_qr">Easypaisa QR Code URL (Optional)</Label>
+                  <Input
+                    id="easypaisa_qr"
+                    value={paymentFormData.easypaisa_qr_code_url}
+                    onChange={(e) => handlePaymentFormChange("easypaisa_qr_code_url", e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>JazzCash Configuration</CardTitle>
+                <CardDescription>
+                  Set up JazzCash wallet details for customer payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="jazzcash_number">JazzCash Wallet Number</Label>
+                  <Input
+                    id="jazzcash_number"
+                    value={paymentFormData.jazzcash_number}
+                    onChange={(e) => handlePaymentFormChange("jazzcash_number", e.target.value)}
+                    placeholder="03XX-XXXXXXX"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="jazzcash_qr">JazzCash QR Code URL (Optional)</Label>
+                  <Input
+                    id="jazzcash_qr"
+                    value={paymentFormData.jazzcash_qr_code_url}
+                    onChange={(e) => handlePaymentFormChange("jazzcash_qr_code_url", e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Bank Transfer Configuration</CardTitle>
+                <CardDescription>
+                  Set up bank account details for customer payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="bank_name">Bank Name</Label>
+                  <Input
+                    id="bank_name"
+                    value={paymentFormData.bank_name}
+                    onChange={(e) => handlePaymentFormChange("bank_name", e.target.value)}
+                    placeholder="Bank Name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bank_account_name">Account Title</Label>
+                  <Input
+                    id="bank_account_name"
+                    value={paymentFormData.bank_account_name}
+                    onChange={(e) => handlePaymentFormChange("bank_account_name", e.target.value)}
+                    placeholder="Account Title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bank_account_number">Account Number</Label>
+                  <Input
+                    id="bank_account_number"
+                    value={paymentFormData.bank_account_number}
+                    onChange={(e) => handlePaymentFormChange("bank_account_number", e.target.value)}
+                    placeholder="XXXX-XXXX-XXXX-XXXX"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="iban">IBAN (Optional)</Label>
+                  <Input
+                    id="iban"
+                    value={paymentFormData.iban}
+                    onChange={(e) => handlePaymentFormChange("iban", e.target.value)}
+                    placeholder="PKXX XXXX XXXX XXXX XXXX XXXX XXXX"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Additional Instructions</CardTitle>
+                <CardDescription>
+                  Optional instructions displayed to customers during payment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label htmlFor="additional_instructions">Instructions (Optional)</Label>
+                  <Input
+                    id="additional_instructions"
+                    value={paymentFormData.additional_instructions}
+                    onChange={(e) => handlePaymentFormChange("additional_instructions", e.target.value)}
+                    placeholder="e.g., Please include your order ID in payment description"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Charges & Fees</CardTitle>
+                <CardDescription>
+                  Configure delivery charges and service fees (in PKR)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="delivery_charges">Delivery Charges (PKR)</Label>
+                  <Input
+                    id="delivery_charges"
+                    type="number"
+                    value={paymentFormData.delivery_charges}
+                    onChange={(e) => handlePaymentFormChange("delivery_charges", parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="wallet_transfer_charges">Wallet Transfer Charges (PKR)</Label>
+                  <Input
+                    id="wallet_transfer_charges"
+                    type="number"
+                    value={paymentFormData.wallet_transfer_charges}
+                    onChange={(e) => handlePaymentFormChange("wallet_transfer_charges", parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="service_fees">Service Fees (PKR)</Label>
+                  <Input
+                    id="service_fees"
+                    type="number"
+                    value={paymentFormData.service_fees}
+                    onChange={(e) => handlePaymentFormChange("service_fees", parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              size="lg"
+              disabled={updatePaymentSettingsMutation.isPending}
+            >
+              {updatePaymentSettingsMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Payment Settings
+                </>
+              )}
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
