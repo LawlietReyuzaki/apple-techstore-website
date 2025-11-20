@@ -558,21 +558,22 @@ This is an automated message. Please do not reply to this email.
         `${item.product_name} - Qty: ${item.quantity} - Price: PKR ${item.product_price.toLocaleString()} - Subtotal: PKR ${item.subtotal.toLocaleString()}`
       ).join('\n');
 
-      subject = `Order Approved - #${orderId.slice(0, 8)}`;
+      const storeName = "Dilbar Mobiles";
+      subject = `Your Order Has Been Approved 🎉`;
       
       emailHtml = `
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-              <h2 style="color: #4CAF50; border-bottom: 2px solid #4CAF50; padding-bottom: 10px;">✅ Order Approved</h2>
+              <h2 style="color: #4CAF50; margin-bottom: 20px;">Your Order Has Been Approved 🎉</h2>
               
               <p>Dear <strong>${order.customer_name}</strong>,</p>
               
-              <p>Great news! Your order has been approved and is now being processed.</p>
+              <p>Good news! Your order <strong>#${orderId.slice(0, 8)}</strong> has been approved by our team.<br>
+              We are now preparing your product.</p>
               
-              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Order Details</h3>
-                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+                <h3 style="margin-top: 0; color: #4CAF50;">Order Details</h3>
                 
                 <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
                   <thead>
@@ -594,23 +595,16 @@ This is an automated message. Please do not reply to this email.
                   </tfoot>
                 </table>
               </div>
-
-              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Delivery Information</h3>
-                <p><strong>Address:</strong> ${order.delivery_address}</p>
-                <p><strong>Payment Method:</strong> ${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}</p>
-                <p><em>Your order will be delivered within 3-5 business days.</em></p>
-              </div>
               
-              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Store Contact</h3>
-                <p><strong>Dilbar Mobiles</strong></p>
-                <p>📍 Main Market, Peshawar, Pakistan</p>
-                <p>📞 +92 300 1234567</p>
-                <p>✉️ info@dilbarmobiles.com</p>
-              </div>
+              <p style="margin: 20px 0;">Your order is now confirmed.<br>
+              We will notify you once your product is ready or shipped.</p>
               
-              <p>Thank you for choosing Dilbar Mobiles!</p>
+              <p>If you have any questions, feel free to reply to this email.</p>
+              
+              <p style="margin-top: 30px;">Thank you for choosing <strong>${storeName}</strong>!</p>
+              
+              <p style="margin-top: 20px;">Warm regards,<br>
+              <strong>${storeName} Team</strong></p>
               
               <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
               <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
@@ -619,32 +613,28 @@ This is an automated message. Please do not reply to this email.
         </html>
       `;
 
-      emailText = `Order Approved - #${orderId.slice(0, 8)}
+      emailText = `Your Order Has Been Approved 🎉
 
 Dear ${order.customer_name},
 
-Great news! Your order has been approved and is now being processed.
+Good news! Your order #${orderId.slice(0, 8)} has been approved by our team.
+We are now preparing your product.
 
 Order Details:
-Order Number: #${orderId.slice(0, 8)}
 
-Products:
 ${itemsListText}
 
 Total Amount: PKR ${order.total_amount.toLocaleString()}
 
-Delivery Information:
-Address: ${order.delivery_address}
-Payment Method: ${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}
-Your order will be delivered within 3-5 business days.
+Your order is now confirmed.
+We will notify you once your product is ready or shipped.
 
-Store Contact:
-Dilbar Mobiles
-Main Market, Peshawar, Pakistan
-Phone: +92 300 1234567
-Email: info@dilbarmobiles.com
+If you have any questions, feel free to reply to this email.
 
-Thank you for choosing Dilbar Mobiles!
+Thank you for choosing ${storeName}!
+
+Warm regards,
+${storeName} Team
 
 ---
 This is an automated email. Please do not reply.`;
@@ -682,34 +672,29 @@ This is an automated email. Please do not reply.`;
         );
       }
 
-      subject = `Order Declined - #${orderId.slice(0, 8)}`;
+      const storeName = "Dilbar Mobiles";
+      subject = `Update Regarding Your Order #${orderId.slice(0, 8)}`;
       
       emailHtml = `
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-              <h2 style="color: #f44336; border-bottom: 2px solid #f44336; padding-bottom: 10px;">❌ Order Declined</h2>
+              <h2 style="color: #f44336; margin-bottom: 20px;">Update Regarding Your Order #${orderId.slice(0, 8)}</h2>
               
               <p>Dear <strong>${order.customer_name}</strong>,</p>
               
-              <p>We regret to inform you that your order <strong>#${orderId.slice(0, 8)}</strong> could not be processed at this time.</p>
+              <p>We want to inform you that your order <strong>#${orderId.slice(0, 8)}</strong> has been declined by our team.</p>
               
-              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Reason</h3>
-                <p>${declineReason || 'Unfortunately, we are unable to fulfill your order at this time.'}</p>
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f44336;">
+                <h3 style="margin-top: 0; color: #f44336;">Reason (if provided):</h3>
+                <p style="margin: 0;">${declineReason || 'We are unable to process your order at this time.'}</p>
               </div>
               
-              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Store Contact</h3>
-                <p><strong>Dilbar Mobiles</strong></p>
-                <p>📍 Main Market, Peshawar, Pakistan</p>
-                <p>📞 +92 300 1234567</p>
-                <p>✉️ info@dilbarmobiles.com</p>
-              </div>
+              <p style="margin: 20px 0;">We sincerely apologize for the inconvenience.<br>
+              If you need help placing another order or have any questions, feel free to contact us.</p>
               
-              <p>We sincerely apologize for any inconvenience. If you have any questions, please feel free to contact us.</p>
-              
-              <p>Thank you for your understanding.</p>
+              <p style="margin-top: 30px;">Warm regards,<br>
+              <strong>${storeName} Support Team</strong></p>
               
               <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
               <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
@@ -718,24 +703,20 @@ This is an automated email. Please do not reply.`;
         </html>
       `;
 
-      emailText = `Order Declined - #${orderId.slice(0, 8)}
+      emailText = `Update Regarding Your Order #${orderId.slice(0, 8)}
 
 Dear ${order.customer_name},
 
-We regret to inform you that your order #${orderId.slice(0, 8)} could not be processed at this time.
+We want to inform you that your order #${orderId.slice(0, 8)} has been declined by our team.
 
-Reason:
-${declineReason || 'Unfortunately, we are unable to fulfill your order at this time.'}
+Reason (if provided):
+${declineReason || 'We are unable to process your order at this time.'}
 
-Store Contact:
-Dilbar Mobiles
-Main Market, Peshawar, Pakistan
-Phone: +92 300 1234567
-Email: info@dilbarmobiles.com
+We sincerely apologize for the inconvenience.
+If you need help placing another order or have any questions, feel free to contact us.
 
-We sincerely apologize for any inconvenience. If you have any questions, please feel free to contact us.
-
-Thank you for your understanding.
+Warm regards,
+${storeName} Support Team
 
 ---
 This is an automated email. Please do not reply.`;
