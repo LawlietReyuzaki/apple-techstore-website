@@ -38,7 +38,7 @@ import { Loader2, Eye, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
 export default function Payments() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, loading: authLoading } = useAuth();
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "declined" | "refunded">("all");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -208,6 +208,14 @@ export default function Payments() {
       });
     },
   });
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     navigate("/");
