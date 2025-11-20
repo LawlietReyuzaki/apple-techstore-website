@@ -58,7 +58,7 @@ export default function Payments() {
         .from("payments")
         .select(`
           *,
-          orders!inner(
+          orders!payments_order_id_fkey(
             customer_name,
             customer_email,
             customer_phone
