@@ -53,15 +53,7 @@ const BookRepair = () => {
 
       if (error) throw error;
 
-      // Send email notification via edge function
-      try {
-        await supabase.functions.invoke('send-order-email', {
-          body: { repairId: data.id, type: 'repair' }
-        });
-      } catch (emailError) {
-        console.error('Failed to send repair notification email:', emailError);
-        // Don't fail the repair booking if email fails
-      }
+      // Email will be sent by admin when repair is approved
 
       toast.success("Repair booked successfully!", {
         description: `Your tracking code is: ${trackingCode}`,

@@ -41,7 +41,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { XCircle } from "lucide-react";
+import { XCircle, Check } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 export default function AdminRepairs() {
   const navigate = useNavigate();
@@ -52,6 +53,10 @@ export default function AdminRepairs() {
   const [selectedRepair, setSelectedRepair] = useState<any>(null);
   const [newNote, setNewNote] = useState("");
   const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [visitDate, setVisitDate] = useState("");
+  const [visitTime, setVisitTime] = useState("");
+  const [approveNote, setApproveNote] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAdmin && !isTechnician) {
@@ -229,6 +234,65 @@ export default function AdminRepairs() {
       });
       setDeclineConfirmId(null);
       setSelectedRepair(null);
+    }
+  };
+
+  const handleApproveRepair = () => {
+    if (!selectedRepair) return;
+    setApproveDialogOpen(true);
+  };
+
+  const confirmApprove = async () => {
+    if (!selectedRepair || !visitDate || !visitTime) {
+      toast.error("Please set visit date and time");
+      return;
+    }
+
+    try {
+      // Update repair status and visit date
+      const visitDateTime = `${visitDate} ${visitTime}`;
+      await supabase
+        .from("repairs")
+        .update({ 
+          status: "in_progress",
+          visit_date: visitDateTime,
+        })
+        .eq("id", selectedRepair.id);
+
+      // Send approval email
+      const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+        body: { 
+          repairId: selectedRepair.id,
+          type: "repair_approved",
+          visitDate: visitDateTime,
+          customNote: approveNote,
+        },
+      });
+
+      if (emailError) {
+        console.error("Email error:", emailError);
+        toast.error("Repair approved but email failed to send");
+      } else {
+        toast.success("Repair approved and email sent to customer");
+      }
+
+      // Add note about approval
+      await supabase.from("repair_notes").insert({
+        repair_id: selectedRepair.id,
+        user_id: user?.id,
+        note: `Repair approved. Visit scheduled for ${visitDateTime}${approveNote ? `. Note: ${approveNote}` : ''}`,
+        type: "approval",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });
+      setApproveDialogOpen(false);
+      setSelectedRepair(null);
+      setVisitDate("");
+      setVisitTime("");
+      setApproveNote("");
+    } catch (error) {
+      console.error("Error approving repair:", error);
+      toast.error("Failed to approve repair");
     }
   };
 
@@ -417,7 +481,7 @@ export default function AdminRepairs() {
                   placeholder="Add a note..."
                   rows={3}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={() =>
                       addNoteMutation.mutate({
@@ -429,14 +493,23 @@ export default function AdminRepairs() {
                   >
                     Add Note
                   </Button>
-                  {isAdmin && selectedRepair.status !== "declined" && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleDeclineRepair(selectedRepair.id)}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Decline Request
-                    </Button>
+                  {isAdmin && selectedRepair.status === "created" && (
+                    <>
+                      <Button
+                        variant="default"
+                        onClick={handleApproveRepair}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Approve & Send Email
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleDeclineRepair(selectedRepair.id)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Decline Request
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -457,6 +530,59 @@ export default function AdminRepairs() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Decline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Repair Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Set the visit date and time for the customer. An approval email will be sent with these details.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="visit-date">Visit Date</Label>
+              <Input
+                id="visit-date"
+                type="date"
+                value={visitDate}
+                onChange={(e) => setVisitDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="visit-time">Visit Time</Label>
+              <Input
+                id="visit-time"
+                type="time"
+                value={visitTime}
+                onChange={(e) => setVisitTime(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="approve-note">Additional Note (Optional)</Label>
+              <Textarea
+                id="approve-note"
+                value={approveNote}
+                onChange={(e) => setApproveNote(e.target.value)}
+                placeholder="Add any special instructions or notes..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setApproveNote("");
+              setVisitDate("");
+              setVisitTime("");
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmApprove}>
+              Approve & Send Email
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

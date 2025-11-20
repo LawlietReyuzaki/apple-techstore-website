@@ -8,7 +8,9 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'repair';
+  type: 'order' | 'repair' | 'repair_approved';
+  visitDate?: string;
+  customNote?: string;
 }
 
 async function sendEmailViaSMTP(
@@ -106,7 +108,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { orderId, repairId, type }: EmailRequest = await req.json();
+    const { orderId, repairId, type, visitDate, customNote }: EmailRequest = await req.json();
 
     if (!orderId && !repairId) {
       return new Response(
@@ -123,6 +125,11 @@ Deno.serve(async (req) => {
     let emailHtml = '';
     let emailText = '';
     let subject = '';
+    
+    // Get Gmail credentials from environment
+    const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL')!;
+    const appPassword = Deno.env.get('GMAIL_APP_PASSWORD')!;
+    const cleanPassword = appPassword.replace(/\s+/g, '');
 
     if (type === 'order' && orderId) {
       // Fetch order details with items
@@ -201,6 +208,170 @@ Status: ${order.payment_status || 'Unpaid'}
 
 ${order.notes ? `Notes:\n${order.notes}` : ''}
 `;
+    } else if (type === 'repair_approved' && repairId) {
+      // Fetch repair details for approval email
+      const { data: repair, error: repairError } = await supabase
+        .from('repairs')
+        .select('*')
+        .eq('id', repairId)
+        .single();
+
+      if (repairError || !repair) {
+        console.error('Error fetching repair:', repairError);
+        return new Response(
+          JSON.stringify({ error: 'Repair not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!repair.customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Customer email not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Mobile Parts & Repair Shop";
+      const storeAddress = "123 Main Street, Karachi, Pakistan";
+      const storePhone = "+92 300 1234567";
+      const storeEmail = "support@mobilerepairshop.com";
+
+      subject = `Repair Request Approved - ${repair.tracking_code}`;
+      
+      emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h1 style="color: #2563eb; margin-bottom: 20px; font-size: 24px;">Repair Request Approved ✓</h1>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+              Dear <strong>${repair.customer_name || 'Valued Customer'}</strong>,
+            </p>
+            
+            <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;">
+              Great news! Your repair request has been approved and is ready for service.
+            </p>
+            
+            <div style="background-color: #f0f7ff; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #2563eb;">
+              <h2 style="color: #1e40af; font-size: 18px; margin-bottom: 15px;">Order Details</h2>
+              <table style="width: 100%; font-size: 14px; color: #333;">
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Order Number:</strong></td>
+                  <td style="padding: 8px 0;">${repair.tracking_code}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Device:</strong></td>
+                  <td style="padding: 8px 0;">${repair.device_make} ${repair.device_model}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Issue:</strong></td>
+                  <td style="padding: 8px 0;">${repair.issue}</td>
+                </tr>
+                ${repair.description ? `
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Description:</strong></td>
+                  <td style="padding: 8px 0;">${repair.description}</td>
+                </tr>
+                ` : ''}
+                ${repair.estimated_cost ? `
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Estimated Cost:</strong></td>
+                  <td style="padding: 8px 0;"><strong style="color: #2563eb;">Rs ${repair.estimated_cost}</strong></td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+            
+            <div style="background-color: #dcfce7; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+              <h2 style="color: #15803d; font-size: 18px; margin-bottom: 15px;">Visit Schedule</h2>
+              <p style="font-size: 16px; color: #333; margin: 0;">
+                <strong>📅 Date & Time:</strong> ${visitDate || 'To be confirmed'}
+              </p>
+              <p style="font-size: 14px; color: #555; margin-top: 10px;">
+                Please visit our shop at the scheduled date and time for your repair service.
+              </p>
+              ${customNote ? `
+              <div style="margin-top: 15px; padding: 12px; background-color: #fff; border-radius: 4px;">
+                <p style="font-size: 13px; color: #666; margin: 0;"><strong>Note:</strong> ${customNote}</p>
+              </div>
+              ` : ''}
+            </div>
+            
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+              <h2 style="color: #374151; font-size: 18px; margin-bottom: 15px;">Store Information</h2>
+              <p style="font-size: 14px; color: #555; line-height: 1.8; margin: 0;">
+                <strong>${storeName}</strong><br/>
+                📍 ${storeAddress}<br/>
+                📞 ${storePhone}<br/>
+                ✉️ ${storeEmail}
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;">
+              If you have any questions or need to reschedule, please don't hesitate to contact us.
+            </p>
+            
+            <p style="font-size: 14px; color: #333; margin-bottom: 5px;">
+              Best regards,<br/>
+              <strong>${storeName} Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px; padding: 15px;">
+            <p style="font-size: 12px; color: #9ca3af;">
+              This is an automated message. Please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `;
+
+      emailText = `Repair Request Approved
+
+Dear ${repair.customer_name || 'Valued Customer'},
+
+Great news! Your repair request has been approved and is ready for service.
+
+Order Details:
+━━━━━━━━━━━━━━━━━━━━━
+Order Number: ${repair.tracking_code}
+Device: ${repair.device_make} ${repair.device_model}
+Issue: ${repair.issue}
+${repair.description ? `Description: ${repair.description}` : ''}
+${repair.estimated_cost ? `Estimated Cost: Rs ${repair.estimated_cost}` : ''}
+
+Visit Schedule:
+━━━━━━━━━━━━━━━━━━━━━
+Date & Time: ${visitDate || 'To be confirmed'}
+
+Please visit our shop at the scheduled date and time for your repair service.
+${customNote ? `\nNote: ${customNote}` : ''}
+
+Store Information:
+━━━━━━━━━━━━━━━━━━━━━
+${storeName}
+${storeAddress}
+${storePhone}
+${storeEmail}
+
+If you have any questions or need to reschedule, please don't hesitate to contact us.
+
+Best regards,
+${storeName} Team
+
+---
+This is an automated message. Please do not reply to this email.
+`;
+
+      // Send to customer
+      await sendEmailViaSMTP(
+        repair.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
     } else if (type === 'repair' && repairId) {
       // Fetch repair details
       const { data: repair, error: repairError } = await supabase
@@ -250,13 +421,6 @@ ${repair.description ? `Description:\n${repair.description}` : ''}
 ${repair.estimated_cost ? `Estimated Cost: Rs ${repair.estimated_cost}` : ''}
 `;
     }
-
-    // Get Gmail credentials from environment
-    const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL')!;
-    const appPassword = Deno.env.get('GMAIL_APP_PASSWORD')!;
-
-    // Remove spaces from app password
-    const cleanPassword = appPassword.replace(/\s+/g, '');
 
     // Send email via SMTP
     await sendEmailViaSMTP(
