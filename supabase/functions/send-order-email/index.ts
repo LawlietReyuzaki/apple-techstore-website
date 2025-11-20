@@ -8,7 +8,7 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined';
+  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined';
   visitDate?: string;
   customNote?: string;
   declineReason?: string;
@@ -503,6 +503,246 @@ This is an automated message. Please do not reply to this email.
       // Send to customer
       await sendEmailViaSMTP(
         repair.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'order_approved' && orderId) {
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (itemsError || !orderItems) {
+        return new Response(
+          JSON.stringify({ error: 'Order items not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!order.customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Customer email not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const itemsListHtml = orderItems.map(item => `
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">${item.product_name}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">PKR ${item.product_price.toLocaleString()}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">PKR ${item.subtotal.toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      const itemsListText = orderItems.map(item => 
+        `${item.product_name} - Qty: ${item.quantity} - Price: PKR ${item.product_price.toLocaleString()} - Subtotal: PKR ${item.subtotal.toLocaleString()}`
+      ).join('\n');
+
+      subject = `Order Approved - #${orderId.slice(0, 8)}`;
+      
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #4CAF50; border-bottom: 2px solid #4CAF50; padding-bottom: 10px;">✅ Order Approved</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>Great news! Your order has been approved and is now being processed.</p>
+              
+              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Order Details</h3>
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                  <thead>
+                    <tr style="background-color: #f0f0f0;">
+                      <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Product</th>
+                      <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Quantity</th>
+                      <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Price</th>
+                      <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemsListHtml}
+                  </tbody>
+                  <tfoot>
+                    <tr style="background-color: #f0f0f0; font-weight: bold;">
+                      <td colspan="3" style="padding: 10px; border: 1px solid #ddd; text-align: right;">Total Amount:</td>
+                      <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">PKR ${order.total_amount.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Delivery Information</h3>
+                <p><strong>Address:</strong> ${order.delivery_address}</p>
+                <p><strong>Payment Method:</strong> ${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}</p>
+                <p><em>Your order will be delivered within 3-5 business days.</em></p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Store Contact</h3>
+                <p><strong>Dilbar Mobiles</strong></p>
+                <p>📍 Main Market, Peshawar, Pakistan</p>
+                <p>📞 +92 300 1234567</p>
+                <p>✉️ info@dilbarmobiles.com</p>
+              </div>
+              
+              <p>Thank you for choosing Dilbar Mobiles!</p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      emailText = `Order Approved - #${orderId.slice(0, 8)}
+
+Dear ${order.customer_name},
+
+Great news! Your order has been approved and is now being processed.
+
+Order Details:
+Order Number: #${orderId.slice(0, 8)}
+
+Products:
+${itemsListText}
+
+Total Amount: PKR ${order.total_amount.toLocaleString()}
+
+Delivery Information:
+Address: ${order.delivery_address}
+Payment Method: ${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}
+Your order will be delivered within 3-5 business days.
+
+Store Contact:
+Dilbar Mobiles
+Main Market, Peshawar, Pakistan
+Phone: +92 300 1234567
+Email: info@dilbarmobiles.com
+
+Thank you for choosing Dilbar Mobiles!
+
+---
+This is an automated email. Please do not reply.`;
+
+      // Send to customer
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'order_declined' && orderId) {
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!order.customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Customer email not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      subject = `Order Declined - #${orderId.slice(0, 8)}`;
+      
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #f44336; border-bottom: 2px solid #f44336; padding-bottom: 10px;">❌ Order Declined</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>We regret to inform you that your order <strong>#${orderId.slice(0, 8)}</strong> could not be processed at this time.</p>
+              
+              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Reason</h3>
+                <p>${declineReason || 'Unfortunately, we are unable to fulfill your order at this time.'}</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Store Contact</h3>
+                <p><strong>Dilbar Mobiles</strong></p>
+                <p>📍 Main Market, Peshawar, Pakistan</p>
+                <p>📞 +92 300 1234567</p>
+                <p>✉️ info@dilbarmobiles.com</p>
+              </div>
+              
+              <p>We sincerely apologize for any inconvenience. If you have any questions, please feel free to contact us.</p>
+              
+              <p>Thank you for your understanding.</p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      emailText = `Order Declined - #${orderId.slice(0, 8)}
+
+Dear ${order.customer_name},
+
+We regret to inform you that your order #${orderId.slice(0, 8)} could not be processed at this time.
+
+Reason:
+${declineReason || 'Unfortunately, we are unable to fulfill your order at this time.'}
+
+Store Contact:
+Dilbar Mobiles
+Main Market, Peshawar, Pakistan
+Phone: +92 300 1234567
+Email: info@dilbarmobiles.com
+
+We sincerely apologize for any inconvenience. If you have any questions, please feel free to contact us.
+
+Thank you for your understanding.
+
+---
+This is an automated email. Please do not reply.`;
+
+      // Send to customer
+      await sendEmailViaSMTP(
+        order.customer_email,
         senderEmail,
         subject,
         emailText,
