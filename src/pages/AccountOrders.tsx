@@ -26,7 +26,15 @@ export default function AccountOrders() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          payments (
+            id,
+            status,
+            payment_method,
+            created_at
+          )
+        `)
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
 
@@ -49,19 +57,135 @@ export default function AccountOrders() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       pending: "secondary",
+      approved: "default",
       processing: "default",
+      packed: "default",
       shipped: "outline",
+      "out for delivery": "outline",
       delivered: "outline",
+      delayed: "secondary",
       cancelled: "destructive",
     };
     const colors: Record<string, string> = {
       pending: "text-yellow-600",
+      approved: "text-green-600",
       processing: "text-blue-600",
+      packed: "text-blue-600",
       shipped: "text-purple-600",
+      "out for delivery": "text-purple-600",
       delivered: "text-green-600",
+      delayed: "text-orange-600",
       cancelled: "text-red-600",
     };
-    return <Badge variant={variants[status] || "default"} className={colors[status]}>{status}</Badge>;
+    return <Badge variant={variants[status] || "default"} className={colors[status]}>{status?.toUpperCase()}</Badge>;
+  };
+
+  const getPaymentStatusBadge = (paymentStatus: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      unpaid: "secondary",
+      paid: "default",
+      pending: "secondary",
+      approved: "default",
+      declined: "destructive",
+      refunded: "outline",
+    };
+    const colors: Record<string, string> = {
+      unpaid: "text-red-600",
+      paid: "text-green-600",
+      pending: "text-yellow-600",
+      approved: "text-green-600",
+      declined: "text-red-600",
+      refunded: "text-blue-600",
+    };
+    return <Badge variant={variants[paymentStatus] || "default"} className={colors[paymentStatus]}>{paymentStatus?.toUpperCase()}</Badge>;
+  };
+
+  const getPaymentInstructions = (order: any) => {
+    const payment = order.payments?.[0];
+    
+    if (order.status === "pending") {
+      return (
+        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            ⏳ Awaiting admin approval before payment
+          </p>
+        </div>
+      );
+    }
+
+    if (order.status === "approved" && !payment) {
+      return (
+        <div className="mt-4 space-y-3">
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              ✅ Order approved! Please proceed with payment
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate("/payment-submission", { 
+              state: { 
+                orderId: order.id,
+                orderData: order
+              }
+            })}
+            className="w-full"
+          >
+            Submit Payment Proof
+          </Button>
+        </div>
+      );
+    }
+
+    if (payment) {
+      if (payment.status === "pending") {
+        return (
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              🔍 Payment Verification in Progress
+            </p>
+            <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+              Submitted via {payment.payment_method.toUpperCase()} on {format(new Date(payment.created_at), "MMM dd, yyyy")}
+            </p>
+          </div>
+        );
+      }
+
+      if (payment.status === "approved") {
+        return (
+          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              ✅ Payment Confirmed
+            </p>
+          </div>
+        );
+      }
+
+      if (payment.status === "declined") {
+        return (
+          <div className="mt-4 space-y-3">
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                ❌ Payment Declined – Please upload valid receipt
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate("/payment-submission", { 
+                state: { 
+                  orderId: order.id,
+                  orderData: order
+                }
+              })}
+              className="w-full"
+              variant="destructive"
+            >
+              Re-submit Payment Proof
+            </Button>
+          </div>
+        );
+      }
+    }
+
+    return null;
   };
 
   if (authLoading || isLoading) {

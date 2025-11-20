@@ -16,6 +16,7 @@ export default function PaymentSubmission() {
   const { user } = useAuth();
   const orderData = location.state?.orderData;
   const orderId = location.state?.orderId;
+  const [orderDetails, setOrderDetails] = useState<any>(null);
 
   const [paymentMethod, setPaymentMethod] = useState<"easypaisa" | "jazzcash" | "bank_transfer">("easypaisa");
   const [transactionId, setTransactionId] = useState("");
@@ -25,23 +26,56 @@ export default function PaymentSubmission() {
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
-  // Fetch payment settings
+  // Fetch payment settings and order details
   useState(() => {
-    const fetchSettings = async () => {
-      const { data } = await supabase
+    const fetchData = async () => {
+      // Fetch payment settings
+      const { data: settings } = await supabase
         .from("payment_settings")
         .select("*")
         .single();
       
-      setPaymentSettings(data);
+      setPaymentSettings(settings);
+
+      // Fetch order details if orderId is provided
+      if (orderId) {
+        const { data: order } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("id", orderId)
+          .single();
+        
+        setOrderDetails(order);
+      }
     };
     
-    fetchSettings();
+    fetchData();
   });
 
   if (!orderData || !orderId) {
     navigate("/checkout");
     return null;
+  }
+
+  // Check if order is approved
+  if (orderDetails && orderDetails.status !== "approved") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Payment Not Available</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              This order must be approved by admin before you can submit payment.
+            </p>
+            <Button onClick={() => navigate("/account/orders")} className="w-full">
+              Back to Orders
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const handleCopy = (text: string) => {
@@ -97,11 +131,17 @@ export default function PaymentSubmission() {
 
       if (paymentError) throw paymentError;
 
-      // Send payment pending email
+      // Update order payment status
+      await supabase
+        .from("orders")
+        .update({ payment_status: "pending" })
+        .eq("id", orderId);
+
+      // Send payment pending email to admin
       const { error: emailError } = await supabase.functions.invoke('send-order-email', {
         body: {
           orderId,
-          type: 'payment_pending',
+          type: 'payment_uploaded',
         },
       });
 
