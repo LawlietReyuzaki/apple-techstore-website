@@ -18,6 +18,7 @@ import AdminTechnicians from "./pages/admin/Technicians";
 import AdminSettings from "./pages/admin/Settings";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
+import AdminPayments from "./pages/admin/Payments";
 import Shop from "./pages/Shop";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import Cart from "./pages/Cart";
@@ -25,7 +26,6 @@ import Checkout from "./pages/Checkout";
 import PaymentSubmission from "./pages/PaymentSubmission";
 import AccountOrders from "./pages/AccountOrders";
 import Wishlist from "./pages/Wishlist";
-import AdminPayments from "./pages/admin/Payments";
 
 const queryClient = new QueryClient();
 
