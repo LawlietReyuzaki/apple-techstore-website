@@ -13,7 +13,7 @@ import { Loader2, Save } from "lucide-react";
 export default function PaymentSettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     easypaisa_number: "",
     easypaisa_qr_code_url: "",
@@ -78,6 +78,14 @@ export default function PaymentSettings() {
       });
     },
   });
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     navigate("/");
