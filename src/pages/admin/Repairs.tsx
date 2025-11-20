@@ -268,7 +268,7 @@ export default function AdminRepairs() {
         repair_id: declineConfirmId,
         user_id: user?.id,
         note: `Repair declined. Reason: ${declineReason || 'No reason provided'}`,
-        type: "decline",
+        type: "status_change",
       });
 
       queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });
@@ -325,7 +325,7 @@ export default function AdminRepairs() {
         repair_id: selectedRepair.id,
         user_id: user?.id,
         note: `Repair approved. Visit scheduled for ${visitDateTime}${approveNote ? `. Note: ${approveNote}` : ''}`,
-        type: "approval",
+        type: "status_change",
       });
 
       queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });

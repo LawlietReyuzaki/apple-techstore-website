@@ -18,6 +18,9 @@ const BookRepair = () => {
     deviceModel: "",
     issue: "",
     description: "",
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +40,9 @@ const BookRepair = () => {
         device_model: formData.deviceModel,
         issue: formData.issue,
         description: formData.description,
+        customer_name: formData.customerName,
+        customer_email: formData.customerEmail,
+        customer_phone: formData.customerPhone,
         status: "created",
       };
 
@@ -118,6 +124,41 @@ const BookRepair = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">Your Name *</Label>
+                    <Input
+                      id="customerName"
+                      required
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerEmail">Your Email *</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      required
+                      value={formData.customerEmail}
+                      onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">Your Phone Number *</Label>
+                    <Input
+                      id="customerPhone"
+                      type="tel"
+                      required
+                      value={formData.customerPhone}
+                      onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                      placeholder="+92 300 1234567"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="deviceMake">Device Make *</Label>
                     <Select
