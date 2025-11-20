@@ -400,26 +400,6 @@ export default function AdminOrders() {
         </DialogContent>
       </Dialog>
 
-      {/* Approve Confirmation Dialog */}
-      <Dialog open={!!approveConfirmId} onOpenChange={(open) => !open && setApproveConfirmId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Approve Order</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>Are you sure you want to approve this order? The customer will receive a confirmation email.</p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setApproveConfirmId(null)}>
-                Cancel
-              </Button>
-              <Button onClick={() => approveConfirmId && approveOrderMutation.mutate(approveConfirmId)}>
-                Approve & Send Email
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Decline Confirmation Dialog */}
       <Dialog open={!!declineConfirmId} onOpenChange={(open) => {
         if (!open) {
