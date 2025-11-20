@@ -94,7 +94,10 @@ export default function Payments() {
       if (payment) {
         await supabase
           .from("orders")
-          .update({ payment_status: "paid" })
+          .update({ 
+            payment_status: "paid",
+            status: "processing"
+          })
           .eq("id", payment.order_id);
 
         // Send approval email
@@ -132,9 +135,17 @@ export default function Payments() {
 
       if (error) throw error;
 
-      // Send decline email
+      // Update order status and send decline email
       const payment = payments?.find(p => p.id === paymentId);
       if (payment) {
+        await supabase
+          .from("orders")
+          .update({ 
+            payment_status: "unpaid",
+            status: "payment_rejected"
+          })
+          .eq("id", payment.order_id);
+
         await supabase.functions.invoke('send-order-email', {
           body: {
             orderId: payment.order_id,
