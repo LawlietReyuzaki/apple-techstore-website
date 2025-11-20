@@ -765,38 +765,43 @@ This is an automated email. Please do not reply.`;
       // Format status for display
       const statusDisplay = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
       
-      // Status-specific messages and colors
-      const statusInfo: Record<string, { message: string; color: string; emoji: string }> = {
+      // Status-specific messages, colors, and subjects
+      const statusInfo: Record<string, { message: string; color: string; emoji: string; subject: string }> = {
         pending: {
           message: "Your order has been received and is awaiting review.",
           color: "#f59e0b",
-          emoji: "⏳"
+          emoji: "⏳",
+          subject: "Your Order Is Pending"
         },
         processing: {
           message: "Great news! Your order is now being processed and prepared.",
           color: "#3b82f6",
-          emoji: "📦"
+          emoji: "📦",
+          subject: "Your Order Is Being Processed"
         },
         shipped: {
           message: "Exciting news! Your order has been shipped and is on its way to you.",
           color: "#8b5cf6",
-          emoji: "🚚"
+          emoji: "🚚",
+          subject: "Your Order Has Been Shipped"
         },
         delivered: {
           message: "Your order has been successfully delivered. We hope you enjoy your purchase!",
           color: "#10b981",
-          emoji: "✅"
+          emoji: "✅",
+          subject: "Your Order Has Been Delivered"
         },
         cancelled: {
           message: "Your order has been cancelled. If you have any questions, please contact us.",
           color: "#ef4444",
-          emoji: "❌"
+          emoji: "❌",
+          subject: "Your Order Has Been Cancelled"
         }
       };
 
       const info = statusInfo[newStatus] || statusInfo.pending;
 
-      subject = `Order Status Update: ${statusDisplay} - #${orderId.slice(0, 8)}`;
+      subject = info.subject;
       
       const itemsList = orderItems?.map(item => 
         `<li style="margin: 8px 0;">${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal.toLocaleString()}</li>`
