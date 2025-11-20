@@ -14,9 +14,6 @@ const BookRepair = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
     deviceMake: "",
     deviceModel: "",
     issue: "",
@@ -36,9 +33,6 @@ const BookRepair = () => {
 
       const insertData: any = {
         tracking_code: trackingCode,
-        customer_name: formData.customerName,
-        customer_email: formData.customerEmail,
-        customer_phone: formData.customerPhone,
         device_make: formData.deviceMake,
         device_model: formData.deviceModel,
         issue: formData.issue,
@@ -58,6 +52,16 @@ const BookRepair = () => {
         .single();
 
       if (error) throw error;
+
+      // Send email notification via edge function
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { repairId: data.id, type: 'repair' }
+        });
+      } catch (emailError) {
+        console.error('Failed to send repair notification email:', emailError);
+        // Don't fail the repair booking if email fails
+      }
 
       toast.success("Repair booked successfully!", {
         description: `Your tracking code is: ${trackingCode}`,
@@ -120,42 +124,7 @@ const BookRepair = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Your Name *</Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  required
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customerEmail">Email Address *</Label>
-                <Input
-                  id="customerEmail"
-                  type="email"
-                  value={formData.customerEmail}
-                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  required
-                  placeholder="your.email@example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customerPhone">Phone Number *</Label>
-                <Input
-                  id="customerPhone"
-                  type="tel"
-                  value={formData.customerPhone}
-                  onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                  required
-                  placeholder="+92 300 1234567"
-                />
-              </div>
-
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="deviceMake">Device Make *</Label>

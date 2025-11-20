@@ -114,34 +114,13 @@ export default function AdminRepairs() {
   });
 
   const updateRepairMutation = useMutation({
-    mutationFn: async ({ id, updates, sendEmail, emailType, visitDate, visitTime, reason }: { 
-      id: string; 
-      updates: any;
-      sendEmail?: boolean;
-      emailType?: 'repair_accepted' | 'repair_declined';
-      visitDate?: string;
-      visitTime?: string;
-      reason?: string;
-    }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { error } = await supabase
         .from("repairs")
         .update(updates)
         .eq("id", id);
 
       if (error) throw error;
-
-      // Send email if requested
-      if (sendEmail && emailType) {
-        await supabase.functions.invoke('send-order-email', {
-          body: { 
-            repairId: id, 
-            type: emailType,
-            visitDate,
-            visitTime,
-            reason
-          }
-        });
-      }
 
       // Add note for status change
       if (updates.status) {

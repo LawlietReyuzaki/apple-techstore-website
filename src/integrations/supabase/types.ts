@@ -292,10 +292,6 @@ export type Database = {
         Row: {
           assigned_to: string | null
           created_at: string
-          customer_email: string | null
-          customer_name: string | null
-          customer_phone: string | null
-          decline_reason: string | null
           description: string | null
           device_make: string
           device_model: string
@@ -309,15 +305,10 @@ export type Database = {
           tracking_code: string
           updated_at: string
           user_id: string | null
-          visit_date: string | null
         }
         Insert: {
           assigned_to?: string | null
           created_at?: string
-          customer_email?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          decline_reason?: string | null
           description?: string | null
           device_make: string
           device_model: string
@@ -331,15 +322,10 @@ export type Database = {
           tracking_code: string
           updated_at?: string
           user_id?: string | null
-          visit_date?: string | null
         }
         Update: {
           assigned_to?: string | null
           created_at?: string
-          customer_email?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          decline_reason?: string | null
           description?: string | null
           device_make?: string
           device_model?: string
@@ -353,7 +339,6 @@ export type Database = {
           tracking_code?: string
           updated_at?: string
           user_id?: string | null
-          visit_date?: string | null
         }
         Relationships: []
       }
