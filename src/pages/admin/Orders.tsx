@@ -39,6 +39,9 @@ export default function AdminOrders() {
   const { isAdmin, loading: authLoading } = useAuth();
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [approveConfirmId, setApproveConfirmId] = useState<string | null>(null);
+  const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -97,6 +100,63 @@ export default function AdminOrders() {
     },
     onError: () => {
       toast.error("Failed to update order");
+    },
+  });
+
+  const approveOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "processing" })
+        .eq("id", orderId);
+
+      if (error) throw error;
+      return orderId;
+    },
+    onSuccess: async (orderId) => {
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { orderId, type: 'order_approved' }
+        });
+        toast.success("Order approved and email sent to customer");
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        toast.warning("Order approved but email failed to send");
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setApproveConfirmId(null);
+    },
+    onError: () => {
+      toast.error("Failed to approve order");
+    },
+  });
+
+  const declineOrderMutation = useMutation({
+    mutationFn: async ({ orderId, reason }: { orderId: string; reason: string }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled", notes: reason })
+        .eq("id", orderId);
+
+      if (error) throw error;
+      return { orderId, reason };
+    },
+    onSuccess: async ({ orderId, reason }) => {
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { orderId, type: 'order_declined', declineReason: reason }
+        });
+        toast.success("Order declined and email sent to customer");
+      } catch (emailError) {
+        console.error('Failed to send decline email:', emailError);
+        toast.warning("Order declined but email failed to send");
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setDeclineConfirmId(null);
+      setDeclineReason("");
+    },
+    onError: () => {
+      toast.error("Failed to decline order");
     },
   });
 
@@ -180,12 +240,33 @@ export default function AdminOrders() {
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
                     <TableCell>{format(new Date(order.created_at), "MMM dd, yyyy")}</TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        View
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          View
+                        </Button>
+                        {order.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => setApproveConfirmId(order.id)}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setDeclineConfirmId(order.id)}
+                            >
+                              Decline
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -296,6 +377,86 @@ export default function AdminOrders() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog open={!!approveConfirmId} onOpenChange={(open) => !open && setApproveConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Are you sure you want to approve this order? The customer will receive a confirmation email.</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setApproveConfirmId(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => approveConfirmId && approveOrderMutation.mutate(approveConfirmId)}>
+                Approve & Send Email
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog open={!!approveConfirmId} onOpenChange={(open) => !open && setApproveConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Are you sure you want to approve this order? The customer will receive a confirmation email.</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setApproveConfirmId(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => approveConfirmId && approveOrderMutation.mutate(approveConfirmId)}>
+                Approve & Send Email
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Decline Confirmation Dialog */}
+      <Dialog open={!!declineConfirmId} onOpenChange={(open) => {
+        if (!open) {
+          setDeclineConfirmId(null);
+          setDeclineReason("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Please provide a reason for declining this order:</p>
+            <textarea
+              className="w-full p-2 border rounded-md min-h-[100px]"
+              placeholder="Enter decline reason..."
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {
+                setDeclineConfirmId(null);
+                setDeclineReason("");
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => declineConfirmId && declineOrderMutation.mutate({ 
+                  orderId: declineConfirmId, 
+                  reason: declineReason || "No reason provided" 
+                })}
+              >
+                Decline & Send Email
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
