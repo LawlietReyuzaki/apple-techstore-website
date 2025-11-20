@@ -125,6 +125,7 @@ export type Database = {
           delivery_address: string
           id: string
           notes: string | null
+          payment_id: string | null
           payment_method: string | null
           payment_status: string | null
           status: string | null
@@ -140,6 +141,7 @@ export type Database = {
           delivery_address: string
           id?: string
           notes?: string | null
+          payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
           status?: string | null
@@ -155,6 +157,7 @@ export type Database = {
           delivery_address?: string
           id?: string
           notes?: string | null
+          payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
           status?: string | null
@@ -162,7 +165,128 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "orders_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_settings: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          created_at: string | null
+          delivery_charges: number | null
+          easypaisa_number: string | null
+          easypaisa_qr_code_url: string | null
+          id: string
+          jazzcash_number: string | null
+          jazzcash_qr_code_url: string | null
+          service_fees: number | null
+          updated_at: string | null
+          wallet_transfer_charges: number | null
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          delivery_charges?: number | null
+          easypaisa_number?: string | null
+          easypaisa_qr_code_url?: string | null
+          id?: string
+          jazzcash_number?: string | null
+          jazzcash_qr_code_url?: string | null
+          service_fees?: number | null
+          updated_at?: string | null
+          wallet_transfer_charges?: number | null
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          delivery_charges?: number | null
+          easypaisa_number?: string | null
+          easypaisa_qr_code_url?: string | null
+          id?: string
+          jazzcash_number?: string | null
+          jazzcash_qr_code_url?: string | null
+          service_fees?: number | null
+          updated_at?: string | null
+          wallet_transfer_charges?: number | null
+        }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string | null
+          decline_reason: string | null
+          id: string
+          order_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_screenshot_url: string | null
+          refund_wallet_number: string | null
+          sender_number: string
+          status: Database["public"]["Enums"]["payment_status"]
+          transaction_id: string
+          updated_at: string | null
+          user_id: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string | null
+          decline_reason?: string | null
+          id?: string
+          order_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_screenshot_url?: string | null
+          refund_wallet_number?: string | null
+          sender_number: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string | null
+          decline_reason?: string | null
+          id?: string
+          order_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_screenshot_url?: string | null
+          refund_wallet_number?: string | null
+          sender_number?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -490,6 +614,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "technician" | "customer"
+      payment_method: "easypaisa" | "jazzcash" | "bank_transfer"
+      payment_status: "pending" | "approved" | "declined" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -618,6 +744,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "technician", "customer"],
+      payment_method: ["easypaisa", "jazzcash", "bank_transfer"],
+      payment_status: ["pending", "approved", "declined", "refunded"],
     },
   },
 } as const
