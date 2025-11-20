@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,9 @@ export default function AdminSettings() {
     delivery_charges: 0,
     wallet_transfer_charges: 0,
     service_fees: 0,
+    enable_easypaisa: true,
+    enable_jazzcash: true,
+    enable_bank_transfer: true,
   });
 
   useEffect(() => {
@@ -81,6 +85,9 @@ export default function AdminSettings() {
           delivery_charges: data.delivery_charges || 0,
           wallet_transfer_charges: data.wallet_transfer_charges || 0,
           service_fees: data.service_fees || 0,
+          enable_easypaisa: data.enable_easypaisa ?? true,
+          enable_jazzcash: data.enable_jazzcash ?? true,
+          enable_bank_transfer: data.enable_bank_transfer ?? true,
         });
       }
       
@@ -193,7 +200,7 @@ export default function AdminSettings() {
     ));
   };
 
-  const handlePaymentFormChange = (field: string, value: string | number) => {
+  const handlePaymentFormChange = (field: string, value: string | number | boolean) => {
     setPaymentFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -348,6 +355,17 @@ export default function AdminSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable_easypaisa" className="text-base font-semibold">Enable Easypaisa</Label>
+                    <p className="text-sm text-muted-foreground">Allow customers to pay via Easypaisa</p>
+                  </div>
+                  <Switch
+                    id="enable_easypaisa"
+                    checked={paymentFormData.enable_easypaisa}
+                    onCheckedChange={(checked) => handlePaymentFormChange("enable_easypaisa", checked)}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="easypaisa_number">Easypaisa Wallet Number</Label>
                   <Input
@@ -355,6 +373,7 @@ export default function AdminSettings() {
                     value={paymentFormData.easypaisa_number}
                     onChange={(e) => handlePaymentFormChange("easypaisa_number", e.target.value)}
                     placeholder="03XX-XXXXXXX"
+                    disabled={!paymentFormData.enable_easypaisa}
                   />
                 </div>
                 <div>
@@ -364,6 +383,7 @@ export default function AdminSettings() {
                     value={paymentFormData.easypaisa_qr_code_url}
                     onChange={(e) => handlePaymentFormChange("easypaisa_qr_code_url", e.target.value)}
                     placeholder="https://..."
+                    disabled={!paymentFormData.enable_easypaisa}
                   />
                 </div>
               </CardContent>
@@ -377,6 +397,17 @@ export default function AdminSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable_jazzcash" className="text-base font-semibold">Enable JazzCash</Label>
+                    <p className="text-sm text-muted-foreground">Allow customers to pay via JazzCash</p>
+                  </div>
+                  <Switch
+                    id="enable_jazzcash"
+                    checked={paymentFormData.enable_jazzcash}
+                    onCheckedChange={(checked) => handlePaymentFormChange("enable_jazzcash", checked)}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="jazzcash_number">JazzCash Wallet Number</Label>
                   <Input
@@ -384,6 +415,7 @@ export default function AdminSettings() {
                     value={paymentFormData.jazzcash_number}
                     onChange={(e) => handlePaymentFormChange("jazzcash_number", e.target.value)}
                     placeholder="03XX-XXXXXXX"
+                    disabled={!paymentFormData.enable_jazzcash}
                   />
                 </div>
                 <div>
@@ -393,6 +425,7 @@ export default function AdminSettings() {
                     value={paymentFormData.jazzcash_qr_code_url}
                     onChange={(e) => handlePaymentFormChange("jazzcash_qr_code_url", e.target.value)}
                     placeholder="https://..."
+                    disabled={!paymentFormData.enable_jazzcash}
                   />
                 </div>
               </CardContent>
@@ -406,6 +439,17 @@ export default function AdminSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable_bank_transfer" className="text-base font-semibold">Enable Bank Transfer</Label>
+                    <p className="text-sm text-muted-foreground">Allow customers to pay via bank transfer</p>
+                  </div>
+                  <Switch
+                    id="enable_bank_transfer"
+                    checked={paymentFormData.enable_bank_transfer}
+                    onCheckedChange={(checked) => handlePaymentFormChange("enable_bank_transfer", checked)}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="bank_name">Bank Name</Label>
                   <Input
@@ -413,6 +457,7 @@ export default function AdminSettings() {
                     value={paymentFormData.bank_name}
                     onChange={(e) => handlePaymentFormChange("bank_name", e.target.value)}
                     placeholder="Bank Name"
+                    disabled={!paymentFormData.enable_bank_transfer}
                   />
                 </div>
                 <div>
@@ -422,6 +467,7 @@ export default function AdminSettings() {
                     value={paymentFormData.bank_account_name}
                     onChange={(e) => handlePaymentFormChange("bank_account_name", e.target.value)}
                     placeholder="Account Title"
+                    disabled={!paymentFormData.enable_bank_transfer}
                   />
                 </div>
                 <div>
@@ -431,6 +477,7 @@ export default function AdminSettings() {
                     value={paymentFormData.bank_account_number}
                     onChange={(e) => handlePaymentFormChange("bank_account_number", e.target.value)}
                     placeholder="XXXX-XXXX-XXXX-XXXX"
+                    disabled={!paymentFormData.enable_bank_transfer}
                   />
                 </div>
                 <div>
@@ -440,6 +487,7 @@ export default function AdminSettings() {
                     value={paymentFormData.iban}
                     onChange={(e) => handlePaymentFormChange("iban", e.target.value)}
                     placeholder="PKXX XXXX XXXX XXXX XXXX XXXX XXXX"
+                    disabled={!paymentFormData.enable_bank_transfer}
                   />
                 </div>
               </CardContent>

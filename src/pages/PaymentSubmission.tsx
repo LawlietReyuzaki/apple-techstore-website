@@ -37,6 +37,17 @@ export default function PaymentSubmission() {
       
       setPaymentSettings(settings);
 
+      // Set default payment method based on what's enabled
+      if (settings) {
+        if (settings.enable_easypaisa) {
+          setPaymentMethod("easypaisa");
+        } else if (settings.enable_jazzcash) {
+          setPaymentMethod("jazzcash");
+        } else if (settings.enable_bank_transfer) {
+          setPaymentMethod("bank_transfer");
+        }
+      }
+
       // Fetch order details if orderId is provided
       if (orderId) {
         const { data: order } = await supabase
@@ -182,18 +193,24 @@ export default function PaymentSubmission() {
             </CardHeader>
             <CardContent>
               <RadioGroup value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <RadioGroupItem value="easypaisa" id="easypaisa" />
-                  <Label htmlFor="easypaisa" className="flex-1 cursor-pointer">Easypaisa</Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <RadioGroupItem value="jazzcash" id="jazzcash" />
-                  <Label htmlFor="jazzcash" className="flex-1 cursor-pointer">JazzCash</Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-                  <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">Bank Transfer</Label>
-                </div>
+                {paymentSettings?.enable_easypaisa && (
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <RadioGroupItem value="easypaisa" id="easypaisa" />
+                    <Label htmlFor="easypaisa" className="flex-1 cursor-pointer">Easypaisa</Label>
+                  </div>
+                )}
+                {paymentSettings?.enable_jazzcash && (
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <RadioGroupItem value="jazzcash" id="jazzcash" />
+                    <Label htmlFor="jazzcash" className="flex-1 cursor-pointer">JazzCash</Label>
+                  </div>
+                )}
+                {paymentSettings?.enable_bank_transfer && (
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <RadioGroupItem value="bank_transfer" id="bank_transfer" />
+                    <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">Bank Transfer</Label>
+                  </div>
+                )}
               </RadioGroup>
             </CardContent>
           </Card>
