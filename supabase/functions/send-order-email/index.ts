@@ -8,9 +8,10 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'repair' | 'repair_approved';
+  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined';
   visitDate?: string;
   customNote?: string;
+  declineReason?: string;
 }
 
 async function sendEmailViaSMTP(
@@ -108,7 +109,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { orderId, repairId, type, visitDate, customNote }: EmailRequest = await req.json();
+    const { orderId, repairId, type, visitDate, customNote, declineReason }: EmailRequest = await req.json();
 
     if (!orderId && !repairId) {
       return new Response(
@@ -355,6 +356,144 @@ ${storeEmail}
 If you have any questions or need to reschedule, please don't hesitate to contact us.
 
 Best regards,
+${storeName} Team
+
+---
+This is an automated message. Please do not reply to this email.
+`;
+
+      // Send to customer
+      await sendEmailViaSMTP(
+        repair.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'repair_declined' && repairId) {
+      // Fetch repair details for decline email
+      const { data: repair, error: repairError } = await supabase
+        .from('repairs')
+        .select('*')
+        .eq('id', repairId)
+        .single();
+
+      if (repairError || !repair) {
+        console.error('Error fetching repair:', repairError);
+        return new Response(
+          JSON.stringify({ error: 'Repair not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!repair.customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Customer email not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Mobile Parts & Repair Shop";
+      const storePhone = "+92 300 1234567";
+      const storeEmail = "support@mobilerepairshop.com";
+
+      subject = `Repair Request Declined - ${repair.tracking_code}`;
+      
+      emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h1 style="color: #dc2626; margin-bottom: 20px; font-size: 24px;">Repair Request Declined</h1>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+              Dear <strong>${repair.customer_name || 'Valued Customer'}</strong>,
+            </p>
+            
+            <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;">
+              We regret to inform you that we are unable to process your repair request at this time.
+            </p>
+            
+            <div style="background-color: #fef2f2; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
+              <h2 style="color: #991b1b; font-size: 18px; margin-bottom: 15px;">Request Details</h2>
+              <table style="width: 100%; font-size: 14px; color: #333;">
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Order Number:</strong></td>
+                  <td style="padding: 8px 0;">${repair.tracking_code}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Device:</strong></td>
+                  <td style="padding: 8px 0;">${repair.device_make} ${repair.device_model}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Issue:</strong></td>
+                  <td style="padding: 8px 0;">${repair.issue}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #fffbeb; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+              <h2 style="color: #92400e; font-size: 18px; margin-bottom: 10px;">Reason</h2>
+              <p style="font-size: 14px; color: #78350f; margin: 0; line-height: 1.6;">
+                ${declineReason || 'We are unable to process your repair request at this time.'}
+              </p>
+            </div>
+            
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+              <p style="font-size: 14px; color: #555; line-height: 1.8; margin: 0;">
+                We sincerely apologize for any inconvenience this may cause. If you have any questions or would like to discuss alternative solutions, please feel free to contact us.
+              </p>
+            </div>
+            
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+              <h2 style="color: #1e40af; font-size: 18px; margin-bottom: 15px;">Contact Us</h2>
+              <p style="font-size: 14px; color: #1e3a8a; line-height: 1.8; margin: 0;">
+                <strong>${storeName}</strong><br/>
+                📞 ${storePhone}<br/>
+                ✉️ ${storeEmail}
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #333; margin-bottom: 5px;">
+              Thank you for your understanding,<br/>
+              <strong>${storeName} Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px; padding: 15px;">
+            <p style="font-size: 12px; color: #9ca3af;">
+              This is an automated message. Please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `;
+
+      emailText = `Repair Request Declined
+
+Dear ${repair.customer_name || 'Valued Customer'},
+
+We regret to inform you that we are unable to process your repair request at this time.
+
+Request Details:
+━━━━━━━━━━━━━━━━━━━━━
+Order Number: ${repair.tracking_code}
+Device: ${repair.device_make} ${repair.device_model}
+Issue: ${repair.issue}
+
+Reason:
+━━━━━━━━━━━━━━━━━━━━━
+${declineReason || 'We are unable to process your repair request at this time.'}
+
+We sincerely apologize for any inconvenience this may cause. If you have any questions or would like to discuss alternative solutions, please feel free to contact us.
+
+Contact Us:
+━━━━━━━━━━━━━━━━━━━━━
+${storeName}
+${storePhone}
+${storeEmail}
+
+Thank you for your understanding,
 ${storeName} Team
 
 ---
