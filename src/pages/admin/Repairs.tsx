@@ -57,6 +57,7 @@ export default function AdminRepairs() {
   const [visitDate, setVisitDate] = useState("");
   const [visitTime, setVisitTime] = useState("");
   const [approveNote, setApproveNote] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAdmin && !isTechnician) {
@@ -226,14 +227,57 @@ export default function AdminRepairs() {
     setDeclineConfirmId(id);
   };
 
-  const confirmDecline = () => {
-    if (declineConfirmId) {
-      updateRepairMutation.mutate({
-        id: declineConfirmId,
-        updates: { status: "declined" },
+  const confirmDecline = async () => {
+    if (!declineConfirmId) return;
+
+    try {
+      // Update repair status
+      await supabase
+        .from("repairs")
+        .update({ 
+          status: "declined",
+          decline_reason: declineReason,
+        })
+        .eq("id", declineConfirmId);
+
+      // Find the repair to get customer email
+      const repair = repairs?.find(r => r.id === declineConfirmId);
+
+      // Send decline email
+      if (repair?.customer_email) {
+        const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+          body: { 
+            repairId: declineConfirmId,
+            type: "repair_declined",
+            declineReason: declineReason || "Unable to process your repair request at this time.",
+          },
+        });
+
+        if (emailError) {
+          console.error("Email error:", emailError);
+          toast.error("Repair declined but email failed to send");
+        } else {
+          toast.success("Repair declined and email sent to customer");
+        }
+      } else {
+        toast.success("Repair declined");
+      }
+
+      // Add note about decline
+      await supabase.from("repair_notes").insert({
+        repair_id: declineConfirmId,
+        user_id: user?.id,
+        note: `Repair declined. Reason: ${declineReason || 'No reason provided'}`,
+        type: "decline",
       });
+
+      queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });
       setDeclineConfirmId(null);
       setSelectedRepair(null);
+      setDeclineReason("");
+    } catch (error) {
+      console.error("Error declining repair:", error);
+      toast.error("Failed to decline repair");
     }
   };
 
@@ -518,18 +562,34 @@ export default function AdminRepairs() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!declineConfirmId} onOpenChange={(open) => !open && setDeclineConfirmId(null)}>
-        <AlertDialogContent>
+      <AlertDialog open={!!declineConfirmId} onOpenChange={(open) => {
+        if (!open) {
+          setDeclineConfirmId(null);
+          setDeclineReason("");
+        }
+      }}>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Decline Repair Request</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to decline this repair request? This action will mark the request as declined.
+              Provide a reason for declining this repair request. An email will be sent to the customer.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="decline-reason">Reason for Decline</Label>
+            <Textarea
+              id="decline-reason"
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              placeholder="E.g., Parts not available, device not repairable, etc."
+              rows={3}
+              className="mt-2"
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeclineReason("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Decline
+              Decline & Send Email
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
