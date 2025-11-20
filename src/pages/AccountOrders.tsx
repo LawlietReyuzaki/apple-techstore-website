@@ -103,22 +103,43 @@ export default function AccountOrders() {
   const getPaymentInstructions = (order: any) => {
     const payment = order.payments?.[0];
     
-    if (order.status === "pending") {
+    // Payment rejected - allow resubmission
+    if (order.status === "payment_rejected" || payment?.status === "declined") {
       return (
-        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ⏳ Awaiting admin approval before payment
-          </p>
+        <div className="mt-4 space-y-3">
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              ❌ Payment Declined – Please upload again
+            </p>
+            {payment?.decline_reason && (
+              <p className="text-xs text-red-600 dark:text-red-300 mt-1">
+                Reason: {payment.decline_reason}
+              </p>
+            )}
+          </div>
+          <Button 
+            onClick={() => navigate("/payment-submission", { 
+              state: { 
+                orderId: order.id,
+                orderData: order
+              }
+            })}
+            variant="destructive"
+            className="w-full"
+          >
+            Resubmit Payment
+          </Button>
         </div>
       );
     }
 
-    if (order.status === "approved" && !payment) {
+    // No payment submitted yet
+    if (!payment || order.payment_status === "unpaid") {
       return (
         <div className="mt-4 space-y-3">
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              ✅ Order approved! Please proceed with payment
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              💳 Please Pay & Upload Receipt
             </p>
           </div>
           <Button 
@@ -136,53 +157,29 @@ export default function AccountOrders() {
       );
     }
 
-    if (payment) {
-      if (payment.status === "pending") {
-        return (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              🔍 Payment Verification in Progress
-            </p>
-            <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-              Submitted via {payment.payment_method.toUpperCase()} on {format(new Date(payment.created_at), "MMM dd, yyyy")}
-            </p>
-          </div>
-        );
-      }
+    // Payment submitted, pending verification
+    if (payment.status === "pending" || order.status === "pending_verification") {
+      return (
+        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            🔍 Payment Verification in Progress
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+            Submitted via {payment.payment_method.toUpperCase()} on {format(new Date(payment.created_at), "MMM dd, yyyy")}
+          </p>
+        </div>
+      );
+    }
 
-      if (payment.status === "approved") {
-        return (
-          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              ✅ Payment Confirmed
-            </p>
-          </div>
-        );
-      }
-
-      if (payment.status === "declined") {
-        return (
-          <div className="mt-4 space-y-3">
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                ❌ Payment Declined – Please upload valid receipt
-              </p>
-            </div>
-            <Button 
-              onClick={() => navigate("/payment-submission", { 
-                state: { 
-                  orderId: order.id,
-                  orderData: order
-                }
-              })}
-              className="w-full"
-              variant="destructive"
-            >
-              Re-submit Payment Proof
-            </Button>
-          </div>
-        );
-      }
+    // Payment confirmed
+    if (payment.status === "approved" || order.payment_status === "paid") {
+      return (
+        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <p className="text-sm font-medium text-green-800 dark:text-green-200">
+            ✅ Payment Confirmed
+          </p>
+        </div>
+      );
     }
 
     return null;

@@ -57,27 +57,6 @@ export default function PaymentSubmission() {
     return null;
   }
 
-  // Check if order is approved
-  if (orderDetails && orderDetails.status !== "approved") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Payment Not Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              This order must be approved by admin before you can submit payment.
-            </p>
-            <Button onClick={() => navigate("/account/orders")} className="w-full">
-              Back to Orders
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -131,10 +110,13 @@ export default function PaymentSubmission() {
 
       if (paymentError) throw paymentError;
 
-      // Update order payment status
+      // Update order payment status and status
       await supabase
         .from("orders")
-        .update({ payment_status: "pending" })
+        .update({ 
+          payment_status: "pending",
+          status: "pending_verification"
+        })
         .eq("id", orderId);
 
       // Send payment pending email to admin
@@ -149,8 +131,8 @@ export default function PaymentSubmission() {
         console.error('Email error:', emailError);
       }
 
-      toast.success("Payment submitted successfully!", {
-        description: "Awaiting admin verification",
+      toast.success("Payment receipt submitted successfully!", {
+        description: "Your payment is being verified by admin",
       });
 
       navigate("/account/orders");
