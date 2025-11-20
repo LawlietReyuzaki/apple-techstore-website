@@ -65,6 +65,7 @@ export default function Checkout() {
           payment_method: formData.paymentMethod,
           notes: formData.notes,
           status: "pending",
+          payment_status: "unpaid",
         })
         .select()
         .single();
@@ -90,12 +91,17 @@ export default function Checkout() {
       // Clear cart
       clearCart();
 
-      toast.success("Order placed successfully!", {
-        description: `Order #${order.id.slice(0, 8)}`,
+      toast.success("Order created!", {
+        description: "Redirecting to payment...",
       });
 
-      // Navigate to orders page
-      navigate("/account/orders");
+      // Navigate to payment submission page
+      navigate("/payment-submission", {
+        state: {
+          orderId: order.id,
+          orderData: order,
+        },
+      });
     } catch (error: any) {
       console.error("Order creation error:", error);
       toast.error("Failed to place order", {

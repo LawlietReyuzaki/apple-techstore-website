@@ -12,6 +12,7 @@ export default function AdminLayout() {
     { path: "/admin/repairs", label: "Repairs", icon: Wrench },
     { path: "/admin/products", label: "Products", icon: Package },
     { path: "/admin/orders", label: "Orders", icon: ShoppingBag },
+    { path: "/admin/payments", label: "Payments", icon: Package },
     { path: "/admin/technicians", label: "Technicians", icon: Users },
     { path: "/admin/settings", label: "Settings", icon: Settings },
   ];

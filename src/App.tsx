@@ -22,8 +22,10 @@ import Shop from "./pages/Shop";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import PaymentSubmission from "./pages/PaymentSubmission";
 import AccountOrders from "./pages/AccountOrders";
 import Wishlist from "./pages/Wishlist";
+import AdminPayments from "./pages/admin/Payments";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const App = () => (
           <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-submission" element={<PaymentSubmission />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/book-repair" element={<BookRepair />} />
           <Route path="/track-repair" element={<TrackRepair />} />
@@ -54,6 +57,7 @@ const App = () => (
             <Route path="repairs" element={<AdminRepairs />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="payments" element={<AdminPayments />} />
             <Route path="technicians" element={<AdminTechnicians />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
