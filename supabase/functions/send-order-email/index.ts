@@ -8,7 +8,7 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update';
+  type: 'order' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update' | 'payment_pending' | 'payment_approved' | 'payment_declined' | 'payment_refunded';
   visitDate?: string;
   customNote?: string;
   declineReason?: string;
@@ -877,6 +877,365 @@ ${storeName} Team
 This is an automated email. Please do not reply.`;
 
       // Send to customer
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'payment_pending' && orderId) {
+      // Payment submission notification
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Dilbar Mobiles";
+      subject = "Payment Submitted - Awaiting Verification";
+
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #f59e0b; margin-bottom: 20px;">Payment Submitted ⏳</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>Thank you for submitting your payment proof for order <strong>#${orderId.slice(0, 8)}</strong>.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <h3 style="margin-top: 0; color: #f59e0b;">Payment Status: Pending Verification</h3>
+                <p style="margin: 10px 0 0 0;">Our admin team is reviewing your payment details. We will notify you once verification is complete.</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                <p><strong>Total Amount:</strong> PKR ${order.total_amount.toLocaleString()}</p>
+              </div>
+              
+              <p>Payment verification typically takes 1-24 hours. You will receive an email once your payment is approved.</p>
+              
+              <p style="margin-top: 30px;">Thank you for choosing <strong>${storeName}</strong>!</p>
+              
+              <p style="margin-top: 20px;">Warm regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      emailText = `Payment Submitted - Awaiting Verification
+
+Dear ${order.customer_name},
+
+Thank you for submitting your payment proof for order #${orderId.slice(0, 8)}.
+
+Payment Status: Pending Verification
+Our admin team is reviewing your payment details. We will notify you once verification is complete.
+
+Order Number: #${orderId.slice(0, 8)}
+Total Amount: PKR ${order.total_amount.toLocaleString()}
+
+Payment verification typically takes 1-24 hours. You will receive an email once your payment is approved.
+
+Thank you for choosing ${storeName}!
+
+Warm regards,
+${storeName} Team
+
+---
+This is an automated email. Please do not reply.`;
+
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'payment_approved' && orderId) {
+      // Payment approved notification
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Dilbar Mobiles";
+      subject = "Payment Approved - Order Confirmed";
+
+      const itemsList = order.order_items?.map((item: any) => 
+        `<li style="margin: 8px 0;">${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal.toLocaleString()}</li>`
+      ).join('') || '';
+
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #10b981; margin-bottom: 20px;">Payment Approved ✅</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>Great news! Your payment for order <strong>#${orderId.slice(0, 8)}</strong> has been verified and approved.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <h3 style="margin-top: 0; color: #10b981;">Payment Status: Approved</h3>
+                <p style="margin: 10px 0 0 0;">Your order is now confirmed and will be processed shortly.</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Order Summary</h3>
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                <ul style="padding-left: 20px;">
+                  ${itemsList}
+                </ul>
+                <p style="margin-top: 15px;"><strong>Total Amount Paid:</strong> PKR ${order.total_amount.toLocaleString()}</p>
+              </div>
+              
+              <p>We will keep you updated on your order status. You can expect delivery within 3-5 business days.</p>
+              
+              <p style="margin-top: 30px;">Thank you for choosing <strong>${storeName}</strong>!</p>
+              
+              <p style="margin-top: 20px;">Warm regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const itemsListText = order.order_items?.map((item: any) => 
+        `${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal.toLocaleString()}`
+      ).join('\n') || '';
+
+      emailText = `Payment Approved - Order Confirmed
+
+Dear ${order.customer_name},
+
+Great news! Your payment for order #${orderId.slice(0, 8)} has been verified and approved.
+
+Payment Status: Approved
+Your order is now confirmed and will be processed shortly.
+
+Order Summary:
+Order Number: #${orderId.slice(0, 8)}
+
+Products:
+${itemsListText}
+
+Total Amount Paid: PKR ${order.total_amount.toLocaleString()}
+
+We will keep you updated on your order status. You can expect delivery within 3-5 business days.
+
+Thank you for choosing ${storeName}!
+
+Warm regards,
+${storeName} Team
+
+---
+This is an automated email. Please do not reply.`;
+
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'payment_declined' && orderId) {
+      // Payment declined notification
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Dilbar Mobiles";
+      subject = "Payment Declined - Action Required";
+
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #ef4444; margin-bottom: 20px;">Payment Declined ❌</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>We regret to inform you that your payment for order <strong>#${orderId.slice(0, 8)}</strong> could not be verified.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <h3 style="margin-top: 0; color: #ef4444;">Payment Status: Declined</h3>
+                ${declineReason ? `<p style="margin: 10px 0 0 0;"><strong>Reason:</strong> ${declineReason}</p>` : ''}
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                <p><strong>Amount:</strong> PKR ${order.total_amount.toLocaleString()}</p>
+              </div>
+              
+              <p>Please verify your payment details and submit again. If you believe this is an error, please contact our support team.</p>
+              
+              <p style="margin-top: 30px;">We apologize for any inconvenience.</p>
+              
+              <p style="margin-top: 20px;">Regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      emailText = `Payment Declined - Action Required
+
+Dear ${order.customer_name},
+
+We regret to inform you that your payment for order #${orderId.slice(0, 8)} could not be verified.
+
+Payment Status: Declined
+${declineReason ? `Reason: ${declineReason}` : ''}
+
+Order Number: #${orderId.slice(0, 8)}
+Amount: PKR ${order.total_amount.toLocaleString()}
+
+Please verify your payment details and submit again. If you believe this is an error, please contact our support team.
+
+We apologize for any inconvenience.
+
+Regards,
+${storeName} Team
+
+---
+This is an automated email. Please do not reply.`;
+
+      await sendEmailViaSMTP(
+        order.customer_email,
+        senderEmail,
+        subject,
+        emailText,
+        emailHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+    } else if (type === 'payment_refunded' && orderId) {
+      // Payment refunded notification
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Dilbar Mobiles";
+      subject = "Payment Refunded";
+
+      emailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #f97316; margin-bottom: 20px;">Payment Refunded 🔄</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>Your payment for order <strong>#${orderId.slice(0, 8)}</strong> has been refunded.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f97316;">
+                <h3 style="margin-top: 0; color: #f97316;">Refund Processed</h3>
+                <p style="margin: 10px 0 0 0;">The refund amount will be credited to your account within 3-7 business days.</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Order Number:</strong> #${orderId.slice(0, 8)}</p>
+                <p><strong>Refund Amount:</strong> PKR ${order.total_amount.toLocaleString()}</p>
+                ${customNote ? `<p><strong>Note:</strong> ${customNote}</p>` : ''}
+              </div>
+              
+              <p>If you have any questions about this refund, please contact our support team.</p>
+              
+              <p style="margin-top: 30px;">Thank you for your understanding.</p>
+              
+              <p style="margin-top: 20px;">Regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      emailText = `Payment Refunded
+
+Dear ${order.customer_name},
+
+Your payment for order #${orderId.slice(0, 8)} has been refunded.
+
+Refund Processed
+The refund amount will be credited to your account within 3-7 business days.
+
+Order Number: #${orderId.slice(0, 8)}
+Refund Amount: PKR ${order.total_amount.toLocaleString()}
+${customNote ? `Note: ${customNote}` : ''}
+
+If you have any questions about this refund, please contact our support team.
+
+Thank you for your understanding.
+
+Regards,
+${storeName} Team
+
+---
+This is an automated email. Please do not reply.`;
+
       await sendEmailViaSMTP(
         order.customer_email,
         senderEmail,
