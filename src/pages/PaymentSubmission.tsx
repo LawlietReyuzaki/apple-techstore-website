@@ -207,24 +207,44 @@ export default function PaymentSubmission() {
                 <div className="space-y-3 p-4 bg-muted rounded-lg">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Bank Name:</span>
-                    <span>{currentWallet.name || "Not configured"}</span>
+                    <span>{paymentSettings?.bank_name || "Not configured"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Account Title:</span>
+                    <span>{paymentSettings?.bank_account_name || "Not configured"}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Account Number:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono">{currentWallet.number || "Not configured"}</span>
-                      {currentWallet.number && (
+                      <span className="font-mono">{paymentSettings?.bank_account_number || "Not configured"}</span>
+                      {paymentSettings?.bank_account_number && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCopy(currentWallet.number)}
+                          onClick={() => handleCopy(paymentSettings.bank_account_number)}
                         >
                           {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                         </Button>
                       )}
                     </div>
                   </div>
+                  {paymentSettings?.iban && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">IBAN:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs">{paymentSettings.iban}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy(paymentSettings.iban)}
+                        >
+                          {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -254,6 +274,24 @@ export default function PaymentSubmission() {
               )}
             </CardContent>
           </Card>
+
+          {paymentSettings?.additional_instructions && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1">Payment Instructions</h3>
+                    <p className="text-sm text-muted-foreground">{paymentSettings.additional_instructions}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

@@ -22,6 +22,8 @@ export default function PaymentSettings() {
     bank_account_name: "",
     bank_account_number: "",
     bank_name: "",
+    iban: "",
+    additional_instructions: "",
     delivery_charges: 0,
     wallet_transfer_charges: 0,
     service_fees: 0,
@@ -48,6 +50,8 @@ export default function PaymentSettings() {
           bank_account_name: data.bank_account_name || "",
           bank_account_number: data.bank_account_number || "",
           bank_name: data.bank_name || "",
+          iban: data.iban || "",
+          additional_instructions: data.additional_instructions || "",
           delivery_charges: data.delivery_charges || 0,
           wallet_transfer_charges: data.wallet_transfer_charges || 0,
           service_fees: data.service_fees || 0,
@@ -210,6 +214,35 @@ export default function PaymentSettings() {
                 value={formData.bank_account_number}
                 onChange={(e) => handleChange("bank_account_number", e.target.value)}
                 placeholder="XXXX-XXXX-XXXX-XXXX"
+              />
+            </div>
+            <div>
+              <Label htmlFor="iban">IBAN (Optional)</Label>
+              <Input
+                id="iban"
+                value={formData.iban}
+                onChange={(e) => handleChange("iban", e.target.value)}
+                placeholder="PKXX XXXX XXXX XXXX XXXX XXXX XXXX"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Additional Instructions</CardTitle>
+            <CardDescription>
+              Optional instructions displayed to customers during payment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="additional_instructions">Instructions (Optional)</Label>
+              <Input
+                id="additional_instructions"
+                value={formData.additional_instructions}
+                onChange={(e) => handleChange("additional_instructions", e.target.value)}
+                placeholder="e.g., Please include your order ID in payment description"
               />
             </div>
           </CardContent>
