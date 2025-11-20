@@ -177,6 +177,7 @@ export type Database = {
       }
       payment_settings: {
         Row: {
+          additional_instructions: string | null
           bank_account_name: string | null
           bank_account_number: string | null
           bank_name: string | null
@@ -184,6 +185,7 @@ export type Database = {
           delivery_charges: number | null
           easypaisa_number: string | null
           easypaisa_qr_code_url: string | null
+          iban: string | null
           id: string
           jazzcash_number: string | null
           jazzcash_qr_code_url: string | null
@@ -192,6 +194,7 @@ export type Database = {
           wallet_transfer_charges: number | null
         }
         Insert: {
+          additional_instructions?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
           bank_name?: string | null
@@ -199,6 +202,7 @@ export type Database = {
           delivery_charges?: number | null
           easypaisa_number?: string | null
           easypaisa_qr_code_url?: string | null
+          iban?: string | null
           id?: string
           jazzcash_number?: string | null
           jazzcash_qr_code_url?: string | null
@@ -207,6 +211,7 @@ export type Database = {
           wallet_transfer_charges?: number | null
         }
         Update: {
+          additional_instructions?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
           bank_name?: string | null
@@ -214,6 +219,7 @@ export type Database = {
           delivery_charges?: number | null
           easypaisa_number?: string | null
           easypaisa_qr_code_url?: string | null
+          iban?: string | null
           id?: string
           jazzcash_number?: string | null
           jazzcash_qr_code_url?: string | null
