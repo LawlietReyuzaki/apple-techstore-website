@@ -123,6 +123,8 @@ Deno.serve(async (req) => {
     let emailHtml = '';
     let emailText = '';
     let subject = '';
+    let recipientEmail = '';
+    const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL')!;
 
     if (type === 'order' && orderId) {
       // Fetch order details with items
@@ -140,66 +142,237 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Build order email content
+      // Set recipient to customer email
+      recipientEmail = order.customer_email || senderEmail;
+
+      const orderNumber = order.id.slice(0, 8).toUpperCase();
+      const expectedDelivery = new Date();
+      expectedDelivery.setDate(expectedDelivery.getDate() + 5); // 5 business days
+      
+      // Build order items HTML table
+      const htmlItemsTable = order.order_items
+        .map((item: any) => 
+          `<tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.product_name}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">Rs ${item.product_price.toFixed(2)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">Rs ${item.subtotal.toFixed(2)}</td>
+          </tr>`
+        )
+        .join('');
+
       const itemsText = order.order_items
         .map((item: any) => 
           `${item.product_name} (x${item.quantity}) — Rs ${item.product_price.toFixed(2)}`
         )
         .join('\n');
 
-      const htmlItems = order.order_items
-        .map((item: any) => 
-          `<li>${item.product_name} — qty: ${item.quantity}, price: Rs ${item.product_price.toFixed(2)}</li>`
-        )
-        .join('');
-
-      subject = `New Order: ${order.id.slice(0, 8)} — ${order.customer_name}`;
+      subject = `Order Confirmation - #${orderNumber}`;
       
       emailHtml = `
-        <h2>New Order Received</h2>
-        <p><strong>Order ID:</strong> ${order.id}<br/>
-        <strong>Created:</strong> ${new Date(order.created_at).toLocaleString()}<br/>
-        <strong>Total:</strong> Rs ${order.total_amount.toFixed(2)}</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Order Confirmed!</h1>
+                      <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">Thank you for your order</p>
+                    </td>
+                  </tr>
 
-        <h3>Customer</h3>
-        <ul>
-          <li><strong>Name:</strong> ${order.customer_name}</li>
-          <li><strong>Email:</strong> ${order.customer_email || 'N/A'}</li>
-          <li><strong>Phone:</strong> ${order.customer_phone}</li>
-          <li><strong>Address:</strong> ${order.delivery_address}</li>
-        </ul>
+                  <!-- Greeting -->
+                  <tr>
+                    <td style="padding: 30px 30px 20px 30px;">
+                      <p style="margin: 0; font-size: 16px; color: #333; line-height: 1.6;">
+                        Hi <strong>${order.customer_name}</strong>,
+                      </p>
+                      <p style="margin: 15px 0 0 0; font-size: 16px; color: #666; line-height: 1.6;">
+                        We've received your order and are getting it ready. Your order details are below.
+                      </p>
+                    </td>
+                  </tr>
 
-        <h3>Items</h3>
-        <ul>
-          ${htmlItems}
-        </ul>
+                  <!-- Order Info Box -->
+                  <tr>
+                    <td style="padding: 0 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+                        <tr>
+                          <td style="padding: 20px;">
+                            <table width="100%">
+                              <tr>
+                                <td style="padding: 8px 0;">
+                                  <span style="color: #666; font-size: 14px;">Order Number:</span><br>
+                                  <span style="color: #333; font-size: 18px; font-weight: 600;">#${orderNumber}</span>
+                                </td>
+                                <td style="padding: 8px 0; text-align: right;">
+                                  <span style="color: #666; font-size: 14px;">Order Date:</span><br>
+                                  <span style="color: #333; font-size: 16px; font-weight: 500;">${new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
 
-        <h3>Payment</h3>
-        <p><strong>Method:</strong> ${order.payment_method || 'COD'}<br/>
-        <strong>Status:</strong> ${order.payment_status || 'Unpaid'}</p>
+                  <!-- Divider -->
+                  <tr>
+                    <td style="padding: 25px 30px;">
+                      <div style="border-top: 2px solid #e9ecef;"></div>
+                    </td>
+                  </tr>
 
-        ${order.notes ? `<h3>Notes</h3><p>${order.notes}</p>` : ''}
+                  <!-- Order Details Heading -->
+                  <tr>
+                    <td style="padding: 0 30px 15px 30px;">
+                      <h2 style="margin: 0; font-size: 20px; color: #333; font-weight: 600;">Order Details</h2>
+                    </td>
+                  </tr>
+
+                  <!-- Order Items Table -->
+                  <tr>
+                    <td style="padding: 0 30px 20px 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e9ecef; border-radius: 6px; overflow: hidden;">
+                        <thead>
+                          <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left; font-size: 14px; color: #666; font-weight: 600; border-bottom: 2px solid #e9ecef;">Product</th>
+                            <th style="padding: 12px; text-align: center; font-size: 14px; color: #666; font-weight: 600; border-bottom: 2px solid #e9ecef;">Qty</th>
+                            <th style="padding: 12px; text-align: right; font-size: 14px; color: #666; font-weight: 600; border-bottom: 2px solid #e9ecef;">Price</th>
+                            <th style="padding: 12px; text-align: right; font-size: 14px; color: #666; font-weight: 600; border-bottom: 2px solid #e9ecef;">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${htmlItemsTable}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Order Total -->
+                  <tr>
+                    <td style="padding: 0 30px 30px 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding: 8px 0; text-align: right; font-size: 18px; color: #333;">
+                            <strong>Total Amount:</strong>
+                          </td>
+                          <td style="padding: 8px 0 8px 20px; text-align: right; font-size: 22px; color: #667eea; font-weight: 700;">
+                            Rs ${order.total_amount.toFixed(2)}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Divider -->
+                  <tr>
+                    <td style="padding: 0 30px 25px 30px;">
+                      <div style="border-top: 2px solid #e9ecef;"></div>
+                    </td>
+                  </tr>
+
+                  <!-- Delivery Info -->
+                  <tr>
+                    <td style="padding: 0 30px 30px 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; padding: 20px;">
+                        <tr>
+                          <td>
+                            <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #333; font-weight: 600;">📦 Expected Delivery</h3>
+                            <p style="margin: 0; font-size: 16px; color: #667eea; font-weight: 600;">
+                              ${expectedDelivery.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                              (Estimated 3-5 business days)
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-top: 20px;">
+                            <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333; font-weight: 600;">📍 Delivery Address</h3>
+                            <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.6;">
+                              ${order.delivery_address}
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-top: 20px;">
+                            <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333; font-weight: 600;">💳 Payment Method</h3>
+                            <p style="margin: 0; font-size: 14px; color: #666;">
+                              ${order.payment_method === 'cod' ? 'Cash on Delivery (COD)' : order.payment_method}
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Thank You Message -->
+                  <tr>
+                    <td style="padding: 0 30px 30px 30px; text-align: center;">
+                      <p style="margin: 0; font-size: 16px; color: #333; line-height: 1.6;">
+                        Thank you for shopping with us! 🎉
+                      </p>
+                      <p style="margin: 10px 0 0 0; font-size: 14px; color: #666; line-height: 1.6;">
+                        If you have any questions, feel free to contact us at ${senderEmail}
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                      <p style="margin: 0; font-size: 12px; color: #999;">
+                        © ${new Date().getFullYear()} Dilbar Mobiles. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `;
 
-      emailText = `New Order Received
-Order ID: ${order.id}
-Created: ${new Date(order.created_at).toLocaleString()}
-Total: Rs ${order.total_amount.toFixed(2)}
+      emailText = `ORDER CONFIRMATION
 
-Customer:
-Name: ${order.customer_name}
-Email: ${order.customer_email || 'N/A'}
-Phone: ${order.customer_phone}
-Address: ${order.delivery_address}
+Hi ${order.customer_name},
 
-Items:
+We've received your order and are getting it ready. Your order details are below.
+
+ORDER NUMBER: #${orderNumber}
+ORDER DATE: ${new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+ORDER DETAILS:
 ${itemsText}
 
-Payment:
-Method: ${order.payment_method || 'COD'}
-Status: ${order.payment_status || 'Unpaid'}
+TOTAL AMOUNT: Rs ${order.total_amount.toFixed(2)}
 
-${order.notes ? `Notes:\n${order.notes}` : ''}
+EXPECTED DELIVERY: ${expectedDelivery.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+(Estimated 3-5 business days)
+
+DELIVERY ADDRESS:
+${order.delivery_address}
+
+PAYMENT METHOD: ${order.payment_method === 'cod' ? 'Cash on Delivery (COD)' : order.payment_method}
+
+Thank you for shopping with us!
+
+If you have any questions, feel free to contact us at ${senderEmail}
+
+© ${new Date().getFullYear()} Dilbar Mobiles. All rights reserved.
 `;
     } else if (type === 'repair' && repairId) {
       // Fetch repair details
@@ -216,6 +389,9 @@ ${order.notes ? `Notes:\n${order.notes}` : ''}
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Set recipient to admin email for repairs
+      recipientEmail = senderEmail;
 
       subject = `New Repair Request: ${repair.tracking_code} — ${repair.device_make} ${repair.device_model}`;
       
@@ -251,8 +427,7 @@ ${repair.estimated_cost ? `Estimated Cost: Rs ${repair.estimated_cost}` : ''}
 `;
     }
 
-    // Get Gmail credentials from environment
-    const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL')!;
+    // Get Gmail app password from environment
     const appPassword = Deno.env.get('GMAIL_APP_PASSWORD')!;
 
     // Remove spaces from app password
@@ -260,7 +435,7 @@ ${repair.estimated_cost ? `Estimated Cost: Rs ${repair.estimated_cost}` : ''}
 
     // Send email via SMTP
     await sendEmailViaSMTP(
-      senderEmail, // to (sending to self for notifications)
+      recipientEmail, // to
       senderEmail, // from
       subject,
       emailText,
