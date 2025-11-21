@@ -64,7 +64,7 @@ export const PromoSection = () => {
                 <p className="text-white/90 mb-4">
                   Can't find what you need? Request specific parts & accessories for any phone model.
                 </p>
-                <Link to="/shop">
+                <Link to="/shop?category=spare-parts">
                   <Button variant="secondary" className="group/btn">
                     Request Parts
                     <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
