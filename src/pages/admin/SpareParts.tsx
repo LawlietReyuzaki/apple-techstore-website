@@ -10,12 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminSpareParts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<any>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [formData, setFormData] = useState({
     phone_model_id: "",
     part_category_id: "",
@@ -76,9 +79,71 @@ export default function AdminSpareParts() {
     },
   });
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setImageFiles(prev => [...prev, ...files]);
+      
+      // Create previews
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async () => {
+    if (imageFiles.length === 0) return formData.images.filter(img => img);
+    
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [...formData.images.filter(img => img)];
+    
+    try {
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('spare-parts-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('spare-parts-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+      
+      setUploadingImages(false);
+      return uploadedUrls;
+    } catch (error) {
+      setUploadingImages(false);
+      toast({ 
+        title: "Image upload failed", 
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive" 
+      });
+      throw error;
+    }
+  };
+
   const createPartMutation = useMutation({
     mutationFn: async (data: any) => {
+      const uploadedImages = await uploadImages();
       const { colors, ...partData } = data;
+      partData.images = uploadedImages;
+      
       const { data: part, error } = await supabase
         .from("spare_parts")
         .insert([partData])
@@ -109,7 +174,10 @@ export default function AdminSpareParts() {
 
   const updatePartMutation = useMutation({
     mutationFn: async ({ id, data }: any) => {
+      const uploadedImages = await uploadImages();
       const { colors, ...partData } = data;
+      partData.images = uploadedImages;
+      
       await supabase.from("spare_parts").update(partData).eq("id", id);
       
       await supabase.from("spare_parts_colors").delete().eq("spare_part_id", id);
@@ -157,6 +225,8 @@ export default function AdminSpareParts() {
       colors: [{ color_name: "", color_code: "" }],
     });
     setEditingPart(null);
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   const handleSubmit = () => {
@@ -198,6 +268,8 @@ export default function AdminSpareParts() {
         ? part.spare_parts_colors 
         : [{ color_name: "", color_code: "" }],
     });
+    setImageFiles([]);
+    setImagePreviews([]);
     setIsDialogOpen(true);
   };
 
@@ -291,28 +363,86 @@ export default function AdminSpareParts() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Image URLs</label>
-                  {formData.images.map((img, idx) => (
+                  <label className="text-sm font-medium mb-2 block">Product Images</label>
+                  
+                  {/* Existing images */}
+                  {formData.images.filter(img => img).length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">Existing Images:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {formData.images.filter(img => img).map((img, idx) => (
+                          <div key={idx} className="relative group">
+                            <img 
+                              src={img} 
+                              alt={`Product ${idx + 1}`} 
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                              onClick={() => {
+                                const newImages = formData.images.filter((_, i) => i !== idx);
+                                setFormData({...formData, images: newImages.length > 0 ? newImages : [""]});
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* New image previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">New Images to Upload:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {imagePreviews.map((preview, idx) => (
+                          <div key={idx} className="relative group">
+                            <img 
+                              src={preview} 
+                              alt={`New ${idx + 1}`} 
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                              onClick={() => removeImage(idx)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* File upload input */}
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
                     <Input
-                      key={idx}
-                      placeholder="Image URL"
-                      value={img}
-                      onChange={(e) => {
-                        const newImages = [...formData.images];
-                        newImages[idx] = e.target.value;
-                        setFormData({...formData, images: newImages});
-                      }}
-                      className="mb-2"
+                      id="image-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
                     />
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFormData({...formData, images: [...formData.images, ""]})}
-                  >
-                    Add Image
-                  </Button>
+                    <label 
+                      htmlFor="image-upload" 
+                      className="cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Click to upload images</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG, WEBP (max 3 images)</p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 <div>
@@ -366,8 +496,8 @@ export default function AdminSpareParts() {
                   </div>
                 </div>
 
-                <Button onClick={handleSubmit} className="w-full">
-                  {editingPart ? "Update" : "Create"} Spare Part
+                <Button onClick={handleSubmit} className="w-full" disabled={uploadingImages}>
+                  {uploadingImages ? "Uploading Images..." : editingPart ? "Update" : "Create"} Spare Part
                 </Button>
               </div>
             </DialogContent>
