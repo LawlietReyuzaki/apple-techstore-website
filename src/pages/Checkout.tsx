@@ -112,12 +112,12 @@ export default function Checkout() {
 
       // Create order items
       const orderItems = items.map(item => {
-        const isSpare = item.product.type === 'spare_part';
+        const isSpare = item.product.type === "spare_part" || "phone_model_id" in item.product;
         return {
           order_id: order.id,
           product_id: isSpare ? null : item.product.id,
           spare_part_id: isSpare ? item.product.id : null,
-          item_type: isSpare ? 'spare_part' : 'product',
+          item_type: isSpare ? "spare_part" : "product",
           product_name: item.product.name,
           product_price: item.product.price,
           quantity: item.quantity,
