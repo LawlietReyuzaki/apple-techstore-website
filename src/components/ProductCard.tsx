@@ -46,6 +46,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       price: product.price,
       wholesale_price: product.wholesale_price,
       images: product.images,
+      type: 'product',
     });
     
     toast.success("Added to cart", {

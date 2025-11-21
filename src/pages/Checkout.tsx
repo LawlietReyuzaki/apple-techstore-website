@@ -73,14 +73,19 @@ export default function Checkout() {
       if (orderError) throw orderError;
 
       // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_price: item.product.price,
-        quantity: item.quantity,
-        subtotal: item.product.price * item.quantity,
-      }));
+      const orderItems = items.map(item => {
+        const isSpare = item.product.type === 'spare_part';
+        return {
+          order_id: order.id,
+          product_id: isSpare ? null : item.product.id,
+          spare_part_id: isSpare ? item.product.id : null,
+          item_type: isSpare ? 'spare_part' : 'product',
+          product_name: item.product.name,
+          product_price: item.product.price,
+          quantity: item.quantity,
+          subtotal: item.product.price * item.quantity,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from("order_items")

@@ -57,6 +57,7 @@ export default function ProductDetailPage() {
       price: product.price,
       wholesale_price: product.wholesale_price,
       images: product.images,
+      type: 'product',
     }, quantity);
     
     toast.success("Added to cart", {
