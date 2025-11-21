@@ -93,6 +93,23 @@ export default function PaymentSubmission() {
         toast.error("Please fill all required fields");
         return;
       }
+
+      // Validate sender number length (must be 11 digits for Pakistani numbers)
+      const cleanedNumber = senderNumber.replace(/\D/g, '');
+      if (cleanedNumber.length !== 11) {
+        toast.error("Invalid phone number", {
+          description: "Phone number must be exactly 11 digits (e.g., 03001234567)"
+        });
+        return;
+      }
+
+      // Require payment screenshot for non-COD payments
+      if (!screenshot) {
+        toast.error("Payment receipt required", {
+          description: "Please upload a screenshot of your payment receipt"
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -376,19 +393,27 @@ export default function PaymentSubmission() {
                     id="senderNumber"
                     value={senderNumber}
                     onChange={(e) => setSenderNumber(e.target.value)}
-                    placeholder="03XX-XXXXXXX or Account number"
+                    placeholder="03001234567 (11 digits)"
+                    maxLength={11}
                     required
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter 11-digit phone number (e.g., 03001234567)
+                  </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="screenshot">Payment Screenshot (Optional)</Label>
+                  <Label htmlFor="screenshot">Payment Screenshot *</Label>
                   <Input
                     id="screenshot"
                     type="file"
                     accept="image/*"
                     onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    required
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload a clear screenshot of your payment receipt
+                  </p>
                 </div>
               </CardContent>
             </Card>
