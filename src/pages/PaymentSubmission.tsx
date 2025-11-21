@@ -171,10 +171,11 @@ export default function PaymentSubmission() {
 
       if (paymentError) throw paymentError;
 
-      // Update order payment status and status
+      // Update order payment status, payment method, and status
       await supabase
         .from("orders")
         .update({ 
+          payment_method: paymentMethod,
           payment_status: "pending",
           status: "pending_verification"
         })

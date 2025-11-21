@@ -194,13 +194,25 @@ export default function AccountOrders() {
     // Payment submitted, pending verification
     if (payment.status === "pending" || order.status === "pending_verification") {
       return (
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            🔍 Payment Verification in Progress
-          </p>
-          <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-            Submitted via {payment.payment_method.toUpperCase()} on {format(new Date(payment.created_at), "MMM dd, yyyy")}
-          </p>
+        <div className="mt-4 space-y-3">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              🔍 Payment Verification in Progress
+            </p>
+            <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+              Submitted via {payment.payment_method.toUpperCase()} on {format(new Date(payment.created_at), "MMM dd, yyyy")}
+            </p>
+          </div>
+          {payment.payment_screenshot_url && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Your Submitted Receipt</p>
+              <img 
+                src={payment.payment_screenshot_url} 
+                alt="Payment Receipt" 
+                className="rounded-lg border max-h-48 object-contain"
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -208,10 +220,22 @@ export default function AccountOrders() {
     // Payment confirmed
     if (payment.status === "approved" || order.payment_status === "paid") {
       return (
-        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-          <p className="text-sm font-medium text-green-800 dark:text-green-200">
-            ✅ Payment Confirmed
-          </p>
+        <div className="mt-4 space-y-3">
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+              ✅ Payment Confirmed
+            </p>
+          </div>
+          {payment.payment_screenshot_url && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Your Payment Receipt</p>
+              <img 
+                src={payment.payment_screenshot_url} 
+                alt="Payment Receipt" 
+                className="rounded-lg border max-h-48 object-contain"
+              />
+            </div>
+          )}
         </div>
       );
     }
