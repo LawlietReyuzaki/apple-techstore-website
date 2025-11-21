@@ -28,8 +28,6 @@ import Checkout from "./pages/Checkout";
 import PaymentSubmission from "./pages/PaymentSubmission";
 import AccountOrders from "./pages/AccountOrders";
 import Wishlist from "./pages/Wishlist";
-import SpareParts from "./pages/SpareParts";
-import SparePartDetail from "./pages/SparePartDetail";
 
 const queryClient = new QueryClient();
 
@@ -42,8 +40,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/shop" element={<Shop />} />
-          <Route path="/spare-parts" element={<SpareParts />} />
-          <Route path="/spare-part/:id" element={<SparePartDetail />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
