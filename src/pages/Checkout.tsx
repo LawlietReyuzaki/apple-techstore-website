@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { toast } from "sonner";
 import { Loader2, Package } from "lucide-react";
@@ -20,12 +20,6 @@ export default function Checkout() {
   const { user, profile } = useAuth();
   const { items, getTotalPrice, clearCart } = useProductCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentSettings, setPaymentSettings] = useState({
-    enable_cod: true,
-    enable_easypaisa: true,
-    enable_jazzcash: true,
-    enable_bank_transfer: true,
-  });
   
   const [formData, setFormData] = useState({
     name: profile?.full_name || "",
@@ -33,40 +27,8 @@ export default function Checkout() {
     phone: profile?.phone || "",
     address: "",
     notes: "",
-    paymentMethod: "",
   });
 
-  // Fetch payment settings
-  useEffect(() => {
-    const fetchPaymentSettings = async () => {
-      const { data, error } = await supabase
-        .from("payment_settings")
-        .select("enable_cod, enable_easypaisa, enable_jazzcash, enable_bank_transfer")
-        .single();
-
-      if (data && !error) {
-        setPaymentSettings({
-          enable_cod: data.enable_cod ?? true,
-          enable_easypaisa: data.enable_easypaisa ?? true,
-          enable_jazzcash: data.enable_jazzcash ?? true,
-          enable_bank_transfer: data.enable_bank_transfer ?? true,
-        });
-        
-        // Set default payment method to first enabled option
-        if (data.enable_cod) {
-          setFormData(prev => ({ ...prev, paymentMethod: "cod" }));
-        } else if (data.enable_easypaisa) {
-          setFormData(prev => ({ ...prev, paymentMethod: "easypaisa" }));
-        } else if (data.enable_jazzcash) {
-          setFormData(prev => ({ ...prev, paymentMethod: "jazzcash" }));
-        } else if (data.enable_bank_transfer) {
-          setFormData(prev => ({ ...prev, paymentMethod: "bank_transfer" }));
-        }
-      }
-    };
-
-    fetchPaymentSettings();
-  }, []);
 
   const totalPrice = getTotalPrice();
   const deliveryFee = 200;
@@ -100,7 +62,6 @@ export default function Checkout() {
           customer_phone: formData.phone,
           delivery_address: formData.address,
           total_amount: grandTotal,
-          payment_method: formData.paymentMethod,
           notes: formData.notes,
           status: "pending",
           payment_status: "unpaid",
@@ -227,55 +188,6 @@ export default function Checkout() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
-                    {paymentSettings.enable_cod && (
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                        <RadioGroupItem value="cod" id="cod" />
-                        <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                          Cash on Delivery (COD)
-                          <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
-                        </Label>
-                      </div>
-                    )}
-                    
-                    {paymentSettings.enable_easypaisa && (
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                        <RadioGroupItem value="easypaisa" id="easypaisa" />
-                        <Label htmlFor="easypaisa" className="flex-1 cursor-pointer">
-                          Easypaisa Payment
-                          <p className="text-sm text-muted-foreground">Pay via Easypaisa wallet</p>
-                        </Label>
-                      </div>
-                    )}
-                    
-                    {paymentSettings.enable_jazzcash && (
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                        <RadioGroupItem value="jazzcash" id="jazzcash" />
-                        <Label htmlFor="jazzcash" className="flex-1 cursor-pointer">
-                          JazzCash Payment
-                          <p className="text-sm text-muted-foreground">Pay via JazzCash wallet</p>
-                        </Label>
-                      </div>
-                    )}
-                    
-                    {paymentSettings.enable_bank_transfer && (
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                        <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-                        <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">
-                          Bank Transfer
-                          <p className="text-sm text-muted-foreground">Pay via bank account transfer</p>
-                        </Label>
-                      </div>
-                    )}
-                  </RadioGroup>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle>Additional Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -292,10 +204,10 @@ export default function Checkout() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Placing Order...
+                    Processing...
                   </>
                 ) : (
-                  "Place Order"
+                  "Proceed to Checkout"
                 )}
               </Button>
             </form>
