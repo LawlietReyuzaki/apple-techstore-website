@@ -273,7 +273,7 @@ export default function Payments() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Sender</TableHead>
+                <TableHead>Receipt</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
@@ -282,13 +282,27 @@ export default function Payments() {
             <TableBody>
               {payments?.map((payment) => (
                 <TableRow key={payment.id}>
-                  <TableCell className="font-mono">{payment.transaction_id}</TableCell>
+                  <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
                   <TableCell>{payment.orders.customer_name}</TableCell>
-                  <TableCell className="capitalize">{payment.payment_method.replace('_', ' ')}</TableCell>
+                  <TableCell className="capitalize text-xs">{payment.payment_method.replace('_', ' ')}</TableCell>
                   <TableCell className="font-semibold">PKR {payment.amount.toLocaleString()}</TableCell>
-                  <TableCell>{payment.sender_number}</TableCell>
+                  <TableCell>
+                    {payment.payment_screenshot_url ? (
+                      <img 
+                        src={payment.payment_screenshot_url} 
+                        alt="Receipt Thumbnail" 
+                        className="w-12 h-12 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          setSelectedPayment(payment);
+                          setViewDialogOpen(true);
+                        }}
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No receipt</span>
+                    )}
+                  </TableCell>
                   <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                  <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-xs">{new Date(payment.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -381,14 +395,47 @@ export default function Payments() {
                 </div>
               </div>
               
-              {selectedPayment.payment_screenshot_url && (
-                <div>
-                  <Label>Payment Screenshot</Label>
-                  <img 
-                    src={selectedPayment.payment_screenshot_url} 
-                    alt="Payment Screenshot" 
-                    className="mt-2 rounded-lg border max-h-96 object-contain"
-                  />
+              {selectedPayment.payment_screenshot_url ? (
+                <div className="space-y-2">
+                  <Label>Payment Receipt Screenshot</Label>
+                  <a 
+                    href={selectedPayment.payment_screenshot_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <img 
+                      src={selectedPayment.payment_screenshot_url} 
+                      alt="Payment Screenshot" 
+                      className="mt-2 rounded-lg border max-h-96 w-full object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                    />
+                  </a>
+                  <p className="text-xs text-muted-foreground">Click image to view full size in new tab</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(selectedPayment.payment_screenshot_url, '_blank')}
+                    >
+                      Open Full Size
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedPayment.payment_screenshot_url);
+                        toast.success("Receipt URL copied to clipboard");
+                      }}
+                    >
+                      Copy URL
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    No payment receipt uploaded
+                  </p>
                 </div>
               )}
 
