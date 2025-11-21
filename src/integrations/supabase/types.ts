@@ -175,6 +175,53 @@ export type Database = {
           },
         ]
       }
+      part_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      part_types: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "part_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           additional_instructions: string | null
@@ -299,6 +346,53 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      phone_models: {
+        Row: {
+          brand_id: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_models_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "spare_parts_brands"
             referencedColumns: ["id"]
           },
         ]
@@ -530,6 +624,137 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spare_parts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string
+          images: string[] | null
+          name: string
+          part_category_id: string
+          part_type_id: string | null
+          phone_model_id: string
+          price: number
+          stock: number
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: string[] | null
+          name: string
+          part_category_id: string
+          part_type_id?: string | null
+          phone_model_id: string
+          price: number
+          stock?: number
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: string[] | null
+          name?: string
+          part_category_id?: string
+          part_type_id?: string | null
+          phone_model_id?: string
+          price?: number
+          stock?: number
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spare_parts_part_category_id_fkey"
+            columns: ["part_category_id"]
+            isOneToOne: false
+            referencedRelation: "part_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spare_parts_part_type_id_fkey"
+            columns: ["part_type_id"]
+            isOneToOne: false
+            referencedRelation: "part_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spare_parts_phone_model_id_fkey"
+            columns: ["phone_model_id"]
+            isOneToOne: false
+            referencedRelation: "phone_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spare_parts_brands: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          phone_category_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          phone_category_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          phone_category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spare_parts_brands_phone_category_id_fkey"
+            columns: ["phone_category_id"]
+            isOneToOne: false
+            referencedRelation: "phone_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spare_parts_colors: {
+        Row: {
+          color_code: string | null
+          color_name: string
+          created_at: string | null
+          id: string
+          spare_part_id: string
+        }
+        Insert: {
+          color_code?: string | null
+          color_name: string
+          created_at?: string | null
+          id?: string
+          spare_part_id: string
+        }
+        Update: {
+          color_code?: string | null
+          color_name?: string
+          created_at?: string | null
+          id?: string
+          spare_part_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spare_parts_colors_spare_part_id_fkey"
+            columns: ["spare_part_id"]
+            isOneToOne: false
+            referencedRelation: "spare_parts"
             referencedColumns: ["id"]
           },
         ]

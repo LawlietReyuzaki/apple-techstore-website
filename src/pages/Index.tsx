@@ -14,6 +14,7 @@ import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
+import { SparePartsSection } from "@/components/SparePartsSection";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
@@ -278,6 +279,9 @@ const Index = () => {
 
       {/* Flash Sale Section */}
       <FlashSaleSection />
+
+      {/* Spare Parts Section */}
+      <SparePartsSection />
 
       {/* Featured Products from Local Inventory */}
       {localProducts.length > 0 && (
