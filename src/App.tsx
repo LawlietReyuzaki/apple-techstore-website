@@ -19,6 +19,8 @@ import AdminSettings from "./pages/admin/Settings";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminPayments from "./pages/admin/Payments";
+import AdminSpareParts from "./pages/admin/SpareParts";
+import AdminSparePartsConfig from "./pages/admin/SparePartsConfig";
 import Shop from "./pages/Shop";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import Cart from "./pages/Cart";
@@ -58,6 +60,8 @@ const App = () => (
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="payments" element={<AdminPayments />} />
+            <Route path="spare-parts" element={<AdminSpareParts />} />
+            <Route path="spare-parts-config" element={<AdminSparePartsConfig />} />
             <Route path="technicians" element={<AdminTechnicians />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
