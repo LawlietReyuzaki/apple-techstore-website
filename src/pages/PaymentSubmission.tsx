@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Loader2, Upload, Copy, CheckCircle } from "lucide-react";
 
+// Generate unique transaction ID
+const generateTransactionId = () => {
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `TXN-${timestamp}-${randomStr}`;
+};
+
 export default function PaymentSubmission() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,7 +26,7 @@ export default function PaymentSubmission() {
   const [orderDetails, setOrderDetails] = useState<any>(null);
 
   const [paymentMethod, setPaymentMethod] = useState<"easypaisa" | "jazzcash" | "bank_transfer" | "cod">("easypaisa");
-  const [transactionId, setTransactionId] = useState("");
+  const [transactionId, setTransactionId] = useState(generateTransactionId());
   const [senderNumber, setSenderNumber] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +34,7 @@ export default function PaymentSubmission() {
   const [copied, setCopied] = useState(false);
 
   // Fetch payment settings and order details
-  useState(() => {
+  useEffect(() => {
     const fetchData = async () => {
       // Fetch payment settings
       const { data: settings } = await supabase
@@ -63,7 +70,7 @@ export default function PaymentSubmission() {
     };
     
     fetchData();
-  });
+  }, [orderId]);
 
   if (!orderData || !orderId) {
     navigate("/checkout");
@@ -354,13 +361,12 @@ export default function PaymentSubmission() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="transactionId">Transaction ID *</Label>
+                  <Label htmlFor="transactionId">Transaction ID (Auto-generated)</Label>
                   <Input
                     id="transactionId"
                     value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Enter transaction ID"
-                    required
+                    readOnly
+                    className="bg-muted cursor-not-allowed"
                   />
                 </div>
 
