@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
+import { SparePartCard } from "@/components/SparePartCard";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,18 +11,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Smartphone } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Filter, Smartphone, Wrench } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [category, setCategory] = useState(searchParams.get("category") || "phones");
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
-  const { data: products, isLoading } = useQuery({
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      setCategory(categoryParam);
+    }
+  }, [searchParams]);
+
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -34,7 +45,46 @@ export default function Shop() {
     }
   });
 
+  const { data: spareParts, isLoading: isLoadingSpareParts } = useQuery({
+    queryKey: ['spare-parts-shop'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .select(`
+          *,
+          phone_models (
+            name,
+            spare_parts_brands (
+              name
+            )
+          ),
+          part_categories (
+            name
+          )
+        `)
+        .eq('visible', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: partCategories } = useQuery({
+    queryKey: ['part-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('part_categories')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   const brands = Array.from(new Set((products || []).map(p => p.brand)));
+  const isLoading = category === "phones" ? isLoadingProducts : isLoadingSpareParts;
 
   const filteredProducts = (products || []).filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,6 +102,24 @@ export default function Shop() {
     if (sortBy === "brand") return a.brand.localeCompare(b.brand);
     return 0;
   });
+
+  const filteredSpareParts = (spareParts || []).filter(part => {
+    const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (part.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesCategory = brandFilter === "all" || part.part_category_id === brandFilter;
+    const matchesAvailability = availabilityFilter === "all" || 
+                               (availabilityFilter === "available" && part.stock > 0) ||
+                               (availabilityFilter === "out-of-stock" && part.stock <= 0);
+    return matchesSearch && matchesCategory && matchesAvailability;
+  }).sort((a, b) => {
+    if (sortBy === "price-low") return a.price - b.price;
+    if (sortBy === "price-high") return b.price - a.price;
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    return 0;
+  });
+
+  const displayItems = category === "phones" ? filteredProducts : filteredSpareParts;
+  const totalCount = displayItems.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,14 +143,40 @@ export default function Shop() {
         {/* Page Header */}
         <div className="mb-12 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <Smartphone className="h-8 w-8 text-primary" />
+            {category === "phones" ? (
+              <Smartphone className="h-8 w-8 text-primary" />
+            ) : (
+              <Wrench className="h-8 w-8 text-primary" />
+            )}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Shop Premium Phones
+            {category === "phones" ? "Shop Premium Phones" : "Phone Spare Parts"}
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
-            Discover our curated collection of flagship smartphones with competitive pricing
+            {category === "phones" 
+              ? "Discover our curated collection of flagship smartphones with competitive pricing"
+              : "High-quality replacement parts for all major phone brands"}
           </p>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex justify-center mb-8 animate-fade-in">
+          <Tabs value={category} onValueChange={(value) => {
+            setCategory(value);
+            setSearchParams({ category: value });
+            setBrandFilter("all");
+          }}>
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="phones" className="gap-2">
+                <Smartphone className="h-4 w-4" />
+                Phones
+              </TabsTrigger>
+              <TabsTrigger value="spare-parts" className="gap-2">
+                <Wrench className="h-4 w-4" />
+                Spare Parts
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Filters */}
@@ -98,15 +192,21 @@ export default function Shop() {
           </div>
           
           <Select value={brandFilter} onValueChange={setBrandFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[200px]">
               <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="All Brands" />
+              <SelectValue placeholder={category === "phones" ? "All Brands" : "All Categories"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
-              {brands.map(brand => (
-                <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-              ))}
+              <SelectItem value="all">{category === "phones" ? "All Brands" : "All Categories"}</SelectItem>
+              {category === "phones" ? (
+                brands.map(brand => (
+                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                ))
+              ) : (
+                (partCategories || []).map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
 
@@ -115,9 +215,9 @@ export default function Shop() {
               <SelectValue placeholder="Availability" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Devices</SelectItem>
-              <SelectItem value="available">Available Now</SelectItem>
-              <SelectItem value="coming-soon">Coming Soon</SelectItem>
+              <SelectItem value="all">{category === "phones" ? "All Devices" : "All Parts"}</SelectItem>
+              <SelectItem value="available">{category === "phones" ? "Available Now" : "In Stock"}</SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
             </SelectContent>
           </Select>
 
@@ -126,10 +226,11 @@ export default function Shop() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="brand">Brand (A-Z)</SelectItem>
+              <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="price-low">Price: Low to High</SelectItem>
               <SelectItem value="price-high">Price: High to Low</SelectItem>
               <SelectItem value="name">Name (A-Z)</SelectItem>
+              {category === "phones" && <SelectItem value="brand">Brand (A-Z)</SelectItem>}
             </SelectContent>
           </Select>
         </div>
@@ -145,26 +246,36 @@ export default function Shop() {
               </div>
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
+        ) : displayItems.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {category === "phones" ? (
+                filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))
+              ) : (
+                filteredSpareParts.map((part) => (
+                  <SparePartCard key={part.id} part={part} />
+                ))
+              )}
             </div>
             
             <div className="text-center mt-12">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                Showing {totalCount} {totalCount === 1 ? (category === "phones" ? 'product' : 'part') : (category === "phones" ? 'products' : 'parts')}
               </p>
             </div>
           </>
         ) : (
           <div className="text-center py-16 animate-fade-in">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-              <Smartphone className="h-8 w-8 text-muted-foreground" />
+              {category === "phones" ? (
+                <Smartphone className="h-8 w-8 text-muted-foreground" />
+              ) : (
+                <Wrench className="h-8 w-8 text-muted-foreground" />
+              )}
             </div>
-            <p className="text-lg font-medium mb-2">No products found</p>
+            <p className="text-lg font-medium mb-2">No {category === "phones" ? "products" : "spare parts"} found</p>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filters
             </p>
