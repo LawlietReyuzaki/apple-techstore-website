@@ -870,7 +870,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "technician" | "customer"
-      payment_method: "easypaisa" | "jazzcash" | "bank_transfer"
+      payment_method: "easypaisa" | "jazzcash" | "bank_transfer" | "cod"
       payment_status: "pending" | "approved" | "declined" | "refunded"
     }
     CompositeTypes: {
@@ -1000,7 +1000,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "technician", "customer"],
-      payment_method: ["easypaisa", "jazzcash", "bank_transfer"],
+      payment_method: ["easypaisa", "jazzcash", "bank_transfer", "cod"],
       payment_status: ["pending", "approved", "declined", "refunded"],
     },
   },
