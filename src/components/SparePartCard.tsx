@@ -40,6 +40,7 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
       brand: part.phone_models?.spare_parts_brands?.name || 'Generic',
       price: part.price,
       images: part.images,
+      type: 'spare_part',
     });
     toast.success(`${part.name} added to cart!`);
   };

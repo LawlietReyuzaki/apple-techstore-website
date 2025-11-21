@@ -8,6 +8,7 @@ export interface CartProduct {
   price: number;
   wholesale_price?: number;
   images: string[];
+  type?: 'product' | 'spare_part'; // Track whether this is a product or spare part
 }
 
 export interface CartItem {
