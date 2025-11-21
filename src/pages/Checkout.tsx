@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,12 @@ export default function Checkout() {
   const { user, profile } = useAuth();
   const { items, getTotalPrice, clearCart } = useProductCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState({
+    enable_cod: true,
+    enable_easypaisa: true,
+    enable_jazzcash: true,
+    enable_bank_transfer: true,
+  });
   
   const [formData, setFormData] = useState({
     name: profile?.full_name || "",
@@ -27,8 +33,40 @@ export default function Checkout() {
     phone: profile?.phone || "",
     address: "",
     notes: "",
-    paymentMethod: "cod",
+    paymentMethod: "",
   });
+
+  // Fetch payment settings
+  useEffect(() => {
+    const fetchPaymentSettings = async () => {
+      const { data, error } = await supabase
+        .from("payment_settings")
+        .select("enable_cod, enable_easypaisa, enable_jazzcash, enable_bank_transfer")
+        .single();
+
+      if (data && !error) {
+        setPaymentSettings({
+          enable_cod: data.enable_cod ?? true,
+          enable_easypaisa: data.enable_easypaisa ?? true,
+          enable_jazzcash: data.enable_jazzcash ?? true,
+          enable_bank_transfer: data.enable_bank_transfer ?? true,
+        });
+        
+        // Set default payment method to first enabled option
+        if (data.enable_cod) {
+          setFormData(prev => ({ ...prev, paymentMethod: "cod" }));
+        } else if (data.enable_easypaisa) {
+          setFormData(prev => ({ ...prev, paymentMethod: "easypaisa" }));
+        } else if (data.enable_jazzcash) {
+          setFormData(prev => ({ ...prev, paymentMethod: "jazzcash" }));
+        } else if (data.enable_bank_transfer) {
+          setFormData(prev => ({ ...prev, paymentMethod: "bank_transfer" }));
+        }
+      }
+    };
+
+    fetchPaymentSettings();
+  }, []);
 
   const totalPrice = getTotalPrice();
   const deliveryFee = 200;
@@ -192,13 +230,45 @@ export default function Checkout() {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                        Cash on Delivery (COD)
-                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
-                      </Label>
-                    </div>
+                    {paymentSettings.enable_cod && (
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="cod" id="cod" />
+                        <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                          Cash on Delivery (COD)
+                          <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {paymentSettings.enable_easypaisa && (
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="easypaisa" id="easypaisa" />
+                        <Label htmlFor="easypaisa" className="flex-1 cursor-pointer">
+                          Easypaisa Payment
+                          <p className="text-sm text-muted-foreground">Pay via Easypaisa wallet</p>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {paymentSettings.enable_jazzcash && (
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="jazzcash" id="jazzcash" />
+                        <Label htmlFor="jazzcash" className="flex-1 cursor-pointer">
+                          JazzCash Payment
+                          <p className="text-sm text-muted-foreground">Pay via JazzCash wallet</p>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {paymentSettings.enable_bank_transfer && (
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="bank_transfer" id="bank_transfer" />
+                        <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">
+                          Bank Transfer
+                          <p className="text-sm text-muted-foreground">Pay via bank account transfer</p>
+                        </Label>
+                      </div>
+                    )}
                   </RadioGroup>
                 </CardContent>
               </Card>

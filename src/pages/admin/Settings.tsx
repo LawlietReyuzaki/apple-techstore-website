@@ -48,6 +48,7 @@ export default function AdminSettings() {
     delivery_charges: 0,
     wallet_transfer_charges: 0,
     service_fees: 0,
+    enable_cod: true,
     enable_easypaisa: true,
     enable_jazzcash: true,
     enable_bank_transfer: true,
@@ -85,6 +86,7 @@ export default function AdminSettings() {
           delivery_charges: data.delivery_charges || 0,
           wallet_transfer_charges: data.wallet_transfer_charges || 0,
           service_fees: data.service_fees || 0,
+          enable_cod: data.enable_cod ?? true,
           enable_easypaisa: data.enable_easypaisa ?? true,
           enable_jazzcash: data.enable_jazzcash ?? true,
           enable_bank_transfer: data.enable_bank_transfer ?? true,
@@ -347,6 +349,28 @@ export default function AdminSettings() {
 
         <TabsContent value="payment" className="space-y-6">
           <form onSubmit={handlePaymentFormSubmit} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Cash on Delivery (COD)</CardTitle>
+                <CardDescription>
+                  Enable or disable Cash on Delivery payment option
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable_cod" className="text-base font-semibold">Enable Cash on Delivery</Label>
+                    <p className="text-sm text-muted-foreground">Allow customers to pay cash when order is delivered</p>
+                  </div>
+                  <Switch
+                    id="enable_cod"
+                    checked={paymentFormData.enable_cod}
+                    onCheckedChange={(checked) => handlePaymentFormChange("enable_cod", checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Easypaisa Configuration</CardTitle>

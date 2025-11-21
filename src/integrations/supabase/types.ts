@@ -246,6 +246,7 @@ export type Database = {
           easypaisa_number: string | null
           easypaisa_qr_code_url: string | null
           enable_bank_transfer: boolean | null
+          enable_cod: boolean | null
           enable_easypaisa: boolean | null
           enable_jazzcash: boolean | null
           iban: string | null
@@ -266,6 +267,7 @@ export type Database = {
           easypaisa_number?: string | null
           easypaisa_qr_code_url?: string | null
           enable_bank_transfer?: boolean | null
+          enable_cod?: boolean | null
           enable_easypaisa?: boolean | null
           enable_jazzcash?: boolean | null
           iban?: string | null
@@ -286,6 +288,7 @@ export type Database = {
           easypaisa_number?: string | null
           easypaisa_qr_code_url?: string | null
           enable_bank_transfer?: boolean | null
+          enable_cod?: boolean | null
           enable_easypaisa?: boolean | null
           enable_jazzcash?: boolean | null
           iban?: string | null
