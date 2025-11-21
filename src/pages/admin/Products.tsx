@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, X, ImagePlus } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, X, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,7 +82,9 @@ export default function AdminProducts() {
     on_sale: false,
     sale_price: "",
   });
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,8 +122,46 @@ export default function AdminProducts() {
     enabled: isAdmin,
   });
 
+  const uploadImages = async () => {
+    if (imageFiles.length === 0) return formData.images.filter(img => img);
+    
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [...formData.images.filter(img => img)];
+    
+    try {
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+      
+      setUploadingImages(false);
+      return uploadedUrls;
+    } catch (error) {
+      setUploadingImages(false);
+      toast.error("Image upload failed", { 
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
+      throw error;
+    }
+  };
+
   const createOrUpdateMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
+      const uploadedImages = await uploadImages();
+      
       const productData = {
         name: data.name,
         brand: data.brand,
@@ -130,7 +170,7 @@ export default function AdminProducts() {
         price: parseFloat(data.price),
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price) : null,
         stock: parseInt(data.stock),
-        images: data.images,
+        images: uploadedImages,
         featured: data.featured,
         on_sale: data.on_sale,
         sale_price: data.sale_price ? parseFloat(data.sale_price) : null,
@@ -189,7 +229,8 @@ export default function AdminProducts() {
       on_sale: false,
       sale_price: "",
     });
-    setNewImageUrl("");
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   const handleEdit = (product: any) => {
@@ -209,17 +250,32 @@ export default function AdminProducts() {
       on_sale: product.on_sale || false,
       sale_price: product.sale_price?.toString() || "",
     });
+    setImageFiles([]);
+    setImagePreviews([]);
     setIsDialogOpen(true);
   };
 
-  const handleAddImage = () => {
-    if (newImageUrl.trim()) {
-      setFormData({ ...formData, images: [...formData.images, newImageUrl.trim()] });
-      setNewImageUrl("");
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setImageFiles(prev => [...prev, ...files]);
+      
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
-  const handleRemoveImage = (index: number) => {
+  const removeNewImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingImage = (index: number) => {
     setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
   };
 
@@ -350,40 +406,81 @@ export default function AdminProducts() {
 
                 <div className="space-y-4">
                   <Label>Product Images</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="Enter image URL"
-                    />
-                    <Button type="button" onClick={handleAddImage} variant="outline">
-                      <ImagePlus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {formData.images.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img 
-                          src={url} 
-                          alt={`Product ${index + 1}`} 
-                          className="w-full h-24 object-cover rounded border"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E";
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleRemoveImage(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                  
+                  {/* Existing images */}
+                  {formData.images.filter(img => img).length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">Existing Images:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {formData.images.filter(img => img).map((img, idx) => (
+                          <div key={idx} className="relative group">
+                            <img 
+                              src={img} 
+                              alt={`Product ${idx + 1}`} 
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                              onClick={() => handleRemoveExistingImage(idx)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  )}
+                  
+                  {/* New image previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-muted-foreground mb-2">New Images to Upload:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {imagePreviews.map((preview, idx) => (
+                          <div key={idx} className="relative group">
+                            <img 
+                              src={preview} 
+                              alt={`New ${idx + 1}`} 
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                              onClick={() => removeNewImage(idx)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* File upload input */}
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <label 
+                      htmlFor="image-upload" 
+                      className="cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Click to upload images</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG, WEBP (multiple images supported)</p>
+                      </div>
+                    </label>
                   </div>
                 </div>
 
@@ -451,8 +548,8 @@ export default function AdminProducts() {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={createOrUpdateMutation.isPending}>
-                  {editingProduct ? "Update Product" : "Create Product"}
+                <Button type="submit" className="w-full" disabled={createOrUpdateMutation.isPending || uploadingImages}>
+                  {uploadingImages ? "Uploading Images..." : editingProduct ? "Update Product" : "Create Product"}
                 </Button>
               </form>
             </DialogContent>
