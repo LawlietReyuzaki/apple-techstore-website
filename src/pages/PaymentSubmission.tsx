@@ -18,7 +18,7 @@ export default function PaymentSubmission() {
   const orderId = location.state?.orderId;
   const [orderDetails, setOrderDetails] = useState<any>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<"easypaisa" | "jazzcash" | "bank_transfer">("easypaisa");
+  const [paymentMethod, setPaymentMethod] = useState<"easypaisa" | "jazzcash" | "bank_transfer" | "cod">("easypaisa");
   const [transactionId, setTransactionId] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -39,7 +39,9 @@ export default function PaymentSubmission() {
 
       // Set default payment method based on what's enabled
       if (settings) {
-        if (settings.enable_easypaisa) {
+        if (settings.enable_cod) {
+          setPaymentMethod("cod");
+        } else if (settings.enable_easypaisa) {
           setPaymentMethod("easypaisa");
         } else if (settings.enable_jazzcash) {
           setPaymentMethod("jazzcash");
@@ -78,14 +80,38 @@ export default function PaymentSubmission() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!transactionId || !senderNumber) {
-      toast.error("Please fill all required fields");
-      return;
+    // For COD, we don't need payment proof
+    if (paymentMethod !== "cod") {
+      if (!transactionId || !senderNumber) {
+        toast.error("Please fill all required fields");
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     try {
+      // Handle Cash on Delivery separately
+      if (paymentMethod === "cod") {
+        // Update order with COD status
+        await supabase
+          .from("orders")
+          .update({ 
+            payment_method: "cod",
+            payment_status: "cod",
+            status: "processing"
+          })
+          .eq("id", orderId);
+
+        toast.success("Order confirmed!", {
+          description: "You will pay cash when your order is delivered",
+        });
+
+        navigate("/account/orders");
+        return;
+      }
+
+      // Handle digital payment methods (Easypaisa, JazzCash, Bank Transfer)
       let screenshotUrl = null;
 
       // Upload screenshot if provided
@@ -193,6 +219,15 @@ export default function PaymentSubmission() {
             </CardHeader>
             <CardContent>
               <RadioGroup value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
+                {paymentSettings?.enable_cod && (
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <RadioGroupItem value="cod" id="cod" />
+                    <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                      Cash on Delivery (COD)
+                      <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                    </Label>
+                  </div>
+                )}
                 {paymentSettings?.enable_easypaisa && (
                   <div className="flex items-center space-x-2 p-3 border rounded-lg">
                     <RadioGroupItem value="easypaisa" id="easypaisa" />
@@ -215,12 +250,13 @@ export default function PaymentSubmission() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {paymentMethod === "bank_transfer" ? (
+          {paymentMethod !== "cod" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {paymentMethod === "bank_transfer" ? (
                 <div className="space-y-3 p-4 bg-muted rounded-lg">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Bank Name:</span>
@@ -288,11 +324,12 @@ export default function PaymentSubmission() {
                     </div>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-          {paymentSettings?.additional_instructions && (
+          {paymentMethod !== "cod" && paymentSettings?.additional_instructions && (
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
@@ -310,50 +347,57 @@ export default function PaymentSubmission() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Submit Payment Proof</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="transactionId">Transaction ID *</Label>
-                <Input
-                  id="transactionId"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="Enter transaction ID"
-                  required
-                />
-              </div>
+          {paymentMethod !== "cod" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit Payment Proof</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="transactionId">Transaction ID *</Label>
+                  <Input
+                    id="transactionId"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="Enter transaction ID"
+                    required
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="senderNumber">Sender Number / Account *</Label>
-                <Input
-                  id="senderNumber"
-                  value={senderNumber}
-                  onChange={(e) => setSenderNumber(e.target.value)}
-                  placeholder="03XX-XXXXXXX or Account number"
-                  required
-                />
-              </div>
+                <div>
+                  <Label htmlFor="senderNumber">Sender Number / Account *</Label>
+                  <Input
+                    id="senderNumber"
+                    value={senderNumber}
+                    onChange={(e) => setSenderNumber(e.target.value)}
+                    placeholder="03XX-XXXXXXX or Account number"
+                    required
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="screenshot">Payment Screenshot (Optional)</Label>
-                <Input
-                  id="screenshot"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label htmlFor="screenshot">Payment Screenshot (Optional)</Label>
+                  <Input
+                    id="screenshot"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting Payment...
+                {paymentMethod === "cod" ? "Confirming Order..." : "Submitting Payment..."}
+              </>
+            ) : paymentMethod === "cod" ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Confirm Order (Pay on Delivery)
               </>
             ) : (
               <>
@@ -364,9 +408,16 @@ export default function PaymentSubmission() {
           </Button>
         </form>
 
-        <p className="text-sm text-muted-foreground text-center mt-4">
-          Your payment will be verified by our admin within 24 hours
-        </p>
+        {paymentMethod !== "cod" && (
+          <p className="text-sm text-muted-foreground text-center mt-4">
+            Your payment will be verified by our admin within 24 hours
+          </p>
+        )}
+        {paymentMethod === "cod" && (
+          <p className="text-sm text-muted-foreground text-center mt-4">
+            You will pay cash when your order is delivered to your address
+          </p>
+        )}
       </div>
     </div>
   );
