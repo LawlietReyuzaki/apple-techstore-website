@@ -112,7 +112,8 @@ export default function Checkout() {
 
       // Create order items
       const orderItems = items.map(item => {
-        const isSpare = item.product.type === "spare_part" || "phone_model_id" in item.product;
+        // Treat any non-explicit 'product' type as a spare part to avoid FK issues with legacy cart data
+        const isSpare = item.product.type !== "product";
         return {
           order_id: order.id,
           product_id: isSpare ? null : item.product.id,
