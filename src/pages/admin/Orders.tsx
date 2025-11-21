@@ -55,7 +55,18 @@ export default function AdminOrders() {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          payments (
+            id,
+            status,
+            payment_method,
+            payment_screenshot_url,
+            transaction_id,
+            sender_number,
+            created_at
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -353,7 +364,15 @@ export default function AdminOrders() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Payment Method</p>
-                    <Badge variant="outline" className="uppercase">{selectedOrder.payment_method}</Badge>
+                    <Badge variant="outline" className="uppercase">
+                      {selectedOrder.payment_method || "Not Set"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Status</p>
+                    <Badge variant={selectedOrder.payment_status === "paid" ? "default" : "secondary"}>
+                      {selectedOrder.payment_status?.toUpperCase() || "UNPAID"}
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -402,6 +421,125 @@ export default function AdminOrders() {
                 <div>
                   <h4 className="font-semibold mb-2">Customer Notes</h4>
                   <p className="text-sm text-muted-foreground bg-secondary/20 p-3 rounded">{selectedOrder.notes}</p>
+                </div>
+              )}
+
+              {selectedOrder.payments && selectedOrder.payments.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Payment Details</h4>
+                  {selectedOrder.payments.map((payment: any) => (
+                    <Card key={payment.id} className="border-primary/20">
+                      <CardContent className="pt-6 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Transaction ID</p>
+                            <p className="font-mono">{payment.transaction_id}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Sender Number</p>
+                            <p>{payment.sender_number}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Payment Method</p>
+                            <Badge variant="outline" className="uppercase">
+                              {payment.payment_method}
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Payment Status</p>
+                            <Badge variant={payment.status === "approved" ? "default" : payment.status === "declined" ? "destructive" : "secondary"}>
+                              {payment.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {payment.payment_screenshot_url && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Payment Receipt</p>
+                            <a 
+                              href={payment.payment_screenshot_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img 
+                                src={payment.payment_screenshot_url} 
+                                alt="Payment Receipt" 
+                                className="rounded-lg border max-h-64 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                              />
+                            </a>
+                            <p className="text-xs text-muted-foreground mt-1">Click to view full size</p>
+                          </div>
+                        )}
+
+                        {payment.status === "pending" && (
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={async () => {
+                                try {
+                                  await supabase
+                                    .from("payments")
+                                    .update({ status: "approved", verified_at: new Date().toISOString() })
+                                    .eq("id", payment.id);
+                                  
+                                  await supabase
+                                    .from("orders")
+                                    .update({ payment_status: "paid", status: "processing" })
+                                    .eq("id", selectedOrder.id);
+
+                                  await supabase.functions.invoke('send-order-email', {
+                                    body: { orderId: selectedOrder.id, type: 'payment_approved' }
+                                  });
+
+                                  toast.success("Payment approved");
+                                  queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+                                  setSelectedOrder(null);
+                                } catch (error) {
+                                  toast.error("Failed to approve payment");
+                                }
+                              }}
+                            >
+                              Approve Payment
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={async () => {
+                                const reason = prompt("Enter decline reason:");
+                                if (reason) {
+                                  try {
+                                    await supabase
+                                      .from("payments")
+                                      .update({ status: "declined", decline_reason: reason })
+                                      .eq("id", payment.id);
+                                    
+                                    await supabase
+                                      .from("orders")
+                                      .update({ payment_status: "unpaid", status: "payment_rejected" })
+                                      .eq("id", selectedOrder.id);
+
+                                    await supabase.functions.invoke('send-order-email', {
+                                      body: { orderId: selectedOrder.id, type: 'payment_declined', declineReason: reason }
+                                    });
+
+                                    toast.success("Payment declined");
+                                    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+                                    setSelectedOrder(null);
+                                  } catch (error) {
+                                    toast.error("Failed to decline payment");
+                                  }
+                                }
+                              }}
+                            >
+                              Decline Payment
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </div>
