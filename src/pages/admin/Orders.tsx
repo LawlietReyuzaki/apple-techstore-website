@@ -37,7 +37,7 @@ export default function AdminOrders() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin, loading: authLoading } = useAuth();
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [approveConfirmId, setApproveConfirmId] = useState<string | null>(null);
   const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
@@ -195,20 +195,31 @@ export default function AdminOrders() {
       <Card>
         <CardHeader>
           <CardTitle>Order Management</CardTitle>
-          <div className="flex gap-4 mt-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant={statusFilter === "pending" ? "default" : "outline"}
+              onClick={() => setStatusFilter("pending")}
+            >
+              Pending Orders
+            </Button>
+            <Button
+              variant={statusFilter === "processing" ? "default" : "outline"}
+              onClick={() => setStatusFilter("processing")}
+            >
+              Approved Orders
+            </Button>
+            <Button
+              variant={statusFilter === "delivered" ? "default" : "outline"}
+              onClick={() => setStatusFilter("delivered")}
+            >
+              Completed Orders
+            </Button>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              onClick={() => setStatusFilter("all")}
+            >
+              All Orders
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -274,6 +285,15 @@ export default function AdminOrders() {
                               Decline
                             </Button>
                           </>
+                        )}
+                        {order.status === "processing" && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => updateOrderMutation.mutate({ id: order.id, status: "delivered" })}
+                          >
+                            Mark Complete
+                          </Button>
                         )}
                       </div>
                     </TableCell>

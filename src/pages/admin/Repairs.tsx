@@ -49,7 +49,7 @@ export default function AdminRepairs() {
   const queryClient = useQueryClient();
   const { isAdmin, isTechnician, loading: authLoading, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("created");
   const [selectedRepair, setSelectedRepair] = useState<any>(null);
   const [newNote, setNewNote] = useState("");
   const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
@@ -354,25 +354,40 @@ export default function AdminRepairs() {
     <div className="container mx-auto py-8 px-4">
       <Card>
         <CardHeader>
-          <CardTitle>Manage Repairs</CardTitle>
-          <div className="flex gap-4 mt-4">
+          <CardTitle>Repair Management</CardTitle>
+          <div className="flex gap-2 mt-4 mb-4">
+            <Button
+              variant={statusFilter === "created" ? "default" : "outline"}
+              onClick={() => setStatusFilter("created")}
+            >
+              Pending Repairs
+            </Button>
+            <Button
+              variant={statusFilter === "in_progress" ? "default" : "outline"}
+              onClick={() => setStatusFilter("in_progress")}
+            >
+              Approved Repairs
+            </Button>
+            <Button
+              variant={statusFilter === "delivered" ? "default" : "outline"}
+              onClick={() => setStatusFilter("delivered")}
+            >
+              Completed Repairs
+            </Button>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              onClick={() => setStatusFilter("all")}
+            >
+              All Repairs
+            </Button>
+          </div>
+          <div className="flex gap-4">
             <Input
               placeholder="Search by customer or device..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-sm"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="created">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="delivered">Completed</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -398,12 +413,50 @@ export default function AdminRepairs() {
                   <TableCell>{repair.assigned_tech?.name || "Unassigned"}</TableCell>
                   <TableCell>{format(new Date(repair.created_at), "MMM dd, yyyy")}</TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedRepair(repair)}
-                    >
-                      View
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedRepair(repair)}
+                      >
+                        View
+                      </Button>
+                      {repair.status === "created" && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              setSelectedRepair(repair);
+                              handleApproveRepair();
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeclineRepair(repair.id)}
+                          >
+                            Decline
+                          </Button>
+                        </>
+                      )}
+                      {repair.status === "in_progress" && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => 
+                            updateRepairMutation.mutate({
+                              id: repair.id,
+                              updates: { status: "delivered" },
+                            })
+                          }
+                        >
+                          Mark Complete
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -21,7 +21,7 @@ export default function AccountOrders() {
     }
   }, [user, authLoading, navigate]);
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["user-orders", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -44,6 +44,23 @@ export default function AccountOrders() {
     enabled: !!user,
   });
 
+  const { data: repairs, isLoading: repairsLoading } = useQuery({
+    queryKey: ["user-repairs", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repairs")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isLoading = ordersLoading || repairsLoading;
+
   const getOrderItems = async (orderId: string) => {
     const { data, error } = await supabase
       .from("order_items")
@@ -65,6 +82,10 @@ export default function AccountOrders() {
       delivered: "outline",
       delayed: "secondary",
       cancelled: "destructive",
+      payment_rejected: "destructive",
+      created: "secondary",
+      in_progress: "default",
+      declined: "destructive",
     };
     const colors: Record<string, string> = {
       pending: "text-yellow-600",
@@ -76,8 +97,21 @@ export default function AccountOrders() {
       delivered: "text-green-600",
       delayed: "text-orange-600",
       cancelled: "text-red-600",
+      payment_rejected: "text-red-600",
+      created: "text-yellow-600",
+      in_progress: "text-blue-600",
+      declined: "text-red-600",
     };
-    return <Badge variant={variants[status] || "default"} className={colors[status]}>{status?.toUpperCase()}</Badge>;
+    const displayText: Record<string, string> = {
+      payment_rejected: "PAYMENT REJECTED",
+      created: "PENDING",
+      in_progress: "IN PROGRESS",
+    };
+    return (
+      <Badge variant={variants[status] || "default"} className={colors[status]}>
+        {displayText[status] || status?.toUpperCase().replace(/_/g, ' ')}
+      </Badge>
+    );
   };
 
   const getPaymentStatusBadge = (paymentStatus: string) => {
@@ -216,23 +250,42 @@ export default function AccountOrders() {
           Back to Account
         </Button>
 
-        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+        <h1 className="text-3xl font-bold mb-8">My Orders & Repairs</h1>
 
-        {orders && orders.length === 0 ? (
+        {(!orders || orders.length === 0) && (!repairs || repairs.length === 0) ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
-              <p className="text-muted-foreground mb-6">Start shopping to see your orders here</p>
-              <Button asChild>
-                <Link to="/shop">Browse Products</Link>
-              </Button>
+              <h3 className="text-xl font-semibold mb-2">No orders or repairs yet</h3>
+              <p className="text-muted-foreground mb-6">Start shopping or request a repair to see them here</p>
+              <div className="flex gap-4 justify-center">
+                <Button asChild>
+                  <Link to="/shop">Browse Products</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/book-repair">Book Repair</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
+            {repairs?.map((repair) => (
+              <RepairCard 
+                key={repair.id} 
+                repair={repair} 
+                getStatusBadge={getStatusBadge}
+              />
+            ))}
             {orders?.map((order) => (
-              <OrderCard key={order.id} order={order} getOrderItems={getOrderItems} getStatusBadge={getStatusBadge} />
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                getOrderItems={getOrderItems} 
+                getStatusBadge={getStatusBadge}
+                getPaymentInstructions={getPaymentInstructions}
+                getPaymentStatusBadge={getPaymentStatusBadge}
+              />
             ))}
           </div>
         )}
@@ -241,7 +294,7 @@ export default function AccountOrders() {
   );
 }
 
-function OrderCard({ order, getOrderItems, getStatusBadge }: any) {
+function OrderCard({ order, getOrderItems, getStatusBadge, getPaymentInstructions, getPaymentStatusBadge }: any) {
   const [items, setItems] = useState<any[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -258,14 +311,16 @@ function OrderCard({ order, getOrderItems, getStatusBadge }: any) {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
+            <Badge variant="outline" className="mb-2">Product Order</Badge>
             <CardTitle className="text-lg">Order #{order.id.slice(0, 8)}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {format(new Date(order.created_at), "PPP")}
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-2">
             {getStatusBadge(order.status)}
-            <p className="text-xl font-bold mt-2">Rs. {order.total_amount.toLocaleString()}</p>
+            {getPaymentStatusBadge(order.payment_status)}
+            <p className="text-xl font-bold">Rs. {order.total_amount.toLocaleString()}</p>
           </div>
         </div>
       </CardHeader>
@@ -280,6 +335,8 @@ function OrderCard({ order, getOrderItems, getStatusBadge }: any) {
             <span className="text-right max-w-[60%]">{order.delivery_address}</span>
           </div>
         </div>
+
+        {getPaymentInstructions(order)}
 
         <Separator className="my-4" />
 
@@ -300,6 +357,57 @@ function OrderCard({ order, getOrderItems, getStatusBadge }: any) {
             ))}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RepairCard({ repair, getStatusBadge }: any) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <Badge variant="outline" className="mb-2">Repair Request</Badge>
+            <CardTitle className="text-lg">Tracking: {repair.tracking_code}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {format(new Date(repair.created_at), "PPP")}
+            </p>
+          </div>
+          <div className="text-right">
+            {getStatusBadge(repair.status)}
+            {repair.estimated_cost && (
+              <p className="text-xl font-bold mt-2">Est. Rs. {repair.estimated_cost.toLocaleString()}</p>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Device</p>
+            <p className="font-medium">{repair.device_make} {repair.device_model}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Issue</p>
+            <p className="text-sm">{repair.issue}</p>
+            {repair.description && (
+              <p className="text-xs text-muted-foreground mt-1">{repair.description}</p>
+            )}
+          </div>
+          {repair.visit_date && (
+            <div>
+              <p className="text-sm text-muted-foreground">Visit Schedule</p>
+              <p className="text-sm font-medium">{format(new Date(repair.visit_date), "PPP 'at' p")}</p>
+            </div>
+          )}
+          {repair.decline_reason && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">Decline Reason:</p>
+              <p className="text-sm text-red-600 dark:text-red-300">{repair.decline_reason}</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
