@@ -22,6 +22,8 @@ import AdminPayments from "./pages/admin/Payments";
 import AdminSpareParts from "./pages/admin/SpareParts";
 import AdminSparePartsConfig from "./pages/admin/SparePartsConfig";
 import Shop from "./pages/Shop";
+import SpareParts from "./pages/SpareParts";
+import SparePartDetail from "./pages/SparePartDetail";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -40,6 +42,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/spare-parts" element={<SpareParts />} />
+          <Route path="/spare-part/:id" element={<SparePartDetail />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
