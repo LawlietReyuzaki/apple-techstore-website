@@ -16,6 +16,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import shopHeroBg from "@/assets/shop-hero-bg.png";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -141,22 +142,29 @@ export default function Shop() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-12 text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            {category === "phones" ? (
-              <Smartphone className="h-8 w-8 text-primary" />
-            ) : (
-              <Wrench className="h-8 w-8 text-primary" />
-            )}
+        <div className="mb-12 text-center animate-fade-in relative rounded-2xl overflow-hidden">
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${shopHeroBg})` }}
+          />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative z-10 py-16 px-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 backdrop-blur-sm mb-4">
+              {category === "phones" ? (
+                <Smartphone className="h-8 w-8 text-white" />
+              ) : (
+                <Wrench className="h-8 w-8 text-white" />
+              )}
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+              {category === "phones" ? "Shop Premium Phones" : "Phone Spare Parts"}
+            </h1>
+            <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
+              {category === "phones" 
+                ? "Discover our curated collection of flagship smartphones with competitive pricing"
+                : "High-quality replacement parts for all major phone brands"}
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {category === "phones" ? "Shop Premium Phones" : "Phone Spare Parts"}
-          </h1>
-          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
-            {category === "phones" 
-              ? "Discover our curated collection of flagship smartphones with competitive pricing"
-              : "High-quality replacement parts for all major phone brands"}
-          </p>
         </div>
 
         {/* Category Tabs */}
