@@ -16,7 +16,7 @@ export const WholesaleBanner = () => {
       </div>
       
       <div className="relative container mx-auto px-4 h-full flex items-center">
-        <div className="max-w-2xl text-black">
+        <div className="max-w-2xl text-white">
           <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 animate-fade-in">
             <TrendingDown className="h-4 w-4" />
             <span className="text-sm font-semibold">Lowest Prices in Pakistan</span>
@@ -28,7 +28,7 @@ export const WholesaleBanner = () => {
             <span className="text-primary">For Pakistan</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-black/90 mb-8 animate-fade-in">
+          <p className="text-lg md:text-xl text-white/90 mb-8 animate-fade-in">
             Premium smartphones from top brands at unbeatable wholesale rates. 
             Direct import, genuine products, nationwide delivery.
           </p>
