@@ -151,6 +151,18 @@ All colors MUST be HSL.
     background: linear-gradient(135deg, hsl(0 0% 100% / 0.95), hsl(0 0% 98% / 0.9));
   }
   
+  /* Hover effects for cards */
+  .glass-card:hover,
+  .glass-effect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px hsl(280 100% 60% / 0.15);
+  }
+  
+  .dark .glass-card:hover,
+  .dark .glass-effect:hover {
+    box-shadow: 0 12px 40px hsl(280 100% 60% / 0.25);
+  }
+  
   /* Responsive Container with minimal padding on desktop */
   .container {
     @apply mx-auto;
