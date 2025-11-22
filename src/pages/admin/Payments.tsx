@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +48,7 @@ export default function Payments() {
   const [declineReason, setDeclineReason] = useState("");
   const [refundWalletNumber, setRefundWalletNumber] = useState("");
   const [refundNotes, setRefundNotes] = useState("");
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   const isAdmin = hasRole("admin");
 
@@ -76,6 +77,32 @@ export default function Payments() {
     },
     enabled: isAdmin,
   });
+
+  // Generate signed URLs for payment screenshots
+  useEffect(() => {
+    const generateSignedUrls = async () => {
+      if (!payments) return;
+      
+      const urls: Record<string, string> = {};
+      
+      for (const payment of payments) {
+        if (payment.payment_screenshot_url) {
+          // Generate signed URL valid for 1 hour
+          const { data, error } = await supabase.storage
+            .from('payment_screenshots')
+            .createSignedUrl(payment.payment_screenshot_url, 3600);
+          
+          if (!error && data) {
+            urls[payment.id] = data.signedUrl;
+          }
+        }
+      }
+      
+      setSignedUrls(urls);
+    };
+    
+    generateSignedUrls();
+  }, [payments]);
 
   const approvePaymentMutation = useMutation({
     mutationFn: async (paymentId: string) => {
@@ -287,9 +314,9 @@ export default function Payments() {
                   <TableCell className="capitalize text-xs">{payment.payment_method.replace('_', ' ')}</TableCell>
                   <TableCell className="font-semibold">PKR {payment.amount.toLocaleString()}</TableCell>
                   <TableCell>
-                    {payment.payment_screenshot_url ? (
+                    {payment.payment_screenshot_url && signedUrls[payment.id] ? (
                       <img 
-                        src={payment.payment_screenshot_url} 
+                        src={signedUrls[payment.id]} 
                         alt="Receipt Thumbnail" 
                         className="w-12 h-12 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => {
@@ -297,6 +324,8 @@ export default function Payments() {
                           setViewDialogOpen(true);
                         }}
                       />
+                    ) : payment.payment_screenshot_url ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : (
                       <span className="text-xs text-muted-foreground">No receipt</span>
                     )}
@@ -395,17 +424,17 @@ export default function Payments() {
                 </div>
               </div>
               
-              {selectedPayment.payment_screenshot_url ? (
+              {selectedPayment.payment_screenshot_url && signedUrls[selectedPayment.id] ? (
                 <div className="space-y-2">
                   <Label>Payment Receipt Screenshot</Label>
                   <a 
-                    href={selectedPayment.payment_screenshot_url} 
+                    href={signedUrls[selectedPayment.id]} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="block"
                   >
                     <img 
-                      src={selectedPayment.payment_screenshot_url} 
+                      src={signedUrls[selectedPayment.id]} 
                       alt="Payment Screenshot" 
                       className="mt-2 rounded-lg border max-h-96 w-full object-contain cursor-pointer hover:opacity-80 transition-opacity"
                     />
@@ -415,7 +444,7 @@ export default function Payments() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(selectedPayment.payment_screenshot_url, '_blank')}
+                      onClick={() => window.open(signedUrls[selectedPayment.id], '_blank')}
                     >
                       Open Full Size
                     </Button>
@@ -423,13 +452,17 @@ export default function Payments() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(selectedPayment.payment_screenshot_url);
+                        navigator.clipboard.writeText(signedUrls[selectedPayment.id]);
                         toast.success("Receipt URL copied to clipboard");
                       }}
                     >
                       Copy URL
                     </Button>
                   </div>
+                </div>
+              ) : selectedPayment.payment_screenshot_url ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
