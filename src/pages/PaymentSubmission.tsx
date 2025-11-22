@@ -142,17 +142,14 @@ export default function PaymentSubmission() {
       if (screenshot) {
         const fileExt = screenshot.name.split('.').pop();
         const fileName = `${orderId}_${Date.now()}.${fileExt}`;
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('payment_screenshots')
           .upload(fileName, screenshot);
 
         if (uploadError) throw uploadError;
         
-        const { data: { publicUrl } } = supabase.storage
-          .from('payment_screenshots')
-          .getPublicUrl(fileName);
-        
-        screenshotUrl = publicUrl;
+        // Store just the file path (not public URL) since bucket is private
+        screenshotUrl = fileName;
       }
 
       // Create payment record
