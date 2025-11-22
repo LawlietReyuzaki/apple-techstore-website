@@ -405,12 +405,43 @@ export default function PaymentSubmission() {
                   <Input
                     id="screenshot"
                     type="file"
-                    accept="image/*"
-                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) {
+                        setScreenshot(null);
+                        return;
+                      }
+
+                      // Validate file type
+                      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                      if (!validTypes.includes(file.type)) {
+                        toast.error("Invalid file format", {
+                          description: "Please upload JPG, PNG, or WEBP image only"
+                        });
+                        e.target.value = '';
+                        setScreenshot(null);
+                        return;
+                      }
+
+                      // Validate file size (max 5MB)
+                      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                      if (file.size > maxSize) {
+                        toast.error("File too large", {
+                          description: "Image must be smaller than 5MB"
+                        });
+                        e.target.value = '';
+                        setScreenshot(null);
+                        return;
+                      }
+
+                      setScreenshot(file);
+                      toast.success("Image uploaded successfully");
+                    }}
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Upload a clear screenshot of your payment receipt
+                    Upload JPG, PNG, or WEBP image (max 5MB)
                   </p>
                 </div>
               </CardContent>
