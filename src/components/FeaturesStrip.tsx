@@ -10,10 +10,7 @@ const features = [
 
 export const FeaturesStrip = () => {
   return (
-    <div className="relative bg-gradient-to-r from-black via-gray-900 to-black text-white py-4 overflow-hidden">
-      {/* Animated glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 opacity-30 animate-gradient-shift" />
-      
+    <div className="relative bg-black text-white py-4 overflow-hidden">
       {/* Glowing top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-shimmer" />
       
