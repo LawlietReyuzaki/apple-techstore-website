@@ -87,13 +87,27 @@ export default function Payments() {
       
       for (const payment of payments) {
         if (payment.payment_screenshot_url) {
-          // Generate signed URL valid for 1 hour
-          const { data, error } = await supabase.storage
-            .from('payment_screenshots')
-            .createSignedUrl(payment.payment_screenshot_url, 3600);
-          
-          if (!error && data) {
-            urls[payment.id] = data.signedUrl;
+          try {
+            // Extract filename from URL if it's a full URL
+            let filePath = payment.payment_screenshot_url;
+            
+            // Check if it's a full URL and extract just the filename
+            if (filePath.includes('payment_screenshots/')) {
+              filePath = filePath.split('payment_screenshots/')[1];
+            }
+            
+            // Generate signed URL valid for 1 hour
+            const { data, error } = await supabase.storage
+              .from('payment_screenshots')
+              .createSignedUrl(filePath, 3600);
+            
+            if (!error && data?.signedUrl) {
+              urls[payment.id] = data.signedUrl;
+            } else {
+              console.error(`Failed to generate signed URL for payment ${payment.id}:`, error);
+            }
+          } catch (err) {
+            console.error(`Error generating signed URL for payment ${payment.id}:`, err);
           }
         }
       }
