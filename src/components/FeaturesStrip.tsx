@@ -12,7 +12,7 @@ export const FeaturesStrip = () => {
   return (
     <div className="relative bg-black text-white py-4 overflow-hidden">
       {/* Glowing top border */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-shimmer" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" />
       
       <div className="flex animate-scroll-left relative z-10">
         {/* First set */}
@@ -25,7 +25,7 @@ export const FeaturesStrip = () => {
               <div className={`absolute inset-0 ${feature.color} opacity-20 blur-lg animate-pulse-slow`} />
               <feature.icon className={`h-6 w-6 flex-shrink-0 ${feature.color} relative z-10 group-hover:scale-110 transition-transform drop-shadow-lg`} />
             </div>
-            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-primary transition-colors">
+            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-white transition-colors">
               {feature.text}
             </span>
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent ml-10" />
@@ -41,7 +41,7 @@ export const FeaturesStrip = () => {
               <div className={`absolute inset-0 ${feature.color} opacity-20 blur-lg animate-pulse-slow`} />
               <feature.icon className={`h-6 w-6 flex-shrink-0 ${feature.color} relative z-10 group-hover:scale-110 transition-transform drop-shadow-lg`} />
             </div>
-            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-primary transition-colors">
+            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-white transition-colors">
               {feature.text}
             </span>
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent ml-10" />
@@ -57,7 +57,7 @@ export const FeaturesStrip = () => {
               <div className={`absolute inset-0 ${feature.color} opacity-20 blur-lg animate-pulse-slow`} />
               <feature.icon className={`h-6 w-6 flex-shrink-0 ${feature.color} relative z-10 group-hover:scale-110 transition-transform drop-shadow-lg`} />
             </div>
-            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-primary transition-colors">
+            <span className="text-sm md:text-base font-semibold tracking-wide group-hover:text-white transition-colors">
               {feature.text}
             </span>
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent ml-10" />
@@ -66,7 +66,7 @@ export const FeaturesStrip = () => {
       </div>
 
       {/* Glowing bottom border */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent animate-shimmer" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" style={{ animationDelay: '1s' }} />
     </div>
   );
 };

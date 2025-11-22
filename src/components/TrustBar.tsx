@@ -39,8 +39,8 @@ export const TrustBar = () => {
     <div ref={ref} className="relative py-12 md:py-16 overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/50">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -60,7 +60,7 @@ export const TrustBar = () => {
                   <Icon className="w-8 h-8 text-primary relative z-10 group-hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors text-base md:text-lg">
+                  <h3 className="font-bold text-foreground mb-1 group-hover:text-white transition-colors text-base md:text-lg">
                     {feature.title}
                   </h3>
                   <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
