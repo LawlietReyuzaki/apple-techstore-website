@@ -26,9 +26,10 @@ import { useCartStore } from "@/stores/cartStore";
 import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
-import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight } from "lucide-react";
+import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useInView } from 'react-intersection-observer';
 import {
   Sheet,
   SheetContent,
@@ -38,6 +39,328 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+
+// Section Components with Scroll Animations
+
+const LimitedTimeOffersSection = () => {
+  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  
+  return (
+    <section 
+      ref={ref}
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="container relative z-10">
+        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-6 animate-pulse-slow border border-primary/30">
+            <Zap className="h-5 w-5 text-primary animate-glow" />
+            <span className="text-white font-semibold">Limited Time Offers!</span>
+            <Sparkles className="h-5 w-5 text-accent animate-glow" />
+          </div>
+          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white animate-shimmer bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent bg-[length:200%_100%]">
+            Flash Sale
+          </h2>
+          <p className="text-white/80 text-xl max-w-2xl mx-auto">
+            Don't miss out on unbeatable deals - limited stock available!
+          </p>
+        </div>
+
+        <div className={`transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <FlashSaleSection />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const SparePartsSection = () => {
+  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  
+  return (
+    <section 
+      ref={ref}
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-white via-purple-50 to-blue-50"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 right-1/3 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }} />
+      </div>
+
+      <div className="container relative z-10">
+        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 mb-6 border border-primary/20">
+            <Wrench className="h-5 w-5 text-primary" />
+            <span className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Spare Parts & Repair Parts
+            </span>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+            Quality Parts
+          </h2>
+          <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+            Genuine replacement parts for all major brands
+          </p>
+        </div>
+
+        <div className={`transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <FeaturedSparePartsSection />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const FeaturedDealsSection = ({ localProducts }: { localProducts: any[] }) => {
+  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  
+  if (localProducts.length === 0) return null;
+
+  return (
+    <section 
+      ref={ref}
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <div className="container relative z-10">
+        <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4 transition-all duration-1000 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}`}>
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-4 border border-primary/30">
+              <Sparkles className="h-5 w-5 text-white" />
+              <span className="text-white font-semibold">Featured Deals</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white">
+              Premium Picks
+            </h2>
+            <p className="text-white/80 text-xl">
+              Wholesale prices on flagship smartphones
+            </p>
+          </div>
+          <Link to="/shop">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-glow"
+            >
+              View All <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+        
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          {localProducts.map((product, index) => (
+            <div 
+              key={product.id}
+              className="animate-scale-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const OurProductsSection = ({ 
+  displayedProducts, 
+  filters, 
+  setFilters 
+}: { 
+  displayedProducts: any[]; 
+  filters: any; 
+  setFilters: (filters: any) => void;
+}) => {
+  const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
+  
+  return (
+    <section 
+      ref={ref}
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="container relative z-10">
+        <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4 transition-all duration-1000 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'}`}>
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 mb-4 border border-primary/20">
+              <Phone className="h-5 w-5 text-primary" />
+              <span className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Our Products
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              Full Catalog
+            </h2>
+            <p className="text-muted-foreground text-xl">
+              {displayedProducts.length} premium devices with competitive pricing
+            </p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="lg" className="flex-1 sm:flex-initial md:hidden glass-effect border-primary/20">
+                  <Filter className="h-5 w-5 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[300px] glass-effect">
+                <SheetHeader>
+                  <SheetTitle>Filter Products</SheetTitle>
+                  <SheetDescription>
+                    Refine your search by brand, availability, and price range
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <ProductFilters filters={filters} onFilterChange={setFilters} />
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Link to="/shop" className="flex-1 sm:flex-initial">
+              <Button size="lg" className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg">
+                View All <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className={`grid md:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          {/* Desktop Filters */}
+          <div className="hidden md:block">
+            <div className="glass-effect p-6 rounded-2xl border border-primary/20 sticky top-24">
+              <ProductFilters filters={filters} onFilterChange={setFilters} />
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          <div className="md:col-span-3">
+            {displayedProducts.length === 0 ? (
+              <Card className="glass-card p-12 text-center border-primary/20">
+                <Phone className="h-16 w-16 mx-auto mb-4 text-primary animate-pulse-slow" />
+                <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
+                <p className="text-muted-foreground mb-6">
+                  Try adjusting your filters to see more products
+                </p>
+                <Button 
+                  onClick={() => setFilters({
+                    brands: [],
+                    availability: "all",
+                    priceRange: [0, 500000]
+                  })}
+                  className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                >
+                  Reset Filters
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedProducts.map((product, index) => (
+                  <div 
+                    key={product.id}
+                    className="animate-scale-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const OurServicesSection = () => {
+  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  
+  return (
+    <section 
+      ref={ref}
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="container relative z-10">
+        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-6 border border-primary/30">
+            <ShoppingBag className="h-5 w-5 text-white" />
+            <span className="text-white font-semibold">Our Services</span>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white animate-shimmer bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent bg-[length:200%_100%]">
+            More Than Phones
+          </h2>
+          <p className="text-white/80 text-xl max-w-2xl mx-auto">
+            Complete solutions for all your mobile needs
+          </p>
+        </div>
+        
+        <div className={`grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 group bg-white/5 backdrop-blur-xl animate-slide-in-left">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
+              <Phone className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold mb-3 text-white">Wholesale Phones</h3>
+            <p className="text-white/70 mb-6 leading-relaxed">
+              New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
+            </p>
+            <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
+              Shop Now
+            </Button>
+          </Card>
+
+          <Link to="/book-repair" className="group">
+            <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center bg-white/5 backdrop-blur-xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
+                <Wrench className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-white">Expert Repairs</h3>
+              <p className="text-white/70 mb-6 leading-relaxed">
+                Professional repairs, quick turnaround, and warranty included on all services.
+              </p>
+              <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
+                Book Repair
+              </Button>
+            </Card>
+          </Link>
+
+          <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 group bg-white/5 backdrop-blur-xl sm:col-span-2 md:col-span-1 animate-slide-in-right" style={{ animationDelay: '0.4s' }}>
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
+              <ShoppingBag className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold mb-3 text-white">Sell Your Phone</h3>
+            <p className="text-white/70 mb-6 leading-relaxed">
+              Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
+            </p>
+            <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
+              Get Quote
+            </Button>
+          </Card>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const Index = () => {
   const { user } = useAuth();
@@ -277,162 +600,24 @@ const Index = () => {
       {/* Brand Section */}
       <BrandSection />
 
-      {/* Flash Sale Section */}
-      <FlashSaleSection />
+      {/* LIMITED TIME OFFERS - Dark Background */}
+      <LimitedTimeOffersSection />
 
-      {/* Featured Spare Parts Section */}
-      <FeaturedSparePartsSection />
+      {/* SPARE PARTS & REPAIR PARTS - Bright Background */}
+      <SparePartsSection />
 
-      {/* Featured Products from Local Inventory */}
-      {localProducts.length > 0 && (
-        <section className="py-8 sm:py-12">
-          <div className="container">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Featured Deals</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Wholesale prices on premium phones</p>
-              </div>
-              <Link to="/shop">
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  View All <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {localProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* FEATURED DEALS - Dark Background */}
+      <FeaturedDealsSection localProducts={localProducts} />
 
-      {/* Our Products Section - Products from Database */}
-      <section className="py-8 sm:py-12 md:py-16 bg-muted/30">
-        <div className="container">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
-                Our Products
-              </h2>
-              <p className="text-muted-foreground text-sm sm:text-base">
-                {displayedProducts.length} premium devices with competitive pricing
-              </p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex-1 sm:flex-initial md:hidden">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="w-[300px]">
-                  <SheetHeader>
-                    <SheetTitle>Filter Products</SheetTitle>
-                    <SheetDescription>
-                      Refine your search by brand, availability, and price range
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <ProductFilters filters={filters} onFilterChange={setFilters} />
-                  </div>
-                </SheetContent>
-              </Sheet>
-              <Link to="/shop" className="flex-1 sm:flex-initial">
-                <Button variant="outline" size="sm" className="w-full">
-                  View All
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+      {/* OUR PRODUCTS - Bright Background */}
+      <OurProductsSection 
+        displayedProducts={displayedProducts}
+        filters={filters}
+        setFilters={setFilters}
+      />
 
-          <div className="grid md:grid-cols-4 gap-4 sm:gap-6">
-            {/* Desktop Filters */}
-            <div className="hidden md:block">
-              <ProductFilters filters={filters} onFilterChange={setFilters} />
-            </div>
-
-            {/* Products Grid */}
-            <div className="md:col-span-3">
-              {displayedProducts.length === 0 ? (
-                <Card className="glass-card p-8 sm:p-12 text-center">
-                  <Phone className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl sm:text-2xl font-bold mb-2">No Products Found</h3>
-                  <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-                    Try adjusting your filters to see more products
-                  </p>
-                  <Button onClick={() => setFilters({
-                    brands: [],
-                    availability: "all",
-                    priceRange: [0, 500000]
-                  })}>
-                    Reset Filters
-                  </Button>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in">
-                  {displayedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section */}
-      <section className="py-8 sm:py-12 md:py-16">
-        <div className="container">
-          <div className="text-center mb-8 sm:mb-10">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-              Our Services
-            </h2>
-            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg">
-              More than just a phone shop
-            </p>
-          </div>
-          
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
-            <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-2">Wholesale Phones</h3>
-              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
-              </p>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">Shop Now</Button>
-            </Card>
-
-            <Link to="/book-repair" className="group">
-              <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                  <Wrench className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold mb-2">Expert Repairs</h3>
-                <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                  Professional repairs, quick turnaround, and warranty included on all services.
-                </p>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto border-primary/50 hover:bg-primary hover:text-white">Book Repair</Button>
-              </Card>
-            </Link>
-
-            <Card className="glass-card text-center p-4 sm:p-6 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-primary/30 group sm:col-span-2 md:col-span-1">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-accent" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-2">Sell Your Phone</h3>
-              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
-              </p>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">Get Quote</Button>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* OUR SERVICES - Dark Background */}
+      <OurServicesSection />
 
       {/* Contact Section */}
       <ContactSection />
