@@ -27,13 +27,13 @@ export const BrandSection = () => {
     <section ref={ref} className="relative py-16 md:py-20 overflow-hidden bg-black">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-10 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-white/3 to-white/3 rounded-full blur-3xl" />
       </div>
 
       {/* Glowing top border */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-shimmer" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className={`text-center mb-12 transition-all duration-700 ${
@@ -51,13 +51,13 @@ export const BrandSection = () => {
           {brands.map((brand, index) => (
             <Card 
               key={brand.name}
-              className={`relative group aspect-square flex flex-col items-center justify-center hover:shadow-2xl hover:shadow-primary/20 cursor-pointer overflow-hidden bg-gradient-to-br from-gray-900 to-black border-primary/20 hover:border-primary/50 transition-all duration-700 hover:scale-110 ${
+              className={`relative group aspect-square flex flex-col items-center justify-center hover:shadow-2xl hover:shadow-white/20 cursor-pointer overflow-hidden bg-gradient-to-br from-gray-900 to-black border-white/20 hover:border-white/50 transition-all duration-700 hover:scale-110 ${
                 inView ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
               }`}
               style={{ transitionDelay: `${index * 100}ms` }}
             >
               {/* Glow effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               <div className="w-full h-full p-3 flex flex-col items-center justify-center relative z-10">
                 <div className="w-full h-16 mb-2 flex items-center justify-center overflow-hidden rounded-lg">
@@ -73,15 +73,15 @@ export const BrandSection = () => {
               </div>
 
               {/* Corner decorations */}
-              <div className="absolute top-1 right-1 w-2 h-2 bg-primary/30 rounded-full group-hover:scale-150 transition-transform" />
-              <div className="absolute bottom-1 left-1 w-2 h-2 bg-accent/30 rounded-full group-hover:scale-150 transition-transform" />
+              <div className="absolute top-1 right-1 w-2 h-2 bg-white/20 rounded-full group-hover:scale-150 transition-transform" />
+              <div className="absolute bottom-1 left-1 w-2 h-2 bg-white/20 rounded-full group-hover:scale-150 transition-transform" />
             </Card>
           ))}
         </div>
       </div>
 
       {/* Glowing bottom border */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent animate-shimmer" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" style={{ animationDelay: '1s' }} />
     </section>
   );
 };
