@@ -24,7 +24,7 @@ export const BrandSection = () => {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
 
   return (
-    <section ref={ref} className="relative py-16 md:py-20 overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black">
+    <section ref={ref} className="relative py-16 md:py-20 overflow-hidden bg-black">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
@@ -39,10 +39,10 @@ export const BrandSection = () => {
         <div className={`text-center mb-12 transition-all duration-700 ${
           inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}>
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent animate-shimmer">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-white tracking-tight">
             All Major Brands Available
           </h2>
-          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
+          <p className="text-white text-lg md:text-xl max-w-3xl mx-auto font-light">
             Every single phone from Google, Apple, Samsung, Huawei, Xiaomi, Vivo, Oppo & more
           </p>
         </div>
