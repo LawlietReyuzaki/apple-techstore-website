@@ -11,7 +11,8 @@ import { Phone, ArrowLeft, Search, Clock, CheckCircle, XCircle, AlertCircle } fr
 
 const TrackRepair = () => {
   const [searchParams] = useSearchParams();
-  const [trackingCode, setTrackingCode] = useState(searchParams.get("code") || "");
+  const codeFromUrl = searchParams.get("code");
+  const [trackingCode, setTrackingCode] = useState(codeFromUrl || "");
   const [repair, setRepair] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -137,7 +138,8 @@ const TrackRepair = () => {
                     placeholder="e.g., R-1234567890-ABCD"
                     value={trackingCode}
                     onChange={(e) => setTrackingCode(e.target.value)}
-                    className="text-lg"
+                    readOnly={!!codeFromUrl}
+                    className={`text-lg ${codeFromUrl ? 'cursor-not-allowed bg-muted/50' : ''}`}
                   />
                 </div>
                 <Button type="submit" size="lg" disabled={loading}>
