@@ -39,10 +39,10 @@ export const BrandSection = () => {
         <div className={`text-center mb-12 transition-all duration-700 ${
           inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}>
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent animate-shimmer">
             All Major Brands Available
           </h2>
-          <p className="text-gray-900 text-lg md:text-xl max-w-3xl mx-auto font-semibold">
+          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
             Every single phone from Google, Apple, Samsung, Huawei, Xiaomi, Vivo, Oppo & more
           </p>
         </div>
