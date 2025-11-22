@@ -123,63 +123,99 @@ export default function Shop() {
   const totalCount = displayItems.length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" />
+      </div>
+
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="glass-effect border-b sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
+          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hover:scale-105 transition-transform">
+            Dilbar Mobiles
+          </Link>
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-6">
-              <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-              <Link to="/shop" className="text-primary font-medium">Shop</Link>
-              <Link to="/book-repair" className="hover:text-primary transition-colors">Repair</Link>
-              <Link to="/track-repair" className="hover:text-primary transition-colors">Track</Link>
+              <Link to="/" className="relative group transition-colors">
+                Home
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
+              </Link>
+              <Link to="/shop" className="relative group text-primary font-medium">
+                Shop
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-accent" />
+              </Link>
+              <Link to="/book-repair" className="relative group transition-colors">
+                Repair
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
+              </Link>
+              <Link to="/track-repair" className="relative group transition-colors">
+                Track
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
+              </Link>
             </nav>
             <ProductCartButton />
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Page Header */}
-        <div className="mb-12 text-center animate-fade-in relative rounded-2xl overflow-hidden">
+        <div className="mb-12 text-center animate-fade-in-up relative rounded-3xl overflow-hidden group">
           <div 
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center transform transition-transform duration-700 group-hover:scale-110"
             style={{ backgroundImage: `url(${shopHeroBg})` }}
           />
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="relative z-10 py-16 px-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 backdrop-blur-sm mb-4">
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-primary/20 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          
+          {/* Animated Gradient Border */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-gradient-shift opacity-50 blur-sm" />
+          
+          <div className="relative z-10 py-20 px-4">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 backdrop-blur-lg mb-6 animate-glow shadow-2xl border border-white/10">
               {category === "phones" ? (
-                <Smartphone className="h-8 w-8 text-white" />
+                <Smartphone className="h-10 w-10 text-white drop-shadow-lg" />
               ) : (
-                <Wrench className="h-8 w-8 text-white" />
+                <Wrench className="h-10 w-10 text-white drop-shadow-lg" />
               )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
               {category === "phones" ? "Shop Premium Phones" : "Phone Spare Parts"}
             </h1>
-            <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
+            <p className="text-white/95 text-xl md:text-2xl max-w-3xl mx-auto font-light tracking-wide drop-shadow-lg">
               {category === "phones" 
                 ? "Discover our curated collection of flagship smartphones with competitive pricing"
                 : "High-quality replacement parts for all major phone brands"}
             </p>
+            
+            {/* Decorative Elements */}
+            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-white/20 rounded-full animate-pulse-slow" />
+            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-accent/30 rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
           </div>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex justify-center mb-8 animate-fade-in">
+        <div className="flex justify-center mb-8 animate-scale-in">
           <Tabs value={category} onValueChange={(value) => {
             setCategory(value);
             setSearchParams({ category: value });
             setBrandFilter("all");
           }}>
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="phones" className="gap-2">
+            <TabsList className="grid w-full max-w-md grid-cols-2 p-1 glass-effect shadow-xl border-primary/20">
+              <TabsTrigger 
+                value="phones" 
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
                 <Smartphone className="h-4 w-4" />
                 Phones
               </TabsTrigger>
-              <TabsTrigger value="spare-parts" className="gap-2">
+              <TabsTrigger 
+                value="spare-parts" 
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
                 <Wrench className="h-4 w-4" />
                 Spare Parts
               </TabsTrigger>
@@ -188,23 +224,23 @@ export default function Shop() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 animate-fade-in">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col md:flex-row gap-4 mb-8 animate-slide-in-left">
+          <div className="flex-1 relative group">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary transition-all duration-300 group-focus-within:scale-110" />
             <Input
               placeholder="Search devices by brand, model, or specs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12 h-12 glass-effect border-primary/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/30 transition-all duration-300 text-base"
             />
           </div>
           
           <Select value={brandFilter} onValueChange={setBrandFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <Filter className="mr-2 h-4 w-4" />
+            <SelectTrigger className="w-full md:w-[200px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
+              <Filter className="mr-2 h-4 w-4 text-primary" />
               <SelectValue placeholder={category === "phones" ? "All Brands" : "All Categories"} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="glass-effect">
               <SelectItem value="all">{category === "phones" ? "All Brands" : "All Categories"}</SelectItem>
               {category === "phones" ? (
                 brands.map(brand => (
@@ -219,10 +255,10 @@ export default function Shop() {
           </Select>
 
           <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
               <SelectValue placeholder="Availability" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="glass-effect">
               <SelectItem value="all">{category === "phones" ? "All Devices" : "All Parts"}</SelectItem>
               <SelectItem value="available">{category === "phones" ? "Available Now" : "In Stock"}</SelectItem>
               <SelectItem value="out-of-stock">Out of Stock</SelectItem>
@@ -230,10 +266,10 @@ export default function Shop() {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="glass-effect">
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="price-low">Price: Low to High</SelectItem>
               <SelectItem value="price-high">Price: High to Low</SelectItem>
@@ -247,46 +283,72 @@ export default function Shop() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-64 w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+              <div key={i} className="space-y-4 animate-pulse">
+                <Skeleton className="h-64 w-full rounded-2xl glass-effect" />
+                <Skeleton className="h-4 w-3/4 rounded-full" />
+                <Skeleton className="h-4 w-1/2 rounded-full" />
               </div>
             ))}
           </div>
         ) : displayItems.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {category === "phones" ? (
-                filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                filteredProducts.map((product, index) => (
+                  <div 
+                    key={product.id} 
+                    className="animate-scale-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <ProductCard product={product} />
+                  </div>
                 ))
               ) : (
-                filteredSpareParts.map((part) => (
-                  <SparePartCard key={part.id} part={part} />
+                filteredSpareParts.map((part, index) => (
+                  <div 
+                    key={part.id} 
+                    className="animate-scale-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <SparePartCard part={part} />
+                  </div>
                 ))
               )}
             </div>
             
-            <div className="text-center mt-12">
-              <p className="text-sm text-muted-foreground">
-                Showing {totalCount} {totalCount === 1 ? (category === "phones" ? 'product' : 'part') : (category === "phones" ? 'products' : 'parts')}
-              </p>
+            <div className="text-center mt-16 animate-fade-in-up">
+              <div className="inline-block px-6 py-3 glass-effect rounded-full border border-primary/20">
+                <p className="text-sm font-medium bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Showing {totalCount} {totalCount === 1 ? (category === "phones" ? 'product' : 'part') : (category === "phones" ? 'products' : 'parts')}
+                </p>
+              </div>
             </div>
           </>
         ) : (
-          <div className="text-center py-16 animate-fade-in">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+          <div className="text-center py-24 animate-fade-in-up">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 backdrop-blur-sm mb-6 animate-pulse-slow border border-primary/20">
               {category === "phones" ? (
-                <Smartphone className="h-8 w-8 text-muted-foreground" />
+                <Smartphone className="h-12 w-12 text-primary" />
               ) : (
-                <Wrench className="h-8 w-8 text-muted-foreground" />
+                <Wrench className="h-12 w-12 text-primary" />
               )}
             </div>
-            <p className="text-lg font-medium mb-2">No {category === "phones" ? "products" : "spare parts"} found</p>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              No {category === "phones" ? "products" : "spare parts"} found
+            </p>
+            <p className="text-muted-foreground text-lg mb-6">
               Try adjusting your search or filters
             </p>
+            <button 
+              onClick={() => {
+                setSearchTerm("");
+                setBrandFilter("all");
+                setAvailabilityFilter("all");
+              }}
+              className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:scale-105 hover:shadow-xl transition-all duration-300 animate-glow"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
       </div>
