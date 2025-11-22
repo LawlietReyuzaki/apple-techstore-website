@@ -28,7 +28,7 @@ import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap } from "lucide-react";
 import logo from "@/assets/logo.png";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { useInView } from 'react-intersection-observer';
 import {
   Sheet,
@@ -320,8 +320,8 @@ const OurServicesSection = () => {
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
               <Phone className="w-10 h-10 text-white" />
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Wholesale Phones</h3>
-            <p className="text-white/70 mb-6 leading-relaxed">
+            <h3 className="text-2xl font-bold mb-3 text-black">Wholesale Phones</h3>
+            <p className="text-black/80 mb-6 leading-relaxed">
               New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
             </p>
             <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
@@ -334,8 +334,8 @@ const OurServicesSection = () => {
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
                 <Wrench className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-white">Expert Repairs</h3>
-              <p className="text-white/70 mb-6 leading-relaxed">
+              <h3 className="text-2xl font-bold mb-3 text-black">Expert Repairs</h3>
+              <p className="text-black/80 mb-6 leading-relaxed">
                 Professional repairs, quick turnaround, and warranty included on all services.
               </p>
               <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
@@ -348,8 +348,8 @@ const OurServicesSection = () => {
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
               <ShoppingBag className="w-10 h-10 text-white" />
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Sell Your Phone</h3>
-            <p className="text-white/70 mb-6 leading-relaxed">
+            <h3 className="text-2xl font-bold mb-3 text-black">Sell Your Phone</h3>
+            <p className="text-black/80 mb-6 leading-relaxed">
               Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
             </p>
             <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
@@ -529,7 +529,6 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <ThemeToggle />
             <Link to="/shop" className="hidden lg:block">
               <Button variant="outline" size="sm">
                 <ShoppingBag className="h-4 w-4 mr-2" />
