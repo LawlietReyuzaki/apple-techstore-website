@@ -51,11 +51,11 @@ export const TrustBar = () => {
               <div 
                 key={feature.title} 
                 className={`group flex flex-col items-center text-center gap-4 transition-all duration-700 ${
-                  inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                  inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'
                 }`}
-                style={{ transitionDelay: `${index * 150}ms` }}
+                style={{ transitionDelay: `${index * 200}ms` }}
               >
-                <div className={`relative w-16 h-16 rounded-2xl ${feature.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg animate-glow`}>
+                <div className={`relative w-16 h-16 rounded-2xl ${feature.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg`}>
                   <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl`} />
                   <Icon className="w-8 h-8 text-primary relative z-10 group-hover:scale-110 transition-transform" />
                 </div>

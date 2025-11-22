@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useInView } from 'react-intersection-observer';
 import appleDevices from "@/assets/brands/apple-devices.jpg";
 import samsungPhones from "@/assets/brands/samsung-phones.jpg";
 import googlePixel from "@/assets/brands/google-pixel.jpg";
@@ -20,40 +21,67 @@ const brands = [
 ];
 
 export const BrandSection = () => {
+  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+
   return (
-    <section className="py-12 md:py-16">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">
+    <section ref={ref} className="relative py-16 md:py-20 overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* Glowing top border */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-shimmer" />
+
+      <div className="container mx-auto px-4 relative z-10">
+        <div className={`text-center mb-12 transition-all duration-700 ${
+          inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}>
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent animate-shimmer">
             All Major Brands Available
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
             Every single phone from Google, Apple, Samsung, Huawei, Xiaomi, Vivo, Oppo & more
           </p>
         </div>
         
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-          {brands.map((brand) => (
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-6">
+          {brands.map((brand, index) => (
             <Card 
               key={brand.name}
-              className="aspect-square flex flex-col items-center justify-center hover:shadow-lg transition-all cursor-pointer group overflow-hidden bg-card"
+              className={`relative group aspect-square flex flex-col items-center justify-center hover:shadow-2xl hover:shadow-primary/20 cursor-pointer overflow-hidden bg-gradient-to-br from-gray-900 to-black border-primary/20 hover:border-primary/50 transition-all duration-700 hover:scale-110 ${
+                inView ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+              }`}
+              style={{ transitionDelay: `${index * 100}ms` }}
             >
-              <div className="w-full h-full p-2 flex flex-col items-center justify-center">
-                <div className="w-full h-16 mb-2 flex items-center justify-center overflow-hidden rounded-md">
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              <div className="w-full h-full p-3 flex flex-col items-center justify-center relative z-10">
+                <div className="w-full h-16 mb-2 flex items-center justify-center overflow-hidden rounded-lg">
                   <img 
                     src={brand.logo} 
                     alt={brand.name}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-300"
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-125 transition-all duration-500"
                   />
                 </div>
-                <span className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                <span className="text-xs md:text-sm font-bold text-gray-400 group-hover:text-white transition-colors duration-300">
                   {brand.name}
                 </span>
               </div>
+
+              {/* Corner decorations */}
+              <div className="absolute top-1 right-1 w-2 h-2 bg-primary/30 rounded-full group-hover:scale-150 transition-transform" />
+              <div className="absolute bottom-1 left-1 w-2 h-2 bg-accent/30 rounded-full group-hover:scale-150 transition-transform" />
             </Card>
           ))}
         </div>
       </div>
+
+      {/* Glowing bottom border */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent animate-shimmer" style={{ animationDelay: '1s' }} />
     </section>
   );
 };
