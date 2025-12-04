@@ -130,8 +130,16 @@ export default function Checkout() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-
+        <h1 className="text-3xl font-bold mb-4">Checkout</h1>
+        
+        {!user && (
+          <div className="mb-6 p-4 bg-secondary/30 border border-border rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              You're checking out as a <span className="font-semibold text-foreground">Guest</span>. 
+              <Link to="/login" className="text-primary hover:underline ml-1">Sign in</Link> to track your orders easily.
+            </p>
+          </div>
+        )}
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
