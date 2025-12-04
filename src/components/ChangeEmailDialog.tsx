@@ -12,7 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Eye, EyeOff } from "lucide-react";
+import { Mail, Eye, EyeOff, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ChangeEmailDialog() {
   const [open, setOpen] = useState(false);
@@ -21,6 +22,7 @@ export function ChangeEmailDialog() {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const resetForm = () => {
     setCurrentPassword("");
@@ -35,7 +37,7 @@ export function ChangeEmailDialog() {
     return emailRegex.test(email);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors: string[] = [];
 
@@ -49,9 +51,6 @@ export function ChangeEmailDialog() {
     if (!confirmEmail) {
       validationErrors.push("Please confirm your new email");
     }
-
-    // Demo mode - accept any password (in production, verify via server)
-    // Password validation is skipped for demo purposes
 
     // Validate email format
     if (newEmail && !validateEmail(newEmail)) {
@@ -68,10 +67,42 @@ export function ChangeEmailDialog() {
       return;
     }
 
-    // Success
-    toast.success("Email changed successfully (demo). Update on server to apply in production.");
-    setOpen(false);
-    resetForm();
+    setIsLoading(true);
+    try {
+      // First verify current password by re-authenticating
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        throw new Error("Unable to get current user email");
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        setErrors(["Current password is incorrect"]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Update email
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast.success("Email update initiated. Please check your new email for confirmation link.");
+      setOpen(false);
+      resetForm();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update email");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -158,10 +189,12 @@ export function ChangeEmailDialog() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">Change Email</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...</> : "Change Email"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
