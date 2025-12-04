@@ -52,11 +52,15 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
+      // Get the current session to ensure we have the correct user_id
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || null;
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          user_id: user?.id || null,
+          user_id: currentUserId,
           customer_name: formData.name,
           customer_email: formData.email,
           customer_phone: formData.phone,
