@@ -56,10 +56,8 @@ export function ChangePasswordDialog() {
       validationErrors.push("Please confirm your new password");
     }
 
-    // Validate current password (demo validation)
-    if (currentPassword && currentPassword !== "CURRENT_PASSWORD_PLACEHOLDER") {
-      validationErrors.push("Current password is incorrect");
-    }
+    // Demo mode - accept any password (in production, verify via server)
+    // Current password validation is skipped for demo purposes
 
     // Validate new password requirements
     if (newPassword && !validatePassword(newPassword)) {

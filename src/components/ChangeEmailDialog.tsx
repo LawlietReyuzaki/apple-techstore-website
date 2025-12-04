@@ -50,10 +50,8 @@ export function ChangeEmailDialog() {
       validationErrors.push("Please confirm your new email");
     }
 
-    // Validate current password (demo validation)
-    if (currentPassword && currentPassword !== "CURRENT_PASSWORD_PLACEHOLDER") {
-      validationErrors.push("Current password is incorrect");
-    }
+    // Demo mode - accept any password (in production, verify via server)
+    // Password validation is skipped for demo purposes
 
     // Validate email format
     if (newEmail && !validateEmail(newEmail)) {
