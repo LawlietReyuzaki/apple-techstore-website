@@ -12,24 +12,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function ChangeEmailDialog() {
   const [open, setOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const resetForm = () => {
-    setCurrentPassword("");
     setNewEmail("");
     setConfirmEmail("");
     setErrors([]);
-    setShowPassword(false);
   };
 
   const validateEmail = (email: string): boolean => {
@@ -41,10 +37,6 @@ export function ChangeEmailDialog() {
     e.preventDefault();
     const validationErrors: string[] = [];
 
-    // Check if all fields are filled
-    if (!currentPassword) {
-      validationErrors.push("Current password is required");
-    }
     if (!newEmail) {
       validationErrors.push("New email is required");
     }
@@ -52,12 +44,10 @@ export function ChangeEmailDialog() {
       validationErrors.push("Please confirm your new email");
     }
 
-    // Validate email format
     if (newEmail && !validateEmail(newEmail)) {
       validationErrors.push("Please enter a valid email address");
     }
 
-    // Check if emails match
     if (newEmail && confirmEmail && newEmail !== confirmEmail) {
       validationErrors.push("Email addresses do not match");
     }
@@ -69,24 +59,6 @@ export function ChangeEmailDialog() {
 
     setIsLoading(true);
     try {
-      // First verify current password by re-authenticating
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
-        throw new Error("Unable to get current user email");
-      }
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: currentPassword,
-      });
-
-      if (signInError) {
-        setErrors(["Current password is incorrect"]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Update email
       const { error: updateError } = await supabase.auth.updateUser({
         email: newEmail,
       });
@@ -95,7 +67,7 @@ export function ChangeEmailDialog() {
         throw updateError;
       }
 
-      toast.success("Email update initiated. Please check your new email for confirmation link.");
+      toast.success("Email updated successfully. Please check your new email for confirmation.");
       setOpen(false);
       resetForm();
     } catch (error: any) {
@@ -120,7 +92,7 @@ export function ChangeEmailDialog() {
         <DialogHeader>
           <DialogTitle>Change Admin Email</DialogTitle>
           <DialogDescription>
-            Enter your current password and the new email address.
+            Enter the new email address for this admin account.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -134,31 +106,6 @@ export function ChangeEmailDialog() {
                 </ul>
               </div>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="current-password-email">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="current-password-email"
-                  type={showPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => {
-                    setCurrentPassword(e.target.value);
-                    setErrors([]);
-                  }}
-                  placeholder="Enter current password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="new-email">New Email Address</Label>
