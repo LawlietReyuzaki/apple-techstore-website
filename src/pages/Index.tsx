@@ -20,7 +20,6 @@ import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { DeviceCard } from "@/components/DeviceCard";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -668,9 +667,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-      
-      {/* Floating WhatsApp Button */}
-      <FloatingWhatsApp />
     </div>
   );
 };
