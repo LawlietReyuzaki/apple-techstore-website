@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Shield, UserCog, Wallet, Save, Loader2 } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import type { AppRole } from "@/hooks/useAuth";
 
 export default function AdminSettings() {
@@ -342,6 +343,11 @@ export default function AdminSettings() {
               <li>Security definer functions prevent recursive RLS issues</li>
               <li>All admin actions are logged in activity timeline</li>
             </ul>
+          </div>
+          
+          <div className="pt-4 border-t">
+            <h4 className="font-semibold mb-3">Account Security</h4>
+            <ChangePasswordDialog />
           </div>
         </CardContent>
       </Card>
