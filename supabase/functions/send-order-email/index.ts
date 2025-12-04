@@ -132,6 +132,9 @@ Deno.serve(async (req) => {
     const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL')!;
     const appPassword = Deno.env.get('GMAIL_APP_PASSWORD')!;
     const cleanPassword = appPassword.replace(/\s+/g, '');
+    
+    // Admin email for receiving order/repair notifications
+    const adminEmail = 'appletwch2228@gmail.com';
 
     if (type === 'order' && orderId) {
       // Fetch order details with items
@@ -1286,9 +1289,9 @@ ${repair.estimated_cost ? `Estimated Cost: Rs ${repair.estimated_cost}` : ''}
 `;
     }
 
-    // Send email via SMTP
+    // Send email via SMTP to admin
     await sendEmailViaSMTP(
-      senderEmail, // to (sending to self for notifications)
+      adminEmail, // to admin for notifications
       senderEmail, // from
       subject,
       emailText,
