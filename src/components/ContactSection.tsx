@@ -24,7 +24,8 @@ export const ContactSection = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Location</h3>
                   <p className="text-sm text-muted-foreground">
-                    Dilbar Mobiles, Bahria Phase 7<br />
+                    Shop No G15, China Center 2<br />
+                    Wallayat Complex, Bahria Town Phase 7<br />
                     Rawalpindi, Pakistan
                   </p>
                 </div>
