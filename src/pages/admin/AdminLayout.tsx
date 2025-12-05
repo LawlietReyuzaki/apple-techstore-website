@@ -1,40 +1,56 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   Home, Wrench, Users, Settings, Package, ShoppingBag, CreditCard, Smartphone,
-  Menu, X, ChevronDown, ChevronUp, ChevronRight
+  Menu, X, ChevronDown, ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthButton } from "@/components/AuthButton";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+const MOBILE_BREAKPOINT = 768;
+
 export default function AdminLayout() {
   const location = useLocation();
-  const isMobile = useIsMobile();
+  // Start closed by default - safer for mobile-first
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [isMobile, setIsMobile] = useState(true); // Default to mobile (safer)
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Auto-collapse sidebar on mobile
+  // Detect mobile on mount and resize
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    } else {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      return mobile;
+    };
+    
+    // Initial check
+    const mobile = checkMobile();
+    
+    // On desktop, open sidebar after mount
+    if (!mobile) {
       setSidebarOpen(true);
     }
-  }, [isMobile]);
+    
+    setIsInitialized(true);
+    
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
-    if (isMobile) {
+    if (isInitialized && isMobile) {
       setSidebarOpen(false);
     }
-  }, [location.pathname, isMobile]);
+  }, [location.pathname, isMobile, isInitialized]);
 
   // Group nav items into sections
   const navSections = [
@@ -74,32 +90,35 @@ export default function AdminLayout() {
     }
   ];
 
-  const toggleSection = (title: string) => {
+  const toggleSection = useCallback((title: string) => {
     setOpenSections(prev => ({
       ...prev,
       [title]: !prev[title]
     }));
-  };
+  }, []);
 
   // Check if any item in section is active
-  const isSectionActive = (items: typeof navSections[0]['items']) => {
+  const isSectionActive = useCallback((items: typeof navSections[0]['items']) => {
     return items.some(item => 
       item.path === "/admin"
         ? location.pathname === "/admin"
         : location.pathname.startsWith(item.path)
     );
-  };
+  }, [location.pathname]);
 
-  // Initialize open sections based on active route
+  // Initialize open sections - only on desktop, keep collapsed on mobile
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const initialOpen: Record<string, boolean> = {};
     navSections.forEach(section => {
-      if (isSectionActive(section.items)) {
+      // Only auto-expand active section on desktop
+      if (!isMobile && isSectionActive(section.items)) {
         initialOpen[section.title] = true;
       }
     });
     setOpenSections(initialOpen);
-  }, []);
+  }, [isInitialized, isMobile]);
 
   return (
     <div className="min-h-screen bg-background">
