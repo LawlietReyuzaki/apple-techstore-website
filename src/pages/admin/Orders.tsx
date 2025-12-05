@@ -57,7 +57,7 @@ export default function AdminOrders() {
         .from("orders")
         .select(`
           *,
-          payments (
+          payments!payments_order_id_fkey (
             id,
             status,
             payment_method,
