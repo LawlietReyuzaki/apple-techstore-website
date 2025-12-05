@@ -351,34 +351,42 @@ export default function AdminRepairs() {
   if (!isAdmin && !isTechnician) return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="w-full max-w-full overflow-x-hidden">
       <Card>
-        <CardHeader>
-          <CardTitle>Repair Management</CardTitle>
-          <div className="flex gap-2 mt-4 mb-4">
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="text-lg md:text-2xl">Repair Management</CardTitle>
+          <div className="flex flex-wrap gap-2 mt-3 md:mt-4 mb-3 md:mb-4">
             <Button
               variant={statusFilter === "created" ? "default" : "outline"}
               onClick={() => setStatusFilter("created")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Pending Repairs
+              Pending
             </Button>
             <Button
               variant={statusFilter === "in_progress" ? "default" : "outline"}
               onClick={() => setStatusFilter("in_progress")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Approved Repairs
+              Approved
             </Button>
             <Button
               variant={statusFilter === "delivered" ? "default" : "outline"}
               onClick={() => setStatusFilter("delivered")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Completed Repairs
+              Completed
             </Button>
             <Button
               variant={statusFilter === "all" ? "default" : "outline"}
               onClick={() => setStatusFilter("all")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              All Repairs
+              All
             </Button>
           </div>
           <div className="flex gap-4">
@@ -386,68 +394,140 @@ export default function AdminRepairs() {
               placeholder="Search by customer or device..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
+              className="max-w-sm text-sm"
             />
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Issue</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Technician</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRepairs?.map((repair) => (
-                <TableRow key={repair.id}>
-                  <TableCell>{repair.customer_profile?.full_name || "N/A"}</TableCell>
-                  <TableCell>{`${repair.device_make} ${repair.device_model}`}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{repair.issue}</TableCell>
-                  <TableCell>{getStatusBadge(repair.status)}</TableCell>
-                  <TableCell>{repair.assigned_tech?.name || "Unassigned"}</TableCell>
-                  <TableCell>{format(new Date(repair.created_at), "MMM dd, yyyy")}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedRepair(repair)}
-                      >
-                        View
-                      </Button>
-                      {repair.status === "created" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => {
-                              setSelectedRepair(repair);
-                              handleApproveRepair();
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeclineRepair(repair.id)}
-                          >
-                            Decline
-                          </Button>
-                        </>
-                      )}
-                      {repair.status === "in_progress" && (
+        <CardContent className="p-3 md:p-6">
+          {/* Mobile card layout */}
+          <div className="md:hidden space-y-3">
+            {filteredRepairs?.map((repair) => (
+              <Card key={repair.id} className="border">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-sm">{repair.customer_profile?.full_name || "N/A"}</p>
+                      <p className="text-xs text-muted-foreground">{`${repair.device_make} ${repair.device_model}`}</p>
+                    </div>
+                    {getStatusBadge(repair.status)}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{repair.issue}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Tech: {repair.assigned_tech?.name || "Unassigned"}</span>
+                    <span>{format(new Date(repair.created_at), "MMM dd")}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedRepair(repair)}
+                      className="flex-1 text-xs h-8"
+                    >
+                      View
+                    </Button>
+                    {repair.status === "created" && (
+                      <>
                         <Button
                           size="sm"
                           variant="default"
-                          onClick={() => 
-                            updateRepairMutation.mutate({
+                          onClick={() => {
+                            setSelectedRepair(repair);
+                            handleApproveRepair();
+                          }}
+                          className="flex-1 text-xs h-8"
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeclineRepair(repair.id)}
+                          className="text-xs h-8"
+                        >
+                          Decline
+                        </Button>
+                      </>
+                    )}
+                    {repair.status === "in_progress" && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => 
+                          updateRepairMutation.mutate({
+                            id: repair.id,
+                            updates: { status: "delivered" },
+                          })
+                        }
+                        className="flex-1 text-xs h-8"
+                      >
+                        Complete
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Issue</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Technician</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRepairs?.map((repair) => (
+                  <TableRow key={repair.id}>
+                    <TableCell>{repair.customer_profile?.full_name || "N/A"}</TableCell>
+                    <TableCell>{`${repair.device_make} ${repair.device_model}`}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{repair.issue}</TableCell>
+                    <TableCell>{getStatusBadge(repair.status)}</TableCell>
+                    <TableCell>{repair.assigned_tech?.name || "Unassigned"}</TableCell>
+                    <TableCell>{format(new Date(repair.created_at), "MMM dd, yyyy")}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedRepair(repair)}
+                        >
+                          View
+                        </Button>
+                        {repair.status === "created" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => {
+                                setSelectedRepair(repair);
+                                handleApproveRepair();
+                              }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeclineRepair(repair.id)}
+                            >
+                              Decline
+                            </Button>
+                          </>
+                        )}
+                        {repair.status === "in_progress" && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => 
+                              updateRepairMutation.mutate({
                               id: repair.id,
                               updates: { status: "delivered" },
                             })
@@ -462,11 +542,12 @@ export default function AdminRepairs() {
               ))}
             </TableBody>
           </Table>
+              </div>
         </CardContent>
       </Card>
 
       <Dialog open={!!selectedRepair} onOpenChange={() => setSelectedRepair(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-2 md:mx-auto w-[95vw] md:w-full">
           <DialogHeader>
             <DialogTitle>Repair Details</DialogTitle>
           </DialogHeader>
