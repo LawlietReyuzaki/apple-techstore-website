@@ -283,17 +283,17 @@ export default function Payments() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Payment Verification</h1>
+    <div className="w-full max-w-full overflow-x-hidden space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+        <h1 className="text-xl md:text-3xl font-bold">Payment Verification</h1>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Payments</CardTitle>
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="text-lg md:text-xl">All Payments</CardTitle>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -306,106 +306,198 @@ export default function Payments() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Receipt</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments?.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
-                  <TableCell>{payment.orders.customer_name}</TableCell>
-                  <TableCell className="capitalize text-xs">{payment.payment_method.replace('_', ' ')}</TableCell>
-                  <TableCell className="font-semibold">PKR {payment.amount.toLocaleString()}</TableCell>
-                  <TableCell>
+        <CardContent className="p-3 md:p-6">
+          {/* Mobile card layout */}
+          <div className="md:hidden space-y-3">
+            {payments?.map((payment) => (
+              <Card key={payment.id} className="border">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-sm">{payment.orders.customer_name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{payment.transaction_id.slice(0, 12)}...</p>
+                    </div>
+                    {getStatusBadge(payment.status)}
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="capitalize">{payment.payment_method.replace('_', ' ')}</span>
+                    <span className="font-semibold">PKR {payment.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     {payment.payment_screenshot_url && signedUrls[payment.id] ? (
                       <img 
                         src={signedUrls[payment.id]} 
-                        alt="Receipt Thumbnail" 
-                        className="w-12 h-12 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                        alt="Receipt" 
+                        className="w-10 h-10 object-cover rounded border cursor-pointer"
                         onClick={() => {
                           setSelectedPayment(payment);
                           setViewDialogOpen(true);
                         }}
                       />
-                    ) : payment.payment_screenshot_url ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : (
                       <span className="text-xs text-muted-foreground">No receipt</span>
                     )}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                  <TableCell className="text-xs">{new Date(payment.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                    <span className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs h-8"
+                      onClick={() => {
+                        setSelectedPayment(payment);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-3 w-3 mr-1" /> View
+                    </Button>
+                    {payment.status === "pending" && (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={() => {
+                            setSelectedPayment(payment);
+                            setApproveDialogOpen(true);
+                          }}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={() => {
+                            setSelectedPayment(payment);
+                            setDeclineDialogOpen(true);
+                          }}
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                    {payment.status === "approved" && (
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
+                        className="text-xs h-8"
                         onClick={() => {
                           setSelectedPayment(payment);
-                          setViewDialogOpen(true);
+                          setRefundDialogOpen(true);
                         }}
                       >
-                        <Eye className="h-4 w-4" />
+                        <RefreshCcw className="h-3 w-3" />
                       </Button>
-                      {payment.status === "pending" && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPayment(payment);
-                              setApproveDialogOpen(true);
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPayment(payment);
-                              setDeclineDialogOpen(true);
-                            }}
-                          >
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Receipt</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments?.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-mono text-xs">{payment.transaction_id}</TableCell>
+                    <TableCell>{payment.orders.customer_name}</TableCell>
+                    <TableCell className="capitalize text-xs">{payment.payment_method.replace('_', ' ')}</TableCell>
+                    <TableCell className="font-semibold">PKR {payment.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      {payment.payment_screenshot_url && signedUrls[payment.id] ? (
+                        <img 
+                          src={signedUrls[payment.id]} 
+                          alt="Receipt Thumbnail" 
+                          className="w-12 h-12 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            setSelectedPayment(payment);
+                            setViewDialogOpen(true);
+                          }}
+                        />
+                      ) : payment.payment_screenshot_url ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No receipt</span>
                       )}
-                      {payment.status === "approved" && (
+                    </TableCell>
+                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                    <TableCell className="text-xs">{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
                             setSelectedPayment(payment);
-                            setRefundDialogOpen(true);
+                            setViewDialogOpen(true);
                           }}
                         >
-                          <RefreshCcw className="h-4 w-4 text-orange-600" />
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        {payment.status === "pending" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPayment(payment);
+                                setApproveDialogOpen(true);
+                              }}
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPayment(payment);
+                                setDeclineDialogOpen(true);
+                              }}
+                            >
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </>
+                        )}
+                        {payment.status === "approved" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPayment(payment);
+                              setRefundDialogOpen(true);
+                            }}
+                          >
+                            <RefreshCcw className="h-4 w-4 text-orange-600" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
       {/* View Payment Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl mx-2 md:mx-auto w-[95vw] md:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Payment Details</DialogTitle>
           </DialogHeader>

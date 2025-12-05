@@ -202,80 +202,79 @@ export default function AdminOrders() {
   if (!isAdmin) return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="w-full max-w-full overflow-x-hidden">
       <Card>
-        <CardHeader>
-          <CardTitle>Order Management</CardTitle>
-          <div className="flex gap-2 mt-4">
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="text-lg md:text-2xl">Order Management</CardTitle>
+          <div className="flex flex-wrap gap-2 mt-3 md:mt-4">
             <Button
               variant={statusFilter === "pending" ? "default" : "outline"}
               onClick={() => setStatusFilter("pending")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Pending Orders
+              Pending
             </Button>
             <Button
               variant={statusFilter === "processing" ? "default" : "outline"}
               onClick={() => setStatusFilter("processing")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Approved Orders
+              Approved
             </Button>
             <Button
               variant={statusFilter === "delivered" ? "default" : "outline"}
               onClick={() => setStatusFilter("delivered")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              Completed Orders
+              Completed
             </Button>
             <Button
               variant={statusFilter === "all" ? "default" : "outline"}
               onClick={() => setStatusFilter("all")}
+              size="sm"
+              className="text-xs md:text-sm"
             >
-              All Orders
+              All
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 md:p-6">
           {orders && orders.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-xl">No orders yet</p>
+            <div className="text-center py-8 md:py-12">
+              <Package className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg md:text-xl">No orders yet</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile card layout */}
+              <div className="md:hidden space-y-3">
                 {orders?.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono text-xs">
-                      {order.id.slice(0, 8)}...
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{order.customer_name}</p>
-                        <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                  <Card key={order.id} className="border">
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-sm">{order.customer_name}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                        </div>
+                        {getStatusBadge(order.status)}
                       </div>
-                    </TableCell>
-                    <TableCell className="font-medium">Rs. {order.total_amount.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="uppercase">{order.payment_method}</Badge>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{format(new Date(order.created_at), "MMM dd, yyyy")}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">ID: {order.id.slice(0, 8)}</span>
+                        <span className="font-medium">Rs. {order.total_amount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Badge variant="outline" className="uppercase text-xs">{order.payment_method}</Badge>
+                        <span className="text-xs text-muted-foreground">{format(new Date(order.created_at), "MMM dd")}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedOrder(order)}
+                          className="flex-1 text-xs h-8"
                         >
                           View
                         </Button>
@@ -285,6 +284,7 @@ export default function AdminOrders() {
                               size="sm"
                               variant="default"
                               onClick={() => setApproveConfirmId(order.id)}
+                              className="flex-1 text-xs h-8"
                             >
                               Approve
                             </Button>
@@ -292,6 +292,7 @@ export default function AdminOrders() {
                               size="sm"
                               variant="destructive"
                               onClick={() => setDeclineConfirmId(order.id)}
+                              className="text-xs h-8"
                             >
                               Decline
                             </Button>
@@ -302,22 +303,99 @@ export default function AdminOrders() {
                             size="sm"
                             variant="default"
                             onClick={() => updateOrderMutation.mutate({ id: order.id, status: "delivered" })}
+                            className="flex-1 text-xs h-8"
                           >
-                            Mark Complete
+                            Complete
                           </Button>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders?.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-mono text-xs">
+                          {order.id.slice(0, 8)}...
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{order.customer_name}</p>
+                            <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">Rs. {order.total_amount.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="uppercase">{order.payment_method}</Badge>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                        <TableCell>{format(new Date(order.created_at), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              View
+                            </Button>
+                            {order.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => setApproveConfirmId(order.id)}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => setDeclineConfirmId(order.id)}
+                                >
+                                  Decline
+                                </Button>
+                              </>
+                            )}
+                            {order.status === "processing" && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => updateOrderMutation.mutate({ id: order.id, status: "delivered" })}
+                              >
+                                Mark Complete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-2 md:mx-auto w-[95vw] md:w-full">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
           </DialogHeader>
