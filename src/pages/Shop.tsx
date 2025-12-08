@@ -168,82 +168,6 @@ export default function Shop() {
       </header>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex gap-6">
-          {/* Shop Sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 glass-effect rounded-2xl p-4 border border-primary/10 space-y-2">
-              <h3 className="font-semibold text-lg mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Categories
-              </h3>
-              
-              {/* Repairs Link */}
-              <Link 
-                to="/book-repair"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
-              >
-                <Wrench className="h-5 w-5 text-primary" />
-                <span className="font-medium group-hover:text-primary transition-colors">Repairs</span>
-              </Link>
-              
-              {/* Used Phones */}
-              <Link 
-                to="/phones"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
-              >
-                <Smartphone className="h-5 w-5 text-primary" />
-                <span className="font-medium group-hover:text-primary transition-colors">Used Phones</span>
-              </Link>
-              
-              {/* Laptops */}
-              <Link 
-                to="/laptops"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
-              >
-                <Laptop className="h-5 w-5 text-primary" />
-                <span className="font-medium group-hover:text-primary transition-colors">Laptops</span>
-              </Link>
-              
-              {/* Accessories - Expandable */}
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group">
-                  <div className="flex items-center gap-3">
-                    <Headphones className="h-5 w-5 text-primary" />
-                    <span className="font-medium group-hover:text-primary transition-colors">Accessories</span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all duration-200 group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-8 space-y-1 mt-1">
-                  <Link 
-                    to="/accessories/mobile"
-                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
-                  >
-                    Mobile Accessories
-                  </Link>
-                  <Link 
-                    to="/accessories/laptop"
-                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
-                  >
-                    Laptop Accessories
-                  </Link>
-                  <Link 
-                    to="/accessories/pc"
-                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
-                  >
-                    PC Accessories
-                  </Link>
-                  <Link 
-                    to="/accessories/computer"
-                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
-                  >
-                    Computer Accessories
-                  </Link>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          </aside>
-
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
         {/* Page Header */}
         <div className="mb-12 text-center animate-fade-in-up relative rounded-3xl overflow-hidden group">
           <div 
@@ -260,17 +184,32 @@ export default function Shop() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 backdrop-blur-lg mb-6 animate-glow shadow-2xl border border-white/10">
               {category === "phones" ? (
                 <Smartphone className="h-10 w-10 text-white drop-shadow-lg" />
-              ) : (
+              ) : category === "spare-parts" ? (
                 <Wrench className="h-10 w-10 text-white drop-shadow-lg" />
+              ) : category === "used-phones" ? (
+                <Smartphone className="h-10 w-10 text-white drop-shadow-lg" />
+              ) : category === "laptops" ? (
+                <Laptop className="h-10 w-10 text-white drop-shadow-lg" />
+              ) : (
+                <Headphones className="h-10 w-10 text-white drop-shadow-lg" />
               )}
             </div>
             <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-              {category === "phones" ? "Shop Premium Phones" : "Phone Spare Parts"}
+              {category === "phones" ? "Shop Premium Phones" : 
+               category === "spare-parts" ? "Phone Spare Parts" :
+               category === "used-phones" ? "Used Phones" :
+               category === "laptops" ? "Laptops" : "Accessories"}
             </h1>
             <p className="text-white/95 text-xl md:text-2xl max-w-3xl mx-auto font-light tracking-wide drop-shadow-lg">
               {category === "phones" 
                 ? "Discover our curated collection of flagship smartphones with competitive pricing"
-                : "High-quality replacement parts for all major phone brands"}
+                : category === "spare-parts"
+                ? "High-quality replacement parts for all major phone brands"
+                : category === "used-phones"
+                ? "Quality pre-owned smartphones at unbeatable prices"
+                : category === "laptops"
+                ? "Premium laptops for work and play"
+                : "Essential accessories for your devices"}
             </p>
             
             {/* Decorative Elements */}
@@ -286,7 +225,7 @@ export default function Shop() {
             setSearchParams({ category: value });
             setBrandFilter("all");
           }}>
-            <TabsList className="grid w-full max-w-md grid-cols-2 p-1 glass-effect shadow-xl border-primary/20">
+            <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-xl border-primary/20 h-auto">
               <TabsTrigger 
                 value="phones" 
                 className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
@@ -300,6 +239,27 @@ export default function Shop() {
               >
                 <Wrench className="h-4 w-4" />
                 Spare Parts
+              </TabsTrigger>
+              <TabsTrigger 
+                value="used-phones" 
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
+                <Smartphone className="h-4 w-4" />
+                Used Phones
+              </TabsTrigger>
+              <TabsTrigger 
+                value="laptops" 
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
+                <Laptop className="h-4 w-4" />
+                Laptops
+              </TabsTrigger>
+              <TabsTrigger 
+                value="accessories" 
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
+                <Headphones className="h-4 w-4" />
+                Accessories
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -433,8 +393,6 @@ export default function Shop() {
             </button>
           </div>
         )}
-          </div>
-        </div>
       </div>
     </div>
   );
