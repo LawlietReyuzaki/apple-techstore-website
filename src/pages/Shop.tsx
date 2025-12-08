@@ -219,7 +219,7 @@ export default function Shop() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex justify-center mb-8 animate-scale-in">
+        <div className="flex flex-col items-center gap-4 mb-8 animate-scale-in">
           <Tabs value={category} onValueChange={(value) => {
             setCategory(value);
             setSearchParams({ category: value });
@@ -263,6 +263,46 @@ export default function Shop() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Accessory Subcategory Tabs */}
+          {category === "accessories" && (
+            <Tabs value={searchParams.get("subcategory") || "all"} onValueChange={(value) => {
+              setSearchParams({ category: "accessories", subcategory: value });
+            }}>
+              <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-lg border-accent/20 h-auto">
+                <TabsTrigger 
+                  value="all" 
+                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="mobile" 
+                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                >
+                  Mobile
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="laptop" 
+                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                >
+                  Laptop
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="pc" 
+                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                >
+                  PC
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="computer" 
+                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                >
+                  Computer
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
         </div>
 
         {/* Filters */}

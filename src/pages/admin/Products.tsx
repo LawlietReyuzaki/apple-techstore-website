@@ -70,6 +70,14 @@ const ACCESSORY_SUBCATEGORIES = [
   { value: "computer", label: "Computer Accessories" },
 ];
 
+const CATEGORY_FILTERS = [
+  { value: "all", label: "All Products" },
+  { value: "phones", label: "Phones" },
+  { value: "used-phones", label: "Used Phones" },
+  { value: "laptops", label: "Laptops" },
+  { value: "accessories", label: "Accessories" },
+];
+
 export default function AdminProducts() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -96,6 +104,7 @@ export default function AdminProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -324,8 +333,24 @@ export default function AdminProducts() {
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 md:p-6">
-          <CardTitle className="text-lg md:text-2xl">Product Management</CardTitle>
+        <CardHeader className="flex flex-col gap-3 p-3 md:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="text-lg md:text-2xl">Product Management</CardTitle>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-muted-foreground">Filter by:</span>
+            {CATEGORY_FILTERS.map((filter) => (
+              <Button
+                key={filter.value}
+                variant={categoryFilter === filter.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCategoryFilter(filter.value)}
+                className="text-xs"
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button size="sm" className="w-full sm:w-auto">
@@ -589,17 +614,30 @@ export default function AdminProducts() {
           </Dialog>
         </CardHeader>
         <CardContent className="p-3 md:p-6">
-          {products && products.length === 0 ? (
-            <div className="text-center py-8 md:py-12">
-              <Package className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg md:text-xl mb-4">No products yet</p>
-              <p className="text-sm text-muted-foreground mb-6">Add your first product to get started</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile card layout */}
-              <div className="md:hidden space-y-3">
-                {products?.map((product) => (
+          {(() => {
+            const filteredProducts = products?.filter((product) => {
+              if (categoryFilter === "all") return true;
+              const categoryName = product.categories?.name?.toLowerCase() || "";
+              if (categoryFilter === "phones") return categoryName === "phones" || categoryName === "phone";
+              if (categoryFilter === "used-phones") return categoryName === "used phones" || categoryName === "used-phones";
+              if (categoryFilter === "laptops") return categoryName === "laptops" || categoryName === "laptop";
+              if (categoryFilter === "accessories") return categoryName === "accessories" || categoryName === "accessory";
+              return true;
+            });
+            
+            return filteredProducts && filteredProducts.length === 0 ? (
+              <div className="text-center py-8 md:py-12">
+                <Package className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg md:text-xl mb-4">No products found</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {categoryFilter === "all" ? "Add your first product to get started" : `No products in "${CATEGORY_FILTERS.find(f => f.value === categoryFilter)?.label}" category`}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile card layout */}
+                <div className="md:hidden space-y-3">
+                  {filteredProducts?.map((product) => (
                   <Card key={product.id} className="border">
                     <CardContent className="p-3">
                       <div className="flex gap-3">
@@ -662,7 +700,7 @@ export default function AdminProducts() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products?.map((product) => (
+                    {filteredProducts?.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -723,7 +761,8 @@ export default function AdminProducts() {
                 </Table>
               </div>
             </>
-          )}
+            );
+          })()}
         </CardContent>
       </Card>
 
