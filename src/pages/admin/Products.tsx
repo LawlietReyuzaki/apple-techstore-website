@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, X, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, X, Upload, Smartphone, Wrench, Laptop, Headphones } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,11 +72,19 @@ const ACCESSORY_SUBCATEGORIES = [
 ];
 
 const CATEGORY_FILTERS = [
-  { value: "all", label: "All Products" },
-  { value: "phones", label: "Phones" },
-  { value: "used-phones", label: "Used Phones" },
-  { value: "laptops", label: "Laptops" },
-  { value: "accessories", label: "Accessories" },
+  { value: "all", label: "All", icon: Package },
+  { value: "phones", label: "Phones", icon: Smartphone },
+  { value: "used-phones", label: "Used Phones", icon: Smartphone },
+  { value: "laptops", label: "Laptops", icon: Laptop },
+  { value: "accessories", label: "Accessories", icon: Headphones },
+];
+
+const ACCESSORY_SUB_FILTERS = [
+  { value: "all", label: "All Accessories" },
+  { value: "mobile", label: "Mobile" },
+  { value: "laptop", label: "Laptop" },
+  { value: "pc", label: "PC" },
+  { value: "computer", label: "Computer" },
 ];
 
 export default function AdminProducts() {
@@ -105,6 +114,7 @@ export default function AdminProducts() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [accessorySubFilter, setAccessorySubFilter] = useState("all");
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -333,24 +343,50 @@ export default function AdminProducts() {
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <Card>
-        <CardHeader className="flex flex-col gap-3 p-3 md:p-6">
+        <CardHeader className="flex flex-col gap-4 p-3 md:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-lg md:text-2xl">Product Management</CardTitle>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-muted-foreground">Filter by:</span>
-            {CATEGORY_FILTERS.map((filter) => (
-              <Button
-                key={filter.value}
-                variant={categoryFilter === filter.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCategoryFilter(filter.value)}
-                className="text-xs"
-              >
-                {filter.label}
-              </Button>
-            ))}
+          
+          {/* Styled Category Tabs */}
+          <div className="flex justify-center animate-scale-in">
+            <Tabs value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setAccessorySubFilter("all"); }}>
+              <TabsList className="h-10 items-center justify-center rounded-md bg-muted text-muted-foreground grid w-full max-w-2xl grid-cols-5 p-1 glass-effect shadow-xl border-primary/20">
+                {CATEGORY_FILTERS.map((filter) => {
+                  const Icon = filter.icon;
+                  return (
+                    <TabsTrigger
+                      key={filter.value}
+                      value={filter.value}
+                      className="gap-1 text-xs md:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{filter.label}</span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </Tabs>
           </div>
+
+          {/* Accessory Subcategory Tabs */}
+          {categoryFilter === "accessories" && (
+            <div className="flex justify-center animate-scale-in">
+              <Tabs value={accessorySubFilter} onValueChange={setAccessorySubFilter}>
+                <TabsList className="h-9 items-center justify-center rounded-md bg-muted/50 text-muted-foreground grid w-full max-w-lg grid-cols-5 p-1">
+                  {ACCESSORY_SUB_FILTERS.map((sub) => (
+                    <TabsTrigger
+                      key={sub.value}
+                      value={sub.value}
+                      className="text-xs data-[state=active]:bg-accent data-[state=active]:text-white transition-all duration-300"
+                    >
+                      {sub.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
           <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button size="sm" className="w-full sm:w-auto">
@@ -616,12 +652,21 @@ export default function AdminProducts() {
         <CardContent className="p-3 md:p-6">
           {(() => {
             const filteredProducts = products?.filter((product) => {
-              if (categoryFilter === "all") return true;
               const categoryName = product.categories?.name?.toLowerCase() || "";
-              if (categoryFilter === "phones") return categoryName === "phones" || categoryName === "phone";
-              if (categoryFilter === "used-phones") return categoryName === "used phones" || categoryName === "used-phones";
-              if (categoryFilter === "laptops") return categoryName === "laptops" || categoryName === "laptop";
-              if (categoryFilter === "accessories") return categoryName === "accessories" || categoryName === "accessory";
+              
+              // Category filter
+              if (categoryFilter !== "all") {
+                if (categoryFilter === "phones" && !(categoryName === "phones" || categoryName === "phone")) return false;
+                if (categoryFilter === "used-phones" && !(categoryName === "used phones" || categoryName === "used-phones")) return false;
+                if (categoryFilter === "laptops" && !(categoryName === "laptops" || categoryName === "laptop")) return false;
+                if (categoryFilter === "accessories" && !(categoryName === "accessories" || categoryName === "accessory")) return false;
+              }
+              
+              // Accessory subcategory filter
+              if (categoryFilter === "accessories" && accessorySubFilter !== "all") {
+                if (product.accessory_subcategory !== accessorySubFilter) return false;
+              }
+              
               return true;
             });
             
