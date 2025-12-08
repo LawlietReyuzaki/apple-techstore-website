@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Smartphone, Wrench } from "lucide-react";
+import { Search, Filter, Smartphone, Wrench, Laptop, Headphones, ChevronDown, ChevronRight, Cpu, Monitor, Mouse } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,8 @@ export default function Shop() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
+  const [accessoriesExpanded, setAccessoriesExpanded] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     const categoryParam = searchParams.get("category");
@@ -162,6 +165,142 @@ export default function Shop() {
       </header>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="glass-effect rounded-2xl border border-primary/20 p-4 sticky top-24 space-y-2">
+              <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Categories
+              </h3>
+              
+              {/* Phones */}
+              <button
+                onClick={() => {
+                  setCategory("phones");
+                  setSearchParams({ category: "phones" });
+                  setActiveSection(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-left",
+                  category === "phones" && !activeSection
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    : "hover:bg-primary/10"
+                )}
+              >
+                <Smartphone className="h-5 w-5" />
+                <span className="font-medium">Phones</span>
+              </button>
+
+              {/* Spare Parts */}
+              <button
+                onClick={() => {
+                  setCategory("spare-parts");
+                  setSearchParams({ category: "spare-parts" });
+                  setActiveSection(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-left",
+                  category === "spare-parts" && !activeSection
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    : "hover:bg-primary/10"
+                )}
+              >
+                <Wrench className="h-5 w-5" />
+                <span className="font-medium">Spare Parts</span>
+              </button>
+
+              {/* Divider */}
+              <div className="border-t border-primary/20 my-3" />
+
+              {/* Used Phones */}
+              <Link
+                to="/phones"
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                  activeSection === "used-phones"
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    : "hover:bg-primary/10"
+                )}
+              >
+                <Smartphone className="h-5 w-5" />
+                <span className="font-medium">Used Phones</span>
+              </Link>
+
+              {/* Laptops */}
+              <Link
+                to="/laptops"
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                  activeSection === "laptops"
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    : "hover:bg-primary/10"
+                )}
+              >
+                <Laptop className="h-5 w-5" />
+                <span className="font-medium">Laptops</span>
+              </Link>
+
+              {/* Accessories (Expandable) */}
+              <div className="space-y-1">
+                <button
+                  onClick={() => setAccessoriesExpanded(!accessoriesExpanded)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300",
+                    activeSection?.startsWith("accessories")
+                      ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                      : "hover:bg-primary/10"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Headphones className="h-5 w-5" />
+                    <span className="font-medium">Accessories</span>
+                  </div>
+                  {accessoriesExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+
+                {/* Accessories Subcategories */}
+                {accessoriesExpanded && (
+                  <div className="pl-4 space-y-1 animate-fade-in">
+                    <Link
+                      to="/accessories/mobile"
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/10 text-sm"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                      <span>Mobile Accessories</span>
+                    </Link>
+                    <Link
+                      to="/accessories/laptop"
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/10 text-sm"
+                    >
+                      <Laptop className="h-4 w-4" />
+                      <span>Laptop Accessories</span>
+                    </Link>
+                    <Link
+                      to="/accessories/pc"
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/10 text-sm"
+                    >
+                      <Cpu className="h-4 w-4" />
+                      <span>PC Accessories</span>
+                    </Link>
+                    <Link
+                      to="/accessories/computer"
+                      className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-primary/10 text-sm"
+                    >
+                      <Monitor className="h-4 w-4" />
+                      <span>Computer Accessories</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
         {/* Page Header */}
         <div className="mb-12 text-center animate-fade-in-up relative rounded-3xl overflow-hidden group">
           <div 
@@ -351,6 +490,8 @@ export default function Shop() {
             </button>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );
