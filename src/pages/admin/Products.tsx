@@ -59,7 +59,16 @@ interface ProductFormData {
   discount_percentage: string;
   on_sale: boolean;
   sale_price: string;
+  accessory_subcategory: string;
 }
+
+const ACCESSORY_SUBCATEGORIES = [
+  { value: "none", label: "None" },
+  { value: "mobile", label: "Mobile Accessories" },
+  { value: "laptop", label: "Laptop Accessories" },
+  { value: "pc", label: "PC Accessories" },
+  { value: "computer", label: "Computer Accessories" },
+];
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -81,6 +90,7 @@ export default function AdminProducts() {
     discount_percentage: "0",
     on_sale: false,
     sale_price: "",
+    accessory_subcategory: "none",
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -174,6 +184,7 @@ export default function AdminProducts() {
         featured: data.featured,
         on_sale: data.on_sale,
         sale_price: data.sale_price ? parseFloat(data.sale_price) : null,
+        accessory_subcategory: data.accessory_subcategory === "none" ? null : (data.accessory_subcategory || null),
       };
 
       if (editingProduct) {
@@ -228,6 +239,7 @@ export default function AdminProducts() {
       discount_percentage: "0",
       on_sale: false,
       sale_price: "",
+      accessory_subcategory: "none",
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -249,6 +261,7 @@ export default function AdminProducts() {
       discount_percentage: "0",
       on_sale: product.on_sale || false,
       sale_price: product.sale_price?.toString() || "",
+      accessory_subcategory: product.accessory_subcategory || "none",
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -348,7 +361,7 @@ export default function AdminProducts() {
 
                 <div>
                   <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
+                  <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value, accessory_subcategory: "" })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -359,6 +372,26 @@ export default function AdminProducts() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Show accessory subcategory only for Accessories category */}
+                {categories?.find(c => c.id === formData.category_id)?.name === "Accessories" && (
+                  <div>
+                    <Label htmlFor="accessory_subcategory">Accessory Subcategory</Label>
+                    <Select 
+                      value={formData.accessory_subcategory} 
+                      onValueChange={(value) => setFormData({ ...formData, accessory_subcategory: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subcategory" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACCESSORY_SUBCATEGORIES.map((sub) => (
+                          <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="description">Description</Label>

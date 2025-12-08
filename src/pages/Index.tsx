@@ -27,7 +27,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
-import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap } from "lucide-react";
+import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 import { useInView } from 'react-intersection-observer';
@@ -536,6 +536,24 @@ const Index = () => {
                 Shop
               </Button>
             </Link>
+            <Link to="/phones" className="hidden xl:block">
+              <Button variant="ghost" size="sm">
+                <Smartphone className="h-4 w-4 mr-2" />
+                Used Phones
+              </Button>
+            </Link>
+            <Link to="/laptops" className="hidden xl:block">
+              <Button variant="ghost" size="sm">
+                <Laptop className="h-4 w-4 mr-2" />
+                Laptops
+              </Button>
+            </Link>
+            <Link to="/accessories" className="hidden xl:block">
+              <Button variant="ghost" size="sm">
+                <Headphones className="h-4 w-4 mr-2" />
+                Accessories
+              </Button>
+            </Link>
             <Link to="/book-repair" className="hidden lg:block">
               <Button variant="outline" size="sm">
                 <Wrench className="h-4 w-4 mr-2" />
@@ -565,6 +583,24 @@ const Index = () => {
                     <Button className="w-full" variant="outline">
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       Shop
+                    </Button>
+                  </Link>
+                  <Link to="/phones" className="block">
+                    <Button className="w-full" variant="outline">
+                      <Smartphone className="h-4 w-4 mr-2" />
+                      Used Phones
+                    </Button>
+                  </Link>
+                  <Link to="/laptops" className="block">
+                    <Button className="w-full" variant="outline">
+                      <Laptop className="h-4 w-4 mr-2" />
+                      Laptops
+                    </Button>
+                  </Link>
+                  <Link to="/accessories" className="block">
+                    <Button className="w-full" variant="outline">
+                      <Headphones className="h-4 w-4 mr-2" />
+                      Accessories
                     </Button>
                   </Link>
                   <Link to="/book-repair" className="block">
