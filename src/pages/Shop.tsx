@@ -11,7 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Smartphone, Wrench } from "lucide-react";
+import { Search, Filter, Smartphone, Wrench, Laptop, Headphones, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -162,6 +168,82 @@ export default function Shop() {
       </header>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="flex gap-6">
+          {/* Shop Sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-24 glass-effect rounded-2xl p-4 border border-primary/10 space-y-2">
+              <h3 className="font-semibold text-lg mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Categories
+              </h3>
+              
+              {/* Repairs Link */}
+              <Link 
+                to="/book-repair"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
+              >
+                <Wrench className="h-5 w-5 text-primary" />
+                <span className="font-medium group-hover:text-primary transition-colors">Repairs</span>
+              </Link>
+              
+              {/* Used Phones */}
+              <Link 
+                to="/phones"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
+              >
+                <Smartphone className="h-5 w-5 text-primary" />
+                <span className="font-medium group-hover:text-primary transition-colors">Used Phones</span>
+              </Link>
+              
+              {/* Laptops */}
+              <Link 
+                to="/laptops"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group"
+              >
+                <Laptop className="h-5 w-5 text-primary" />
+                <span className="font-medium group-hover:text-primary transition-colors">Laptops</span>
+              </Link>
+              
+              {/* Accessories - Expandable */}
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-all duration-300 group">
+                  <div className="flex items-center gap-3">
+                    <Headphones className="h-5 w-5 text-primary" />
+                    <span className="font-medium group-hover:text-primary transition-colors">Accessories</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all duration-200 group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-8 space-y-1 mt-1">
+                  <Link 
+                    to="/accessories/mobile"
+                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                  >
+                    Mobile Accessories
+                  </Link>
+                  <Link 
+                    to="/accessories/laptop"
+                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                  >
+                    Laptop Accessories
+                  </Link>
+                  <Link 
+                    to="/accessories/pc"
+                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                  >
+                    PC Accessories
+                  </Link>
+                  <Link 
+                    to="/accessories/computer"
+                    className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                  >
+                    Computer Accessories
+                  </Link>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
         {/* Page Header */}
         <div className="mb-12 text-center animate-fade-in-up relative rounded-3xl overflow-hidden group">
           <div 
@@ -351,6 +433,8 @@ export default function Shop() {
             </button>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );
