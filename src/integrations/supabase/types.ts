@@ -647,6 +647,209 @@ export type Database = {
           },
         ]
       }
+      shop_brands: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_brands_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "shop_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      shop_items: {
+        Row: {
+          brand_id: string | null
+          category_id: string
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string
+          images: string[] | null
+          model_id: string | null
+          name: string
+          part_type_id: string | null
+          price: number
+          sale_price: number | null
+          stock: number | null
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          brand_id?: string | null
+          category_id: string
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: string[] | null
+          model_id?: string | null
+          name: string
+          part_type_id?: string | null
+          price?: number
+          sale_price?: number | null
+          stock?: number | null
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          brand_id?: string | null
+          category_id?: string
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: string[] | null
+          model_id?: string | null
+          name?: string
+          part_type_id?: string | null
+          price?: number
+          sale_price?: number | null
+          stock?: number | null
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "shop_brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "shop_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_items_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "shop_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_items_part_type_id_fkey"
+            columns: ["part_type_id"]
+            isOneToOne: false
+            referencedRelation: "shop_part_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_models: {
+        Row: {
+          brand_id: string
+          created_at: string | null
+          id: string
+          name: string
+          series: string | null
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+          series?: string | null
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          series?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_models_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "shop_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_part_types: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_part_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "shop_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spare_parts: {
         Row: {
           created_at: string | null

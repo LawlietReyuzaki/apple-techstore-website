@@ -66,6 +66,7 @@ export default function AdminLayout() {
         { path: "/admin/products", label: "Products", icon: Package },
         { path: "/admin/spare-parts", label: "Spare Parts", icon: Smartphone },
         { path: "/admin/spare-parts-config", label: "Parts Config", icon: Settings },
+        { path: "/admin/shop-inventory", label: "Shop Inventory", icon: ShoppingBag },
       ]
     },
     {
