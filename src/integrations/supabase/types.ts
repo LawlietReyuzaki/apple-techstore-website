@@ -415,6 +415,7 @@ export type Database = {
       }
       products: {
         Row: {
+          accessory_subcategory: string | null
           brand: string
           category_id: string | null
           created_at: string | null
@@ -432,6 +433,7 @@ export type Database = {
           wholesale_price: number | null
         }
         Insert: {
+          accessory_subcategory?: string | null
           brand: string
           category_id?: string | null
           created_at?: string | null
@@ -449,6 +451,7 @@ export type Database = {
           wholesale_price?: number | null
         }
         Update: {
+          accessory_subcategory?: string | null
           brand?: string
           category_id?: string | null
           created_at?: string | null

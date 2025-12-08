@@ -30,6 +30,9 @@ import Checkout from "./pages/Checkout";
 import PaymentSubmission from "./pages/PaymentSubmission";
 import AccountOrders from "./pages/AccountOrders";
 import Wishlist from "./pages/Wishlist";
+import UsedPhones from "./pages/UsedPhones";
+import Laptops from "./pages/Laptops";
+import Accessories from "./pages/Accessories";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +45,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/phones" element={<UsedPhones />} />
+          <Route path="/laptops" element={<Laptops />} />
+          <Route path="/accessories" element={<Accessories />} />
+          <Route path="/accessories/:subcategory" element={<Accessories />} />
           <Route path="/spare-parts" element={<SpareParts />} />
           <Route path="/spare-part/:id" element={<SparePartDetail />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
