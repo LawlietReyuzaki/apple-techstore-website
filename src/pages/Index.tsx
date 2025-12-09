@@ -20,6 +20,7 @@ import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { DeviceCard } from "@/components/DeviceCard";
+import { DynamicCategoriesSection } from "@/components/DynamicCategoriesSection";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
@@ -651,6 +652,9 @@ const Index = () => {
         filters={filters}
         setFilters={setFilters}
       />
+
+      {/* DYNAMIC CATEGORIES SECTION */}
+      <DynamicCategoriesSection />
 
       {/* OUR SERVICES - Dark Background */}
       <OurServicesSection />
