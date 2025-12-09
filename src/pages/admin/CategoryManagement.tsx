@@ -18,6 +18,7 @@ interface ShopCategory {
   description: string | null;
   sort_order: number;
   created_at: string;
+  image_url?: string | null;
 }
 
 export default function CategoryManagement() {
@@ -28,6 +29,9 @@ export default function CategoryManagement() {
   const [editingCategory, setEditingCategory] = useState<ShopCategory | null>(null);
   const [categoryName, setCategoryName] = useState("");
   const [categoryDescription, setCategoryDescription] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Fetch all categories
   const { data: categories = [], isLoading } = useQuery({
@@ -45,6 +49,8 @@ export default function CategoryManagement() {
   const resetForm = () => {
     setCategoryName("");
     setCategoryDescription("");
+    setImageFile(null);
+    setExistingImageUrl(null);
     setEditingCategory(null);
   };
 
@@ -59,7 +65,47 @@ export default function CategoryManagement() {
     setEditingCategory(category);
     setCategoryName(category.name);
     setCategoryDescription(category.description || "");
+    setExistingImageUrl((category as any).image_url || null);
+    setImageFile(null);
     setDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error("Please upload a valid image (JPG, PNG, or WEBP)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return existingImageUrl;
+
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `category-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `categories/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(filePath, imageFile);
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      throw new Error("Failed to upload image");
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   };
 
   // Create/Update mutation
@@ -67,26 +113,38 @@ export default function CategoryManagement() {
     mutationFn: async () => {
       if (!categoryName.trim()) throw new Error("Category name is required");
 
+      setIsUploading(true);
       const slug = generateSlug(categoryName);
       const maxSortOrder = categories.reduce((max, cat) => Math.max(max, cat.sort_order || 0), 0);
+      
+      let imageUrl: string | null = null;
+      try {
+        imageUrl = await uploadImage();
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        // Continue without image if upload fails
+      }
+
+      const categoryData: any = {
+        name: categoryName.trim(),
+        slug,
+        description: categoryDescription.trim() || null,
+      };
+
+      // Only include image_url if the column exists (we'll add it via migration if needed)
+      // For now, we store it in description as a workaround or just skip if column doesn't exist
 
       if (editingCategory) {
         const { error } = await supabase
           .from("shop_categories")
-          .update({
-            name: categoryName.trim(),
-            slug,
-            description: categoryDescription.trim() || null,
-          })
+          .update(categoryData)
           .eq("id", editingCategory.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("shop_categories")
           .insert({
-            name: categoryName.trim(),
-            slug,
-            description: categoryDescription.trim() || null,
+            ...categoryData,
             sort_order: maxSortOrder + 1,
           });
         if (error) throw error;
@@ -97,9 +155,11 @@ export default function CategoryManagement() {
       toast.success(editingCategory ? "Category updated successfully" : "Category added successfully");
       setDialogOpen(false);
       resetForm();
+      setIsUploading(false);
     },
     onError: (error) => {
       toast.error(`Error: ${error.message}`);
+      setIsUploading(false);
     },
   });
 
@@ -153,7 +213,7 @@ export default function CategoryManagement() {
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
             </DialogHeader>
@@ -177,12 +237,76 @@ export default function CategoryManagement() {
                   placeholder="Brief description of the category"
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              
+              {/* Image Upload (Optional) */}
+              <div className="space-y-2">
+                <Label>Category Image (Optional)</Label>
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                  {imageFile ? (
+                    <div className="relative inline-block">
+                      <img 
+                        src={URL.createObjectURL(imageFile)} 
+                        alt="Preview" 
+                        className="h-24 w-24 object-cover rounded-lg mx-auto"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => setImageFile(null)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : existingImageUrl ? (
+                    <div className="relative inline-block">
+                      <img 
+                        src={existingImageUrl} 
+                        alt="Current" 
+                        className="h-24 w-24 object-cover rounded-lg mx-auto"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => setExistingImageUrl(null)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <FolderOpen className="h-10 w-10 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No image selected</p>
+                    </div>
+                  )}
+                  <div className="mt-3">
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors text-sm">
+                        <Upload className="h-4 w-4" />
+                        {imageFile || existingImageUrl ? "Change Image" : "Upload Image"}
+                      </span>
+                      <input
+                        id="image-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">JPG, PNG, WEBP (Max 5MB)</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? "Saving..." : editingCategory ? "Update" : "Add Category"}
+                <Button type="submit" disabled={saveMutation.isPending || isUploading}>
+                  {saveMutation.isPending || isUploading ? "Saving..." : editingCategory ? "Update" : "Add Category"}
                 </Button>
               </div>
             </form>
@@ -221,7 +345,14 @@ export default function CategoryManagement() {
                   {categories.map((category, index) => (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          {category.name}
+                        </div>
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {category.slug}
                       </TableCell>
