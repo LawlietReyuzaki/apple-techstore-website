@@ -11,12 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Smartphone, Wrench, Laptop, Headphones, ChevronDown, ChevronRight } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { 
+  Search, Filter, Smartphone, Wrench, Laptop, Headphones, 
+  Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator, Shield, FolderOpen
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
@@ -24,13 +22,43 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import shopHeroBg from "@/assets/shop-hero-bg.png";
 
+// Map category names to icons
+const getCategoryIcon = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes("phone") || lowerName.includes("mobile")) return Smartphone;
+  if (lowerName.includes("laptop")) return Laptop;
+  if (lowerName.includes("accessori") || lowerName.includes("headphone") || lowerName.includes("earphone")) return Headphones;
+  if (lowerName.includes("spare") || lowerName.includes("part") || lowerName.includes("repair")) return Wrench;
+  if (lowerName.includes("protector") || lowerName.includes("skin") || lowerName.includes("case")) return Shield;
+  if (lowerName.includes("computer") || lowerName.includes("pc")) return Monitor;
+  if (lowerName.includes("microwave") || lowerName.includes("oven")) return Tv;
+  if (lowerName.includes("air") || lowerName.includes("conditioner") || lowerName.includes("ac")) return Wind;
+  if (lowerName.includes("kitchen")) return UtensilsCrossed;
+  if (lowerName.includes("refrigerator") || lowerName.includes("fridge")) return Refrigerator;
+  if (lowerName.includes("cpu") || lowerName.includes("processor")) return Cpu;
+  return Package;
+};
+
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [category, setCategory] = useState(searchParams.get("category") || "phones");
+  const [category, setCategory] = useState(searchParams.get("category") || "all");
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
+
+  // Fetch dynamic categories from database
+  const { data: shopCategories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["shop-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shop_categories")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   useEffect(() => {
     const categoryParam = searchParams.get("category");
@@ -38,6 +66,10 @@ export default function Shop() {
       setCategory(categoryParam);
     }
   }, [searchParams]);
+
+  // Get current category details
+  const currentCategory = shopCategories.find(c => c.slug === category);
+  const CurrentIcon = currentCategory ? getCategoryIcon(currentCategory.name) : Package;
 
   const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
@@ -182,34 +214,13 @@ export default function Shop() {
           
           <div className="relative z-10 py-20 px-4">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 backdrop-blur-lg mb-6 animate-glow shadow-2xl border border-white/10">
-              {category === "phones" ? (
-                <Smartphone className="h-10 w-10 text-white drop-shadow-lg" />
-              ) : category === "spare-parts" ? (
-                <Wrench className="h-10 w-10 text-white drop-shadow-lg" />
-              ) : category === "used-phones" ? (
-                <Smartphone className="h-10 w-10 text-white drop-shadow-lg" />
-              ) : category === "laptops" ? (
-                <Laptop className="h-10 w-10 text-white drop-shadow-lg" />
-              ) : (
-                <Headphones className="h-10 w-10 text-white drop-shadow-lg" />
-              )}
+              <CurrentIcon className="h-10 w-10 text-white drop-shadow-lg" />
             </div>
             <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-              {category === "phones" ? "Shop Premium Phones" : 
-               category === "spare-parts" ? "Phone Spare Parts" :
-               category === "used-phones" ? "Used Phones" :
-               category === "laptops" ? "Laptops" : "Accessories"}
+              {category === "all" ? "Shop All Products" : currentCategory?.name || "Shop"}
             </h1>
             <p className="text-white/95 text-xl md:text-2xl max-w-3xl mx-auto font-light tracking-wide drop-shadow-lg">
-              {category === "phones" 
-                ? "Discover our curated collection of flagship smartphones with competitive pricing"
-                : category === "spare-parts"
-                ? "High-quality replacement parts for all major phone brands"
-                : category === "used-phones"
-                ? "Quality pre-owned smartphones at unbeatable prices"
-                : category === "laptops"
-                ? "Premium laptops for work and play"
-                : "Essential accessories for your devices"}
+              {currentCategory?.description || "Discover our curated collection of products with competitive pricing"}
             </p>
             
             {/* Decorative Elements */}
@@ -218,88 +229,41 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Category Tabs */}
+        {/* Dynamic Category Tabs */}
         <div className="flex flex-col items-center gap-4 mb-8 animate-scale-in">
-          <Tabs value={category} onValueChange={(value) => {
-            setCategory(value);
-            setSearchParams({ category: value });
-            setBrandFilter("all");
-          }}>
-            <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-xl border-primary/20 h-auto">
-              <TabsTrigger 
-                value="phones" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Smartphone className="h-4 w-4" />
-                Phones
-              </TabsTrigger>
-              <TabsTrigger 
-                value="spare-parts" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Wrench className="h-4 w-4" />
-                Spare Parts
-              </TabsTrigger>
-              <TabsTrigger 
-                value="used-phones" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Smartphone className="h-4 w-4" />
-                Used Phones
-              </TabsTrigger>
-              <TabsTrigger 
-                value="laptops" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Laptop className="h-4 w-4" />
-                Laptops
-              </TabsTrigger>
-              <TabsTrigger 
-                value="accessories" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Headphones className="h-4 w-4" />
-                Accessories
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Accessory Subcategory Tabs */}
-          {category === "accessories" && (
-            <Tabs value={searchParams.get("subcategory") || "all"} onValueChange={(value) => {
-              setSearchParams({ category: "accessories", subcategory: value });
+          {isLoadingCategories ? (
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-10 w-24 rounded-md" />
+              ))}
+            </div>
+          ) : (
+            <Tabs value={category} onValueChange={(value) => {
+              setCategory(value);
+              setSearchParams({ category: value });
+              setBrandFilter("all");
             }}>
-              <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-lg border-accent/20 h-auto">
+              <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-xl border-primary/20 h-auto">
                 <TabsTrigger 
                   value="all" 
-                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                  className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
                 >
+                  <Package className="h-4 w-4" />
                   All
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="mobile" 
-                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                >
-                  Mobile
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="laptop" 
-                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                >
-                  Laptop
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="pc" 
-                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                >
-                  PC
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="computer" 
-                  className="text-sm gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-accent data-[state=active]:to-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                >
-                  Computer
-                </TabsTrigger>
+                {shopCategories.map((cat) => {
+                  const Icon = getCategoryIcon(cat.name);
+                  return (
+                    <TabsTrigger 
+                      key={cat.id}
+                      value={cat.slug} 
+                      className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {cat.name}
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
             </Tabs>
           )}
