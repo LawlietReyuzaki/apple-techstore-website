@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Shield, UserCog, Wallet, Save, Loader2 } from "lucide-react";
+import { Shield, UserCog, Wallet, Save, Loader2, KeyRound, Mail } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { ChangeEmailDialog } from "@/components/ChangeEmailDialog";
 import type { AppRole } from "@/hooks/useAuth";
@@ -34,7 +34,7 @@ import type { AppRole } from "@/hooks/useAuth";
 export default function AdminSettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, loading: authLoading, user } = useAuth();
   
   // Payment settings state
   const [paymentFormData, setPaymentFormData] = useState({
@@ -225,8 +225,12 @@ export default function AdminSettings() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+      <Tabs defaultValue="account" className="space-y-6">
+        <TabsList className="grid w-full max-w-xl grid-cols-3">
+          <TabsTrigger value="account" className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            Account Settings
+          </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <UserCog className="h-4 w-4" />
             User Management
@@ -236,6 +240,87 @@ export default function AdminSettings() {
             Payment Settings
           </TabsTrigger>
         </TabsList>
+
+        {/* Admin Account Settings Tab */}
+        <TabsContent value="account" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Admin Account Settings
+              </CardTitle>
+              <CardDescription>
+                Manage your admin account security settings, including email and password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Current Admin Info */}
+              <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Current Admin Account</h4>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">Email:</span>
+                    <span className="font-mono text-sm">{user?.email || "Not available"}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Last Sign In:</span>
+                    <span className="text-sm">
+                      {user?.last_sign_in_at 
+                        ? new Date(user.last_sign_in_at).toLocaleString() 
+                        : "Not available"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Actions */}
+              <div className="space-y-4">
+                <h4 className="font-semibold">Security Actions</h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="p-4 rounded-lg border space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <KeyRound className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h5 className="font-medium">Change Password</h5>
+                        <p className="text-xs text-muted-foreground">Update your login password</p>
+                      </div>
+                    </div>
+                    <ChangePasswordDialog />
+                  </div>
+                  
+                  <div className="p-4 rounded-lg border space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Mail className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h5 className="font-medium">Change Email</h5>
+                        <p className="text-xs text-muted-foreground">Update your login email</p>
+                      </div>
+                    </div>
+                    <ChangeEmailDialog />
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Info */}
+              <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+                <h4 className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2 mb-2">
+                  <Shield className="h-4 w-4" />
+                  Email Change Verification
+                </h4>
+                <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1 list-disc list-inside">
+                  <li>When you change your email, a verification link will be sent to the new address</li>
+                  <li>Your email will NOT be updated until you click the verification link</li>
+                  <li>The verification link expires after 24 hours</li>
+                  <li>After verification, you'll need to log in with your new email</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
           <Card>
