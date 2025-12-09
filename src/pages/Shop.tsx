@@ -162,36 +162,31 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" />
+      {/* Subtle Animated Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse-slow" />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '3s' }} />
       </div>
 
-      {/* Header */}
-      <header className="glass-effect border-b sticky top-0 z-50 animate-fade-in">
+      {/* Minimal Header */}
+      <header className="bg-background/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hover:scale-105 transition-transform">
+          <Link to="/" className="text-xl font-bold text-foreground hover:text-primary transition-colors">
             Dilbar Mobiles
           </Link>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/" className="relative group transition-colors">
+          <div className="flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
                 Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
               </Link>
-              <Link to="/shop" className="relative group text-primary font-medium">
+              <Link to="/shop" className="text-primary">
                 Shop
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-accent" />
               </Link>
-              <Link to="/book-repair" className="relative group transition-colors">
+              <Link to="/book-repair" className="text-muted-foreground hover:text-foreground transition-colors">
                 Repair
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
               </Link>
-              <Link to="/track-repair" className="relative group transition-colors">
+              <Link to="/track-repair" className="text-muted-foreground hover:text-foreground transition-colors">
                 Track
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-accent transition-all duration-300 group-hover:w-full" />
               </Link>
             </nav>
             <ProductCartButton />
@@ -200,189 +195,190 @@ export default function Shop() {
       </header>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Page Header */}
-        <div className="mb-12 text-center animate-fade-in-up relative rounded-3xl overflow-hidden group">
+        {/* Compact Hero Section */}
+        <div className="mb-10 text-center relative rounded-2xl overflow-hidden group animate-fade-in">
           <div 
-            className="absolute inset-0 bg-cover bg-center transform transition-transform duration-700 group-hover:scale-110"
+            className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-700 group-hover:scale-110"
             style={{ backgroundImage: `url(${shopHeroBg})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-primary/20 to-black/70" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
           
-          {/* Animated Gradient Border */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-gradient-shift opacity-50 blur-sm" />
-          
-          <div className="relative z-10 py-20 px-4">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 backdrop-blur-lg mb-6 animate-glow shadow-2xl border border-white/10">
-              <CurrentIcon className="h-10 w-10 text-white drop-shadow-lg" />
+          <div className="relative z-10 py-16 px-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md mb-5 border border-white/20">
+              <CurrentIcon className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-white drop-shadow-2xl bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-              {category === "all" ? "Shop All Products" : currentCategory?.name || "Shop"}
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 text-white tracking-tight">
+              {category === "all" ? "All Products" : currentCategory?.name || "Shop"}
             </h1>
-            <p className="text-white/95 text-xl md:text-2xl max-w-3xl mx-auto font-light tracking-wide drop-shadow-lg">
-              {currentCategory?.description || "Discover our curated collection of products with competitive pricing"}
+            <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
+              {currentCategory?.description || "Browse our curated collection"}
             </p>
-            
-            {/* Decorative Elements */}
-            <div className="absolute top-10 right-10 w-20 h-20 border-2 border-white/20 rounded-full animate-pulse-slow" />
-            <div className="absolute bottom-10 left-10 w-16 h-16 border-2 border-accent/30 rounded-full animate-pulse-slow" style={{ animationDelay: '1s' }} />
           </div>
         </div>
 
-        {/* Dynamic Category Tabs */}
-        <div className="flex flex-col items-center gap-4 mb-8 animate-scale-in">
+        {/* Category Pills */}
+        <div className="flex justify-center mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {isLoadingCategories ? (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-center">
               {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-10 w-24 rounded-md" />
+                <Skeleton key={i} className="h-10 w-24 rounded-full" />
               ))}
             </div>
           ) : (
-            <Tabs value={category} onValueChange={(value) => {
-              setCategory(value);
-              setSearchParams({ category: value });
-              setBrandFilter("all");
-            }}>
-              <TabsList className="flex flex-wrap justify-center gap-1 p-1 glass-effect shadow-xl border-primary/20 h-auto">
-                <TabsTrigger 
-                  value="all" 
-                  className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-                >
-                  <Package className="h-4 w-4" />
-                  All
-                </TabsTrigger>
-                {shopCategories.map((cat) => {
-                  const Icon = getCategoryIcon(cat.name);
-                  return (
-                    <TabsTrigger 
-                      key={cat.id}
-                      value={cat.slug} 
-                      className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-                    >
-                      <Icon className="h-4 w-4" />
-                      {cat.name}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
+            <div className="flex flex-wrap gap-2 justify-center max-w-4xl">
+              <button
+                onClick={() => {
+                  setCategory("all");
+                  setSearchParams({ category: "all" });
+                  setBrandFilter("all");
+                }}
+                className={cn(
+                  "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                  category === "all"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Package className="h-4 w-4" />
+                All
+              </button>
+              {shopCategories.map((cat) => {
+                const Icon = getCategoryIcon(cat.name);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setCategory(cat.slug);
+                      setSearchParams({ category: cat.slug });
+                      setBrandFilter("all");
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                      category === cat.slug
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 animate-slide-in-left">
-          <div className="flex-1 relative group">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary transition-all duration-300 group-focus-within:scale-110" />
-            <Input
-              placeholder="Search devices by brand, model, or specs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 glass-effect border-primary/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/30 transition-all duration-300 text-base"
-            />
+        {/* Search & Filters Row */}
+        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-4 mb-8 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-10 bg-background border-border/50 focus:border-primary/50"
+              />
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Select value={brandFilter} onValueChange={setBrandFilter}>
+                <SelectTrigger className="w-full sm:w-[160px] h-10 bg-background border-border/50">
+                  <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All {category === "phones" ? "Brands" : "Types"}</SelectItem>
+                  {category === "phones" ? (
+                    brands.map(brand => (
+                      <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                    ))
+                  ) : (
+                    (partCategories || []).map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+
+              <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <SelectTrigger className="w-full sm:w-[150px] h-10 bg-background border-border/50">
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Items</SelectItem>
+                  <SelectItem value="available">In Stock</SelectItem>
+                  <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[150px] h-10 bg-background border-border/50">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="price-low">Price: Low → High</SelectItem>
+                  <SelectItem value="price-high">Price: High → Low</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  {category === "phones" && <SelectItem value="brand">Brand (A-Z)</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <Select value={brandFilter} onValueChange={setBrandFilter}>
-            <SelectTrigger className="w-full md:w-[200px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
-              <Filter className="mr-2 h-4 w-4 text-primary" />
-              <SelectValue placeholder={category === "phones" ? "All Brands" : "All Categories"} />
-            </SelectTrigger>
-            <SelectContent className="glass-effect">
-              <SelectItem value="all">{category === "phones" ? "All Brands" : "All Categories"}</SelectItem>
-              {category === "phones" ? (
-                brands.map(brand => (
-                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-                ))
-              ) : (
-                (partCategories || []).map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-            <SelectTrigger className="w-full md:w-[180px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
-              <SelectValue placeholder="Availability" />
-            </SelectTrigger>
-            <SelectContent className="glass-effect">
-              <SelectItem value="all">{category === "phones" ? "All Devices" : "All Parts"}</SelectItem>
-              <SelectItem value="available">{category === "phones" ? "Available Now" : "In Stock"}</SelectItem>
-              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[180px] h-12 glass-effect border-primary/20 hover:border-primary/50 transition-all duration-300">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent className="glass-effect">
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="price-low">Price: Low to High</SelectItem>
-              <SelectItem value="price-high">Price: High to Low</SelectItem>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-              {category === "phones" && <SelectItem value="brand">Brand (A-Z)</SelectItem>}
-            </SelectContent>
-          </Select>
+          {/* Results count */}
+          <div className="mt-3 pt-3 border-t border-border/30">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{totalCount}</span> {totalCount === 1 ? 'item' : 'items'}
+            </p>
+          </div>
         </div>
 
         {/* Products Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-4 animate-pulse">
-                <Skeleton className="h-64 w-full rounded-2xl glass-effect" />
-                <Skeleton className="h-4 w-3/4 rounded-full" />
-                <Skeleton className="h-4 w-1/2 rounded-full" />
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             ))}
           </div>
         ) : displayItems.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {category === "phones" ? (
-                filteredProducts.map((product, index) => (
-                  <div 
-                    key={product.id} 
-                    className="animate-scale-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <ProductCard product={product} />
-                  </div>
-                ))
-              ) : (
-                filteredSpareParts.map((part, index) => (
-                  <div 
-                    key={part.id} 
-                    className="animate-scale-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <SparePartCard part={part} />
-                  </div>
-                ))
-              )}
-            </div>
-            
-            <div className="text-center mt-16 animate-fade-in-up">
-              <div className="inline-block px-6 py-3 glass-effect rounded-full border border-primary/20">
-                <p className="text-sm font-medium bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Showing {totalCount} {totalCount === 1 ? (category === "phones" ? 'product' : 'part') : (category === "phones" ? 'products' : 'parts')}
-                </p>
-              </div>
-            </div>
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            {category === "phones" ? (
+              filteredProducts.map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="animate-scale-in"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))
+            ) : (
+              filteredSpareParts.map((part, index) => (
+                <div 
+                  key={part.id} 
+                  className="animate-scale-in"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
+                >
+                  <SparePartCard part={part} />
+                </div>
+              ))
+            )}
+          </div>
         ) : (
-          <div className="text-center py-24 animate-fade-in-up">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 backdrop-blur-sm mb-6 animate-pulse-slow border border-primary/20">
-              {category === "phones" ? (
-                <Smartphone className="h-12 w-12 text-primary" />
-              ) : (
-                <Wrench className="h-12 w-12 text-primary" />
-              )}
+          <div className="text-center py-20 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-muted mb-6">
+              <CurrentIcon className="h-10 w-10 text-muted-foreground" />
             </div>
-            <p className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              No {category === "phones" ? "products" : "spare parts"} found
+            <p className="text-xl font-semibold mb-2 text-foreground">
+              No items found
             </p>
-            <p className="text-muted-foreground text-lg mb-6">
+            <p className="text-muted-foreground mb-6">
               Try adjusting your search or filters
             </p>
             <button 
@@ -391,9 +387,9 @@ export default function Shop() {
                 setBrandFilter("all");
                 setAvailabilityFilter("all");
               }}
-              className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:scale-105 hover:shadow-xl transition-all duration-300 animate-glow"
+              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Clear All Filters
+              Clear Filters
             </button>
           </div>
         )}
