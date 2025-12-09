@@ -22,6 +22,7 @@ import AdminPayments from "./pages/admin/Payments";
 import AdminSpareParts from "./pages/admin/SpareParts";
 import AdminSparePartsConfig from "./pages/admin/SparePartsConfig";
 import AdminShopInventory from "./pages/admin/ShopInventory";
+import AdminCategoryManagement from "./pages/admin/CategoryManagement";
 import Shop from "./pages/Shop";
 import SpareParts from "./pages/SpareParts";
 import SparePartDetail from "./pages/SparePartDetail";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="spare-parts" element={<AdminSpareParts />} />
             <Route path="spare-parts-config" element={<AdminSparePartsConfig />} />
             <Route path="shop-inventory" element={<AdminShopInventory />} />
+            <Route path="categories" element={<AdminCategoryManagement />} />
             <Route path="technicians" element={<AdminTechnicians />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   Home, Wrench, Users, Settings, Package, ShoppingBag, CreditCard, Smartphone,
-  Menu, X, ChevronDown, ChevronRight
+  Menu, X, ChevronDown, ChevronRight, FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export default function AdminLayout() {
         { path: "/admin/spare-parts", label: "Spare Parts", icon: Smartphone },
         { path: "/admin/spare-parts-config", label: "Parts Config", icon: Settings },
         { path: "/admin/shop-inventory", label: "Shop Inventory", icon: ShoppingBag },
+        { path: "/admin/categories", label: "Categories", icon: FolderOpen },
       ]
     },
     {
