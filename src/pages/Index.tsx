@@ -21,6 +21,7 @@ import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { DeviceCard } from "@/components/DeviceCard";
 import { DynamicCategoriesSection } from "@/components/DynamicCategoriesSection";
+import { ShopCategoryShowcase } from "@/components/ShopCategoryShowcase";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
@@ -655,6 +656,9 @@ const Index = () => {
 
       {/* DYNAMIC CATEGORIES SECTION */}
       <DynamicCategoriesSection />
+
+      {/* SHOP CATEGORY SHOWCASE - Alternating Dark/Light Sections */}
+      <ShopCategoryShowcase />
 
       {/* OUR SERVICES - Dark Background */}
       <OurServicesSection />
