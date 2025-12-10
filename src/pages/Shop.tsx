@@ -209,6 +209,9 @@ export default function Shop() {
   const isShopCategory = category !== "all" && shopCategories.some(c => c.slug === category);
   const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts || isLoadingCategories;
   
+  // Used Phones category ID
+  const USED_PHONES_CATEGORY_ID = 'd6cedc35-4e44-4392-8483-b1ab8f2c11df';
+
   // Map product category_id to shop category slug
   const getProductShopCategory = (categoryId: string | null) => {
     // Map from products.category_id to shop_categories slug
@@ -227,6 +230,11 @@ export default function Shop() {
       ? categoryMap[categoryId] 
       : { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' };
   };
+  
+  // Determine condition based on category
+  const getProductCondition = (categoryId: string | null) => {
+    return categoryId === USED_PHONES_CATEGORY_ID ? 'used' : 'new';
+  };
 
   // Normalize products to shop item format for unified display
   const normalizedProducts = filteredProducts.map(product => ({
@@ -241,7 +249,7 @@ export default function Shop() {
     category_id: product.category_id,
     shop_categories: getProductShopCategory(product.category_id),
     shop_brands: { id: product.brand, name: product.brand },
-    condition: 'new',
+    condition: getProductCondition(product.category_id),
     _type: 'product' as const
   }));
 
