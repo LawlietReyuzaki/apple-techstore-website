@@ -152,19 +152,6 @@ export function ShopItemCard({ item }: ShopItemCardProps) {
             {item.name}
           </h3>
 
-          {/* Condition Badge - Show for phones in New & Used Phones category */}
-          {item.condition && item.shop_categories?.slug === 'new-used-phones' && (
-            <Badge 
-              variant="outline" 
-              className={`text-xs capitalize ${
-                item.condition === 'used' 
-                  ? 'border-orange-500 text-orange-500 bg-orange-500/10' 
-                  : 'border-green-500 text-green-500 bg-green-500/10'
-              }`}
-            >
-              {item.condition === 'used' ? 'Used' : 'New'}
-            </Badge>
-          )}
 
           {/* Price */}
           <div className="flex items-center gap-2 pt-1">
