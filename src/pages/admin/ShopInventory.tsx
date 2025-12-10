@@ -400,12 +400,12 @@ export default function ShopInventory() {
                     {brands.length > 0 && (
                       <div className="space-y-2">
                         <Label>Brand</Label>
-                        <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                        <Select value={selectedBrand || "none"} onValueChange={(v) => setSelectedBrand(v === "none" ? "" : v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select brand" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No brand</SelectItem>
+                            <SelectItem value="none">No brand</SelectItem>
                             {brands.map((brand) => (
                               <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                             ))}
@@ -418,12 +418,12 @@ export default function ShopInventory() {
                     {models.length > 0 && (
                       <div className="space-y-2">
                         <Label>Model</Label>
-                        <Select value={selectedModel} onValueChange={setSelectedModel}>
+                        <Select value={selectedModel || "none"} onValueChange={(v) => setSelectedModel(v === "none" ? "" : v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select model" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No model</SelectItem>
+                            <SelectItem value="none">No model</SelectItem>
                             {models.map((model) => (
                               <SelectItem key={model.id} value={model.id}>
                                 {model.name} {model.series && `(${model.series})`}
@@ -438,12 +438,12 @@ export default function ShopInventory() {
                     {partTypes.length > 0 && (
                       <div className="space-y-2">
                         <Label>Part Type</Label>
-                        <Select value={selectedPartType} onValueChange={setSelectedPartType}>
+                        <Select value={selectedPartType || "none"} onValueChange={(v) => setSelectedPartType(v === "none" ? "" : v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select part type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No part type</SelectItem>
+                            <SelectItem value="none">No part type</SelectItem>
                             {partTypes.map((pt) => (
                               <SelectItem key={pt.id} value={pt.id}>{pt.name}</SelectItem>
                             ))}
