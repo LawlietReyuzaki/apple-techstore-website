@@ -151,9 +151,10 @@ export default function Shop() {
     }
   });
 
-  // Get unique brands from shop items for filtering
+  // Get unique brands from all sources for filtering
   const shopBrands = Array.from(new Set(shopItems.map(item => item.shop_brands?.name).filter(Boolean)));
-  const productBrands = Array.from(new Set(products.map(p => p.brand)));
+  const productBrands = Array.from(new Set(products.map(p => p.brand).filter(Boolean)));
+  const allBrands = Array.from(new Set([...shopBrands, ...productBrands])).sort();
 
   // Filter shop items based on current category and filters
   const filteredShopItems = shopItems.filter(item => {
@@ -206,14 +207,59 @@ export default function Shop() {
 
   // Determine which items to display based on category
   const isShopCategory = category !== "all" && shopCategories.some(c => c.slug === category);
-  const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts;
+  const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts || isLoadingCategories;
   
-  // Get display items - prioritize shop_items for dynamic categories
+  // Normalize products to shop item format for unified display
+  const normalizedProducts = filteredProducts.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    sale_price: product.sale_price,
+    stock: product.stock,
+    images: product.images,
+    featured: product.featured,
+    category_id: product.category_id,
+    shop_categories: { id: 'products', name: 'Products', slug: 'products' },
+    shop_brands: { id: product.brand, name: product.brand },
+    condition: 'new',
+    _type: 'product' as const
+  }));
+
+  // Normalize spare parts to shop item format for unified display
+  const normalizedSpareParts = filteredSpareParts.map(part => ({
+    id: part.id,
+    name: part.name,
+    description: part.description,
+    price: part.price,
+    sale_price: null,
+    stock: part.stock,
+    images: part.images,
+    featured: part.featured,
+    category_id: part.part_category_id,
+    shop_categories: { id: 'spare-parts', name: 'Spare Parts', slug: 'spare-parts' },
+    shop_brands: { id: part.phone_models?.spare_parts_brands?.name || '', name: part.phone_models?.spare_parts_brands?.name || 'Unknown' },
+    condition: 'new',
+    _type: 'spare_part' as const
+  }));
+
+  // Normalize shop items
+  const normalizedShopItems = filteredShopItems.map(item => ({
+    ...item,
+    _type: 'shop_item' as const
+  }));
+  
+  // Get display items - combine all sources for "all" category, or filter by category
   const displayItems = category === "all" 
-    ? [...filteredShopItems] 
+    ? [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts]
     : isShopCategory 
-      ? filteredShopItems 
-      : filteredShopItems;
+      ? normalizedShopItems
+      : [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts].filter(item => {
+          // For legacy categories like phones, spare-parts, etc.
+          if (category === 'phones' && item._type === 'product') return true;
+          if (category === 'spare-parts' && item._type === 'spare_part') return true;
+          return false;
+        });
   
   const totalCount = displayItems.length;
 
@@ -346,7 +392,7 @@ export default function Shop() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Brands</SelectItem>
-                  {shopBrands.map(brand => (
+                  {allBrands.map(brand => (
                     <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                   ))}
                 </SelectContent>

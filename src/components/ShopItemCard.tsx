@@ -25,6 +25,7 @@ interface ShopItem {
     id: string;
     name: string;
   } | null;
+  _type?: 'shop_item' | 'product' | 'spare_part';
 }
 
 interface ShopItemCardProps {
@@ -59,14 +60,26 @@ export function ShopItemCard({ item }: ShopItemCardProps) {
       brand: item.shop_brands?.name,
       price: displayPrice || item.price,
       images: item.images || [],
-      type: 'shop_item'
+      type: item._type || 'shop_item'
     });
     
     toast.success(`${item.name} added to cart`);
   };
 
+  // Determine the correct link based on item type
+  const getItemLink = () => {
+    switch (item._type) {
+      case 'product':
+        return `/product/${item.id}`;
+      case 'spare_part':
+        return `/spare-part/${item.id}`;
+      default:
+        return `/product/${item.id}`;
+    }
+  };
+
   return (
-    <Link to={`/shop/item/${item.id}`}>
+    <Link to={getItemLink()}>
       <Card className="group h-full overflow-hidden bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden bg-muted/30">
