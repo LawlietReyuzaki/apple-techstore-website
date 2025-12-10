@@ -27,6 +27,7 @@ import Shop from "./pages/Shop";
 import SpareParts from "./pages/SpareParts";
 import SparePartDetail from "./pages/SparePartDetail";
 import ProductDetailPage from "./pages/ProductDetailPage";
+import ShopItemDetail from "./pages/ShopItemDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import PaymentSubmission from "./pages/PaymentSubmission";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/accessories/:subcategory" element={<Accessories />} />
           <Route path="/spare-parts" element={<SpareParts />} />
           <Route path="/spare-part/:id" element={<SparePartDetail />} />
+          <Route path="/shop-item/:id" element={<ShopItemDetail />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />

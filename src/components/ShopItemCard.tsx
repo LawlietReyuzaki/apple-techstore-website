@@ -73,8 +73,9 @@ export function ShopItemCard({ item }: ShopItemCardProps) {
         return `/product/${item.id}`;
       case 'spare_part':
         return `/spare-part/${item.id}`;
+      case 'shop_item':
       default:
-        return `/product/${item.id}`;
+        return `/shop-item/${item.id}`;
     }
   };
 
