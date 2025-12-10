@@ -4,11 +4,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export interface CartProduct {
   id: string;
   name: string;
-  brand: string;
+  brand?: string;
   price: number;
   wholesale_price?: number;
-  images: string[];
-  type?: 'product' | 'spare_part'; // Track whether this is a product or spare part
+  images?: string[];
+  image?: string;
+  type?: 'product' | 'spare_part' | 'shop_item';
+  quantity?: number;
 }
 
 export interface CartItem {
