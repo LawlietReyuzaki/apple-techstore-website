@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
 import { SparePartCard } from "@/components/SparePartCard";
+import { ShopItemCard } from "@/components/ShopItemCard";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,13 +14,13 @@ import {
 } from "@/components/ui/select";
 import { 
   Search, Filter, Smartphone, Wrench, Laptop, Headphones, 
-  Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator, Shield, FolderOpen
+  Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator, Shield, FolderOpen,
+  Battery, Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import shopHeroBg from "@/assets/shop-hero-bg.png";
 
 // Map category names to icons
@@ -36,6 +37,8 @@ const getCategoryIcon = (name: string) => {
   if (lowerName.includes("kitchen")) return UtensilsCrossed;
   if (lowerName.includes("refrigerator") || lowerName.includes("fridge")) return Refrigerator;
   if (lowerName.includes("cpu") || lowerName.includes("processor")) return Cpu;
+  if (lowerName.includes("power") || lowerName.includes("bank") || lowerName.includes("battery")) return Battery;
+  if (lowerName.includes("charger") || lowerName.includes("cable")) return Zap;
   return Package;
 };
 
@@ -71,7 +74,33 @@ export default function Shop() {
   const currentCategory = shopCategories.find(c => c.slug === category);
   const CurrentIcon = currentCategory ? getCategoryIcon(currentCategory.name) : Package;
 
-  const { data: products, isLoading: isLoadingProducts } = useQuery({
+  // Fetch shop_items for dynamic categories
+  const { data: shopItems = [], isLoading: isLoadingShopItems } = useQuery({
+    queryKey: ['shop-items'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shop_items')
+        .select(`
+          *,
+          shop_categories (
+            id,
+            name,
+            slug
+          ),
+          shop_brands (
+            id,
+            name
+          )
+        `)
+        .eq('visible', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -84,7 +113,7 @@ export default function Shop() {
     }
   });
 
-  const { data: spareParts, isLoading: isLoadingSpareParts } = useQuery({
+  const { data: spareParts = [], isLoading: isLoadingSpareParts } = useQuery({
     queryKey: ['spare-parts-shop'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -122,17 +151,35 @@ export default function Shop() {
     }
   });
 
-  const brands = Array.from(new Set((products || []).map(p => p.brand)));
-  const isLoading = category === "phones" ? isLoadingProducts : isLoadingSpareParts;
+  // Get unique brands from shop items for filtering
+  const shopBrands = Array.from(new Set(shopItems.map(item => item.shop_brands?.name).filter(Boolean)));
+  const productBrands = Array.from(new Set(products.map(p => p.brand)));
 
-  const filteredProducts = (products || []).filter(product => {
+  // Filter shop items based on current category and filters
+  const filteredShopItems = shopItems.filter(item => {
+    const matchesCategory = category === "all" || item.shop_categories?.slug === category;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (item.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesBrand = brandFilter === "all" || item.shop_brands?.name === brandFilter;
+    const matchesAvailability = availabilityFilter === "all" || 
+                               (availabilityFilter === "available" && (item.stock || 0) > 0) ||
+                               (availabilityFilter === "out-of-stock" && (item.stock || 0) <= 0);
+    return matchesCategory && matchesSearch && matchesBrand && matchesAvailability;
+  }).sort((a, b) => {
+    if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
+    if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    return 0;
+  });
+
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesBrand = brandFilter === "all" || product.brand === brandFilter;
     const matchesAvailability = availabilityFilter === "all" || 
-                               (availabilityFilter === "available" && product.stock > 0) ||
-                               (availabilityFilter === "out-of-stock" && product.stock <= 0);
+                               (availabilityFilter === "available" && (product.stock || 0) > 0) ||
+                               (availabilityFilter === "out-of-stock" && (product.stock || 0) <= 0);
     return matchesSearch && matchesBrand && matchesAvailability;
   }).sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
@@ -142,7 +189,7 @@ export default function Shop() {
     return 0;
   });
 
-  const filteredSpareParts = (spareParts || []).filter(part => {
+  const filteredSpareParts = spareParts.filter(part => {
     const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (part.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCategory = brandFilter === "all" || part.part_category_id === brandFilter;
@@ -157,7 +204,17 @@ export default function Shop() {
     return 0;
   });
 
-  const displayItems = category === "phones" ? filteredProducts : filteredSpareParts;
+  // Determine which items to display based on category
+  const isShopCategory = category !== "all" && shopCategories.some(c => c.slug === category);
+  const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts;
+  
+  // Get display items - prioritize shop_items for dynamic categories
+  const displayItems = category === "all" 
+    ? [...filteredShopItems] 
+    : isShopCategory 
+      ? filteredShopItems 
+      : filteredShopItems;
+  
   const totalCount = displayItems.length;
 
   return (
@@ -288,16 +345,10 @@ export default function Shop() {
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All {category === "phones" ? "Brands" : "Types"}</SelectItem>
-                  {category === "phones" ? (
-                    brands.map(brand => (
-                      <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-                    ))
-                  ) : (
-                    (partCategories || []).map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))
-                  )}
+                  <SelectItem value="all">All Brands</SelectItem>
+                  {shopBrands.map(brand => (
+                    <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -348,27 +399,15 @@ export default function Shop() {
           </div>
         ) : displayItems.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            {category === "phones" ? (
-              filteredProducts.map((product, index) => (
-                <div 
-                  key={product.id} 
-                  className="animate-scale-in"
-                  style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
-                >
-                  <ProductCard product={product} />
-                </div>
-              ))
-            ) : (
-              filteredSpareParts.map((part, index) => (
-                <div 
-                  key={part.id} 
-                  className="animate-scale-in"
-                  style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
-                >
-                  <SparePartCard part={part} />
-                </div>
-              ))
-            )}
+            {displayItems.map((item, index) => (
+              <div 
+                key={item.id} 
+                className="animate-scale-in"
+                style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
+              >
+                <ShopItemCard item={item} />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="text-center py-20 animate-fade-in">
