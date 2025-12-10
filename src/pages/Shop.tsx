@@ -210,6 +210,7 @@ export default function Shop() {
   const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts || isLoadingCategories;
   
   // Normalize products to shop item format for unified display
+  // Map to 'new-used-phones' category slug
   const normalizedProducts = filteredProducts.map(product => ({
     id: product.id,
     name: product.name,
@@ -220,13 +221,14 @@ export default function Shop() {
     images: product.images,
     featured: product.featured,
     category_id: product.category_id,
-    shop_categories: { id: 'products', name: 'Products', slug: 'products' },
+    shop_categories: { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
     shop_brands: { id: product.brand, name: product.brand },
     condition: 'new',
     _type: 'product' as const
   }));
 
   // Normalize spare parts to shop item format for unified display
+  // Map to 'mobile-spare-parts' category slug
   const normalizedSpareParts = filteredSpareParts.map(part => ({
     id: part.id,
     name: part.name,
@@ -237,7 +239,7 @@ export default function Shop() {
     images: part.images,
     featured: part.featured,
     category_id: part.part_category_id,
-    shop_categories: { id: 'spare-parts', name: 'Spare Parts', slug: 'spare-parts' },
+    shop_categories: { id: 'mobile-spare-parts', name: 'Mobile Spare Parts', slug: 'mobile-spare-parts' },
     shop_brands: { id: part.phone_models?.spare_parts_brands?.name || '', name: part.phone_models?.spare_parts_brands?.name || 'Unknown' },
     condition: 'new',
     _type: 'spare_part' as const
@@ -249,17 +251,13 @@ export default function Shop() {
     _type: 'shop_item' as const
   }));
   
-  // Get display items - combine all sources for "all" category, or filter by category
+  // Combine all normalized items
+  const allNormalizedItems = [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts];
+  
+  // Get display items - filter by category
   const displayItems = category === "all" 
-    ? [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts]
-    : isShopCategory 
-      ? normalizedShopItems
-      : [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts].filter(item => {
-          // For legacy categories like phones, spare-parts, etc.
-          if (category === 'phones' && item._type === 'product') return true;
-          if (category === 'spare-parts' && item._type === 'spare_part') return true;
-          return false;
-        });
+    ? allNormalizedItems
+    : allNormalizedItems.filter(item => item.shop_categories?.slug === category);
   
   const totalCount = displayItems.length;
 
