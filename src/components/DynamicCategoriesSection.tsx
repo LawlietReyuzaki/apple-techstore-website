@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useInView } from "react-intersection-observer";
 import { 
   FolderOpen, Smartphone, Laptop, Headphones, Wrench, Shield, 
-  Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator
+  Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator,
+  Battery, Zap, Cable, Watch, Camera, Speaker, Keyboard, Mouse
 } from "lucide-react";
 
 interface ShopCategory {
@@ -13,7 +14,12 @@ interface ShopCategory {
   name: string;
   slug: string;
   description: string | null;
+  image_url?: string | null;
+  sort_order: number | null;
 }
+
+// Default placeholder image
+const DEFAULT_CATEGORY_IMAGE = "/placeholder.svg";
 
 // Map category names to icons
 const getCategoryIcon = (name: string) => {
@@ -29,6 +35,13 @@ const getCategoryIcon = (name: string) => {
   if (lowerName.includes("kitchen")) return UtensilsCrossed;
   if (lowerName.includes("refrigerator") || lowerName.includes("fridge")) return Refrigerator;
   if (lowerName.includes("cpu") || lowerName.includes("processor")) return Cpu;
+  if (lowerName.includes("power") || lowerName.includes("bank") || lowerName.includes("battery")) return Battery;
+  if (lowerName.includes("charger") || lowerName.includes("cable")) return Zap;
+  if (lowerName.includes("watch") || lowerName.includes("smart")) return Watch;
+  if (lowerName.includes("camera")) return Camera;
+  if (lowerName.includes("speaker") || lowerName.includes("audio")) return Speaker;
+  if (lowerName.includes("keyboard")) return Keyboard;
+  if (lowerName.includes("mouse")) return Mouse;
   return Package;
 };
 
@@ -36,7 +49,7 @@ export function DynamicCategoriesSection() {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
 
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["shop-categories"],
+    queryKey: ["shop-categories-home"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shop_categories")
@@ -45,6 +58,8 @@ export function DynamicCategoriesSection() {
       if (error) throw error;
       return data as ShopCategory[];
     },
+    staleTime: 1000 * 60, // Cache for 1 minute for faster loads
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   if (isLoading) {
@@ -55,6 +70,16 @@ export function DynamicCategoriesSection() {
             <div className="animate-pulse">
               <div className="h-8 bg-white/10 rounded w-48 mx-auto mb-4" />
               <div className="h-4 bg-white/10 rounded w-64 mx-auto" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-12">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-white/5 rounded-xl p-6 h-32">
+                    <div className="w-14 h-14 rounded-full bg-white/10 mx-auto mb-4" />
+                    <div className="h-4 bg-white/10 rounded w-20 mx-auto" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -92,6 +117,8 @@ export function DynamicCategoriesSection() {
         <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
           {categories.map((category, index) => {
             const Icon = getCategoryIcon(category.name);
+            const hasImage = category.image_url && category.image_url.trim() !== '';
+            
             return (
               <Link 
                 key={category.id} 
@@ -99,13 +126,28 @@ export function DynamicCategoriesSection() {
                 className="group"
               >
                 <Card 
-                  className="h-full bg-white/5 backdrop-blur-xl border-primary/20 hover:border-primary/50 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 animate-scale-in"
+                  className="h-full bg-white/5 backdrop-blur-xl border-primary/20 hover:border-primary/50 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 animate-scale-in overflow-hidden"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <CardContent className="p-4 md:p-6 flex flex-col items-center text-center">
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                      <Icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
-                    </div>
+                    {hasImage ? (
+                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 border-2 border-primary/30">
+                        <img 
+                          src={category.image_url!} 
+                          alt={category.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center"><svg class="w-7 h-7 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>`;
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                        <Icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                      </div>
+                    )}
                     <h3 className="font-semibold text-white text-sm md:text-base leading-tight">
                       {category.name}
                     </h3>
