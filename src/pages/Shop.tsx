@@ -209,8 +209,26 @@ export default function Shop() {
   const isShopCategory = category !== "all" && shopCategories.some(c => c.slug === category);
   const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts || isLoadingCategories;
   
+  // Map product category_id to shop category slug
+  const getProductShopCategory = (categoryId: string | null) => {
+    // Map from products.category_id to shop_categories slug
+    const categoryMap: Record<string, { id: string; name: string; slug: string }> = {
+      // Accessories category
+      '6065ce07-0cc9-4609-8faa-c6e45897b898': { id: 'mobile-accessories', name: 'Mobile Accessories', slug: 'mobile-accessories' },
+      // Laptops category
+      '739f7b1d-0408-4ebe-85b7-d8caf128f18f': { id: 'laptop-accessories', name: 'Laptop Accessories', slug: 'laptop-accessories' },
+      // Smartphones category
+      '96dd7488-f9d0-43cd-8db9-998be0c29a50': { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
+      // Used Phones category
+      'd6cedc35-4e44-4392-8483-b1ab8f2c11df': { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
+    };
+    // Default to new-used-phones for phones without category (like the device catalog phones)
+    return categoryId && categoryMap[categoryId] 
+      ? categoryMap[categoryId] 
+      : { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' };
+  };
+
   // Normalize products to shop item format for unified display
-  // Map to 'new-used-phones' category slug
   const normalizedProducts = filteredProducts.map(product => ({
     id: product.id,
     name: product.name,
@@ -221,7 +239,7 @@ export default function Shop() {
     images: product.images,
     featured: product.featured,
     category_id: product.category_id,
-    shop_categories: { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
+    shop_categories: getProductShopCategory(product.category_id),
     shop_brands: { id: product.brand, name: product.brand },
     condition: 'new',
     _type: 'product' as const
