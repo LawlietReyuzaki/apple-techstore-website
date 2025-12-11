@@ -102,6 +102,7 @@ export type Database = {
           product_name: string
           product_price: number
           quantity: number
+          shop_item_id: string | null
           spare_part_id: string | null
           subtotal: number
         }
@@ -114,6 +115,7 @@ export type Database = {
           product_name: string
           product_price: number
           quantity: number
+          shop_item_id?: string | null
           spare_part_id?: string | null
           subtotal: number
         }
@@ -126,6 +128,7 @@ export type Database = {
           product_name?: string
           product_price?: number
           quantity?: number
+          shop_item_id?: string | null
           spare_part_id?: string | null
           subtotal?: number
         }
@@ -142,6 +145,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_shop_item_id_fkey"
+            columns: ["shop_item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
             referencedColumns: ["id"]
           },
           {

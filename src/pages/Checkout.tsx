@@ -82,18 +82,21 @@ export default function Checkout() {
         // Determine foreign keys based on item type
         let productId = null;
         let sparePartId = null;
+        let shopItemId = null;
         
         if (itemType === "product") {
           productId = item.product.id;
         } else if (itemType === "spare_part") {
           sparePartId = item.product.id;
+        } else if (itemType === "shop_item") {
+          shopItemId = item.product.id;
         }
-        // For shop_items or unknown types, both FKs remain null - we rely on product_name
         
         return {
           order_id: order.id,
           product_id: productId,
           spare_part_id: sparePartId,
+          shop_item_id: shopItemId,
           item_type: itemType,
           product_name: item.product.name,
           product_price: item.product.price,
