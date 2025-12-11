@@ -638,6 +638,9 @@ const Index = () => {
       {/* Brand Section */}
       <BrandSection />
 
+      {/* DYNAMIC CATEGORIES SECTION - Shop by Category */}
+      <DynamicCategoriesSection />
+
       {/* LIMITED TIME OFFERS - Dark Background */}
       <LimitedTimeOffersSection />
 
@@ -653,9 +656,6 @@ const Index = () => {
         filters={filters}
         setFilters={setFilters}
       />
-
-      {/* DYNAMIC CATEGORIES SECTION */}
-      <DynamicCategoriesSection />
 
       {/* SHOP CATEGORY SHOWCASE - Alternating Dark/Light Sections */}
       <ShopCategoryShowcase />
