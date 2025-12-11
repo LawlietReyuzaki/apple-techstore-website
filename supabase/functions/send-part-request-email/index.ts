@@ -1,9 +1,25 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ADMIN_EMAIL = "appletwch2228@gmail.com";
+// Get admin email dynamically from database
+async function getAdminEmail(): Promise<string> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("admin_email")
+    .limit(1)
+    .single();
+  
+  return data?.admin_email || "appletwch2228@gmail.com"; // Fallback
+}
 
 interface PartRequestEmailPayload {
   type?: string;
@@ -479,9 +495,10 @@ Deno.serve(async (req) => {
       console.log("Customer confirmation email sent");
 
       const adminNotification = getNewRequestAdminEmail(payload);
-      console.log(`Sending notification email to admin: ${ADMIN_EMAIL}`);
+      const adminEmail = await getAdminEmail();
+      console.log(`Sending notification email to admin: ${adminEmail}`);
       await sendEmailViaSMTP(
-        ADMIN_EMAIL,
+        adminEmail,
         senderEmail,
         adminNotification.subject,
         adminNotification.text,

@@ -133,8 +133,13 @@ Deno.serve(async (req) => {
     const appPassword = Deno.env.get('GMAIL_APP_PASSWORD')!;
     const cleanPassword = appPassword.replace(/\s+/g, '');
     
-    // Admin email for receiving order/repair notifications
-    const adminEmail = 'appletwch2228@gmail.com';
+    // Admin email for receiving order/repair notifications - fetch dynamically
+    const { data: adminSettings } = await supabase
+      .from('admin_settings')
+      .select('admin_email')
+      .limit(1)
+      .single();
+    const adminEmail = adminSettings?.admin_email || 'appletwch2228@gmail.com';
 
     if (type === 'order' && orderId) {
       // Fetch order details with items
