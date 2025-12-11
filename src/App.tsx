@@ -23,6 +23,7 @@ import AdminSpareParts from "./pages/admin/SpareParts";
 import AdminSparePartsConfig from "./pages/admin/SparePartsConfig";
 import AdminShopInventory from "./pages/admin/ShopInventory";
 import AdminCategoryManagement from "./pages/admin/CategoryManagement";
+import AdminPartRequests from "./pages/admin/PartRequests";
 import Shop from "./pages/Shop";
 import SpareParts from "./pages/SpareParts";
 import SparePartDetail from "./pages/SparePartDetail";
@@ -36,6 +37,8 @@ import Wishlist from "./pages/Wishlist";
 import UsedPhones from "./pages/UsedPhones";
 import Laptops from "./pages/Laptops";
 import Accessories from "./pages/Accessories";
+import RequestPart from "./pages/RequestPart";
+import RequestPartThankYou from "./pages/RequestPartThankYou";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +66,8 @@ const App = () => (
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/book-repair" element={<BookRepair />} />
           <Route path="/track-repair" element={<TrackRepair />} />
+          <Route path="/request-part" element={<RequestPart />} />
+          <Route path="/request-part/thank-you" element={<RequestPartThankYou />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/account" element={<Account />} />
@@ -79,6 +84,7 @@ const App = () => (
             <Route path="spare-parts-config" element={<AdminSparePartsConfig />} />
             <Route path="shop-inventory" element={<AdminShopInventory />} />
             <Route path="categories" element={<AdminCategoryManagement />} />
+            <Route path="part-requests" element={<AdminPartRequests />} />
             <Route path="technicians" element={<AdminTechnicians />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
