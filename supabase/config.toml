@@ -7,4 +7,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-email-verification-otp]
+
+[functions.update-user-email]
 verify_jwt = false
