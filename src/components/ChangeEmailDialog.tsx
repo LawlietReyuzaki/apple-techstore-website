@@ -134,20 +134,32 @@ export function ChangeEmailDialog() {
     setErrors([]);
 
     try {
-      // OTP verified, now update the email in Supabase
-      const { error: updateError } = await supabase.auth.updateUser({
-        email: newEmail,
+      // OTP verified, now update the email using admin edge function
+      const { data, error: updateError } = await supabase.functions.invoke("update-user-email", {
+        body: {
+          newEmail: newEmail,
+          userId: user?.id,
+        },
       });
 
       if (updateError) {
-        if (updateError.message.includes("already registered")) {
+        throw new Error(updateError.message || "Failed to update email");
+      }
+
+      if (data?.error) {
+        if (data.error.includes("already registered") || data.error.includes("already been registered")) {
           throw new Error("This email is already registered to another account");
         }
-        throw updateError;
+        throw new Error(data.error);
       }
 
       setStep("success");
       toast.success("Email updated successfully!");
+      
+      // Sign out the user so they can log in with new email
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+      }, 2000);
     } catch (error: any) {
       console.error("Error updating email:", error);
       setErrors([error.message || "Failed to update email. Please try again."]);
