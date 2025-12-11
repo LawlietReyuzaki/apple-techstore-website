@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
   Home, Wrench, Users, Settings, Package, ShoppingBag, CreditCard, Smartphone,
-  Menu, X, ChevronDown, ChevronRight, FolderOpen
+  Menu, X, ChevronDown, ChevronRight, FolderOpen, FileQuestion
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,7 @@ export default function AdminLayout() {
       title: "Services",
       items: [
         { path: "/admin/repairs", label: "Repairs", icon: Wrench },
+        { path: "/admin/part-requests", label: "Part Requests", icon: FileQuestion },
         { path: "/admin/technicians", label: "Technicians", icon: Users },
       ]
     },

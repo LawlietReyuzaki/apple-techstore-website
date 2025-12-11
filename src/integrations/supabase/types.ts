@@ -206,6 +206,51 @@ export type Database = {
         }
         Relationships: []
       }
+      part_requests: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          email: string
+          id: string
+          image_url: string | null
+          name: string
+          part_details: string | null
+          part_name: string
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          email: string
+          id?: string
+          image_url?: string | null
+          name: string
+          part_details?: string | null
+          part_name: string
+          phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          email?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          part_details?: string | null
+          part_name?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       part_types: {
         Row: {
           category_id: string
