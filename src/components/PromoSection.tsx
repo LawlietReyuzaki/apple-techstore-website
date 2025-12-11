@@ -120,7 +120,7 @@ export const PromoSection = () => {
                 <p className="text-white/90 mb-5 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                   Can't find what you need? Request specific parts & accessories for any phone model.
                 </p>
-                <Link to="/shop?category=spare-parts">
+                <Link to="/request-part">
                   <Button 
                     className="group/btn bg-white text-primary hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 animate-fade-in-up"
                     style={{ animationDelay: '0.3s' }}
