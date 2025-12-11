@@ -58,7 +58,7 @@ const PartRequests = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
+    mutationFn: async ({ id, status, notes, request }: { id: string; status: string; notes: string; request: PartRequest }) => {
       const { error } = await supabase
         .from('part_requests')
         .update({ status, admin_notes: notes })
@@ -66,24 +66,31 @@ const PartRequests = () => {
       
       if (error) throw error;
 
-      // Send status update email
-      if (selectedRequest) {
-        await supabase.functions.invoke('send-part-request-email', {
-          body: {
-            type: 'status_update',
-            requestId: id,
-            customerName: selectedRequest.name,
-            customerEmail: selectedRequest.email,
-            partName: selectedRequest.part_name,
-            newStatus: status,
-            adminNotes: notes,
-          },
-        });
+      // Send status update email to customer
+      console.log('Sending status update email to:', request.email);
+      const { data, error: emailError } = await supabase.functions.invoke('send-part-request-email', {
+        body: {
+          type: 'status_update',
+          requestId: id,
+          customerName: request.name,
+          customerEmail: request.email,
+          partName: request.part_name,
+          newStatus: status,
+          adminNotes: notes,
+        },
+      });
+
+      if (emailError) {
+        console.error('Email sending failed:', emailError);
+        throw new Error('Status updated but email notification failed');
       }
+      
+      console.log('Email sent successfully:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['part-requests'] });
-      toast.success('Status updated successfully');
+      toast.success('Status updated and customer notified via email');
       setIsStatusUpdateOpen(false);
       setSelectedRequest(null);
       setAdminNotes('');
@@ -145,6 +152,7 @@ const PartRequests = () => {
       id: selectedRequest.id,
       status: newStatus,
       notes: adminNotes,
+      request: selectedRequest,
     });
   };
 
