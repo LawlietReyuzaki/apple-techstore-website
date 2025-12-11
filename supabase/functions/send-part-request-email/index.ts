@@ -1,14 +1,8 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use existing Gmail SMTP configuration
-const GMAIL_SENDER_EMAIL = Deno.env.get("GMAIL_SENDER_EMAIL");
-const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD");
 const ADMIN_EMAIL = "appletwch2228@gmail.com";
 
 interface PartRequestEmailPayload {
@@ -26,44 +20,101 @@ interface PartRequestEmailPayload {
   adminNotes?: string;
 }
 
-async function sendEmail(to: string, subject: string, htmlContent: string): Promise<boolean> {
-  if (!GMAIL_SENDER_EMAIL || !GMAIL_APP_PASSWORD) {
-    console.error("Gmail credentials not configured");
-    return false;
+async function sendEmailViaSMTP(
+  to: string,
+  from: string,
+  subject: string,
+  textBody: string,
+  htmlBody: string,
+  username: string,
+  password: string
+) {
+  const hostname = 'smtp.gmail.com';
+  const port = 465;
+
+  // Connect to SMTP server with TLS
+  const conn = await Deno.connectTls({ hostname, port });
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  async function readResponse(): Promise<string> {
+    const buffer = new Uint8Array(1024);
+    const n = await conn.read(buffer);
+    return decoder.decode(buffer.subarray(0, n || 0));
+  }
+
+  async function sendCommand(cmd: string): Promise<string> {
+    await conn.write(encoder.encode(cmd + '\r\n'));
+    return await readResponse();
   }
 
   try {
-    // Using Deno's built-in SMTP client via denopkg
-    const encoder = new TextEncoder();
-    const credentials = btoa(`${GMAIL_SENDER_EMAIL}:${GMAIL_APP_PASSWORD}`);
-    
-    // Use Gmail's SMTP relay via HTTP API workaround
-    // Since Deno Deploy doesn't support direct SMTP, we'll use a fetch-based approach
-    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        api_key: GMAIL_APP_PASSWORD,
-        to: [to],
-        sender: GMAIL_SENDER_EMAIL,
-        subject: subject,
-        html_body: htmlContent,
-      }),
-    }).catch(() => null);
+    // Read greeting
+    await readResponse();
 
-    // Fallback: Log email content for manual sending if SMTP fails
-    console.log("Email to send:", { to, subject, htmlContent: htmlContent.substring(0, 500) });
-    return true;
+    // EHLO
+    await sendCommand(`EHLO ${hostname}`);
+
+    // AUTH LOGIN
+    await sendCommand('AUTH LOGIN');
+    await sendCommand(btoa(username));
+    await sendCommand(btoa(password));
+
+    // MAIL FROM
+    await sendCommand(`MAIL FROM:<${from}>`);
+
+    // RCPT TO
+    await sendCommand(`RCPT TO:<${to}>`);
+
+    // DATA
+    await sendCommand('DATA');
+
+    // Email content
+    const boundary = '----=_Part_0_' + Date.now();
+    const emailContent = [
+      `From: ${from}`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=UTF-8`,
+      `Content-Transfer-Encoding: 7bit`,
+      '',
+      textBody,
+      '',
+      `--${boundary}`,
+      `Content-Type: text/html; charset=UTF-8`,
+      `Content-Transfer-Encoding: 7bit`,
+      '',
+      htmlBody,
+      '',
+      `--${boundary}--`,
+      '.',
+    ].join('\r\n');
+
+    await conn.write(encoder.encode(emailContent + '\r\n'));
+    await readResponse();
+
+    // QUIT
+    await sendCommand('QUIT');
+
+    conn.close();
+    console.log(`Email sent successfully to ${to}`);
+    return 'Email sent successfully';
   } catch (error) {
-    console.error("Email sending error:", error);
-    return false;
+    conn.close();
+    console.error('SMTP Error:', error);
+    throw error;
   }
 }
 
-function getNewRequestCustomerEmail(data: PartRequestEmailPayload): string {
-  return `
+function getNewRequestCustomerEmail(data: PartRequestEmailPayload): { subject: string; html: string; text: string } {
+  const requestIdShort = data.requestId.slice(0, 8).toUpperCase();
+  const subject = `Part Request Received - #${requestIdShort}`;
+  
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -85,7 +136,7 @@ function getNewRequestCustomerEmail(data: PartRequestEmailPayload): string {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #666;">Request ID:</td>
-              <td style="padding: 8px 0; font-weight: bold;">#${data.requestId.slice(0, 8).toUpperCase()}</td>
+              <td style="padding: 8px 0; font-weight: bold;">#${requestIdShort}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #666;">Part Name:</td>
@@ -103,7 +154,7 @@ function getNewRequestCustomerEmail(data: PartRequestEmailPayload): string {
               <td style="padding: 8px 0; color: #666;">Status:</td>
               <td style="padding: 8px 0;">
                 <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
-                  ⏳ Pending
+                  Pending
                 </span>
               </td>
             </tr>
@@ -130,10 +181,38 @@ function getNewRequestCustomerEmail(data: PartRequestEmailPayload): string {
     </body>
     </html>
   `;
+
+  const text = `Part Request Received
+
+Dear ${data.customerName},
+
+Thank you for submitting your part request. We have received your request and our team will review it shortly.
+
+Request Details:
+━━━━━━━━━━━━━━━━━━━━━
+Request ID: #${requestIdShort}
+Part Name: ${data.partName}
+Category: ${data.category || 'N/A'}
+Status: Pending
+
+What happens next?
+Our team will review your request and check availability with our suppliers. You'll receive an email notification once we have an update.
+
+If you have any questions, feel free to contact us via WhatsApp: +92 334 2228141
+
+Best regards,
+AppleT Shop Team
+Shop No G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi
+`;
+
+  return { subject, html, text };
 }
 
-function getNewRequestAdminEmail(data: PartRequestEmailPayload): string {
-  return `
+function getNewRequestAdminEmail(data: PartRequestEmailPayload): { subject: string; html: string; text: string } {
+  const requestIdShort = data.requestId.slice(0, 8).toUpperCase();
+  const subject = `New Part Request - ${data.partName} from ${data.customerName}`;
+
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -142,7 +221,7 @@ function getNewRequestAdminEmail(data: PartRequestEmailPayload): string {
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: #dc2626; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">🔔 New Part Request Received</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">New Part Request Received</h1>
       </div>
       
       <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px;">
@@ -171,7 +250,7 @@ function getNewRequestAdminEmail(data: PartRequestEmailPayload): string {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #666; width: 40%;">Request ID:</td>
-              <td style="padding: 8px 0; font-family: monospace; font-weight: bold;">#${data.requestId.slice(0, 8).toUpperCase()}</td>
+              <td style="padding: 8px 0; font-family: monospace; font-weight: bold;">#${requestIdShort}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #666;">Category:</td>
@@ -200,22 +279,47 @@ function getNewRequestAdminEmail(data: PartRequestEmailPayload): string {
         
         <div style="background: #fef3c7; padding: 15px; border-radius: 8px; text-align: center;">
           <p style="margin: 0; font-weight: bold; color: #92400e;">
-            ⚡ Action Required: Please review this request in the Admin Panel
+            Action Required: Please review this request in the Admin Panel
           </p>
         </div>
       </div>
     </body>
     </html>
   `;
+
+  const text = `New Part Request Received
+
+A new part request has been submitted and requires your attention.
+
+Customer Information:
+━━━━━━━━━━━━━━━━━━━━━
+Name: ${data.customerName}
+Email: ${data.customerEmail}
+Phone: ${data.customerPhone || 'N/A'}
+
+Part Details:
+━━━━━━━━━━━━━━━━━━━━━
+Request ID: #${requestIdShort}
+Category: ${data.category || 'N/A'}
+Part Name: ${data.partName}
+${data.partDetails ? `Description: ${data.partDetails}` : ''}
+
+Action Required: Please review this request in the Admin Panel
+`;
+
+  return { subject, html, text };
 }
 
-function getStatusUpdateEmail(data: PartRequestEmailPayload): string {
+function getStatusUpdateEmail(data: PartRequestEmailPayload): { subject: string; html: string; text: string } {
+  const requestIdShort = data.requestId.slice(0, 8).toUpperCase();
   const isApproved = data.newStatus === 'approved';
   const statusColor = isApproved ? '#22c55e' : '#dc2626';
   const statusBg = isApproved ? '#dcfce7' : '#fee2e2';
-  const statusText = isApproved ? '✅ Approved' : '❌ Rejected';
+  const statusText = isApproved ? 'Approved' : 'Rejected';
   
-  return `
+  const subject = `Part Request #${requestIdShort} - Status Updated`;
+
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -236,7 +340,7 @@ function getStatusUpdateEmail(data: PartRequestEmailPayload): string {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #666;">Request ID:</td>
-              <td style="padding: 8px 0; font-weight: bold;">#${data.requestId.slice(0, 8).toUpperCase()}</td>
+              <td style="padding: 8px 0; font-weight: bold;">#${requestIdShort}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #666;">Part Name:</td>
@@ -288,11 +392,38 @@ function getStatusUpdateEmail(data: PartRequestEmailPayload): string {
     </body>
     </html>
   `;
+
+  const text = `Part Request Update
+
+Dear ${data.customerName},
+
+Your part request status has been updated.
+
+Request Details:
+━━━━━━━━━━━━━━━━━━━━━
+Request ID: #${requestIdShort}
+Part Name: ${data.partName}
+New Status: ${statusText}
+
+${data.adminNotes ? `Message from our team:\n${data.adminNotes}\n` : ''}
+
+${isApproved 
+  ? 'Next Steps:\nOur team will contact you shortly with pricing and availability details. You can also reach out to us directly via WhatsApp.'
+  : 'We apologize that we couldn\'t fulfill your request at this time. Please feel free to submit another request or contact us for alternatives.'}
+
+If you have any questions, feel free to contact us via WhatsApp: +92 334 2228141
+
+Best regards,
+AppleT Shop Team
+Shop No G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi
+`;
+
+  return { subject, html, text };
 }
 
-const handler = async (req: Request): Promise<Response> => {
+Deno.serve(async (req) => {
   console.log("Part request email function called");
-  
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -302,53 +433,74 @@ const handler = async (req: Request): Promise<Response> => {
     const payload: PartRequestEmailPayload = await req.json();
     console.log("Received payload:", JSON.stringify(payload, null, 2));
 
+    // Get Gmail credentials from environment
+    const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL');
+    const appPassword = Deno.env.get('GMAIL_APP_PASSWORD');
+
+    if (!senderEmail || !appPassword) {
+      console.error('Missing Gmail credentials');
+      return new Response(
+        JSON.stringify({ error: 'Email configuration missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const cleanPassword = appPassword.replace(/\s+/g, '');
     const { type } = payload;
 
     if (type === 'status_update') {
       // Send status update email to customer
-      const customerEmailHtml = getStatusUpdateEmail(payload);
-      await sendEmail(
+      const { subject, html, text } = getStatusUpdateEmail(payload);
+      
+      console.log(`Sending status update email to customer: ${payload.customerEmail}`);
+      await sendEmailViaSMTP(
         payload.customerEmail,
-        `Part Request #${payload.requestId.slice(0, 8).toUpperCase()} - Status Updated`,
-        customerEmailHtml
+        senderEmail,
+        subject,
+        text,
+        html,
+        senderEmail,
+        cleanPassword
       );
-      console.log("Status update email sent to customer:", payload.customerEmail);
+      console.log("Status update email sent successfully");
     } else {
       // New request - send emails to both customer and admin
-      const customerEmailHtml = getNewRequestCustomerEmail(payload);
-      await sendEmail(
+      const customerEmail = getNewRequestCustomerEmail(payload);
+      console.log(`Sending confirmation email to customer: ${payload.customerEmail}`);
+      await sendEmailViaSMTP(
         payload.customerEmail,
-        `Part Request Received - #${payload.requestId.slice(0, 8).toUpperCase()}`,
-        customerEmailHtml
+        senderEmail,
+        customerEmail.subject,
+        customerEmail.text,
+        customerEmail.html,
+        senderEmail,
+        cleanPassword
       );
-      console.log("Confirmation email sent to customer:", payload.customerEmail);
+      console.log("Customer confirmation email sent");
 
-      const adminEmailHtml = getNewRequestAdminEmail(payload);
-      await sendEmail(
+      const adminNotification = getNewRequestAdminEmail(payload);
+      console.log(`Sending notification email to admin: ${ADMIN_EMAIL}`);
+      await sendEmailViaSMTP(
         ADMIN_EMAIL,
-        `🔔 New Part Request - ${payload.partName}`,
-        adminEmailHtml
+        senderEmail,
+        adminNotification.subject,
+        adminNotification.text,
+        adminNotification.html,
+        senderEmail,
+        cleanPassword
       );
-      console.log("Notification email sent to admin:", ADMIN_EMAIL);
+      console.log("Admin notification email sent");
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Emails processed" }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: true, message: "Emails sent successfully" }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error in send-part-request-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
-};
-
-serve(handler);
+});
