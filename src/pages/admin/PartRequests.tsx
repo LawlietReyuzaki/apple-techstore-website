@@ -66,6 +66,11 @@ const PartRequests = () => {
       
       if (error) throw error;
 
+      // Show toast that email is being sent
+      toast.info(`Sending notification email to: ${request.email}`, {
+        duration: 3000,
+      });
+
       // Send status update email to customer
       console.log('Sending status update email to:', request.email);
       const { data, error: emailError } = await supabase.functions.invoke('send-part-request-email', {
@@ -86,11 +91,11 @@ const PartRequests = () => {
       }
       
       console.log('Email sent successfully:', data);
-      return data;
+      return { data, customerEmail: request.email };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['part-requests'] });
-      toast.success('Status updated and customer notified via email');
+      toast.success(`Email sent successfully to ${result.customerEmail}`);
       setIsStatusUpdateOpen(false);
       setSelectedRequest(null);
       setAdminNotes('');
@@ -400,6 +405,13 @@ const PartRequests = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Customer Email Display */}
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <Label className="text-sm text-muted-foreground">Notification will be sent to:</Label>
+              <p className="font-semibold text-primary mt-1">{selectedRequest?.email}</p>
+              <p className="text-sm text-muted-foreground mt-1">Customer: {selectedRequest?.name}</p>
+            </div>
+            
             <div>
               <Label>Admin Notes (Optional)</Label>
               <Textarea
