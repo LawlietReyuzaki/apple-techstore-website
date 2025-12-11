@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Check if the user is an admin
+    const { data: userRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin");
+
+    const isAdmin = userRoles && userRoles.length > 0;
+
     // Update user email directly using admin privileges
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       email: newEmail,
@@ -45,6 +54,30 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: error.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // If the user is an admin, update the admin_settings table
+    if (isAdmin) {
+      // First, delete all existing admin_settings entries (only one admin allowed)
+      await supabaseAdmin
+        .from("admin_settings")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+
+      // Insert new admin email
+      const { error: settingsError } = await supabaseAdmin
+        .from("admin_settings")
+        .insert({
+          admin_email: newEmail,
+          admin_user_id: userId,
+        });
+
+      if (settingsError) {
+        console.error("Error updating admin settings:", settingsError);
+        // Don't fail the whole operation, just log the error
+      } else {
+        console.log(`Admin settings updated with new email: ${newEmail}`);
+      }
     }
 
     console.log(`Email updated successfully for user ${userId} to ${newEmail}`);
