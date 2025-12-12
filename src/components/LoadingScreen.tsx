@@ -55,13 +55,13 @@ export function LoadingScreen({ onLoadingComplete }: LoadingScreenProps) {
         {/* Logo with animation */}
         <div className="relative animate-fade-in">
           {/* Glow ring */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary blur-xl opacity-50 animate-pulse" style={{ transform: "scale(1.2)" }} />
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary blur-2xl opacity-60 animate-pulse" style={{ transform: "scale(1.3)" }} />
           
           {/* Logo */}
           <img
             src={logo}
             alt="AppleTechStore"
-            className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-2xl object-cover shadow-2xl border-2 border-white/20"
+            className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-3xl object-cover shadow-2xl border-2 border-white/20"
           />
         </div>
 
