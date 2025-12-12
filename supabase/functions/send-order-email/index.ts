@@ -1561,46 +1561,35 @@ This is an automated email.`;
       // Generate signed URL for payment screenshot (valid for 7 days)
       let signedScreenshotUrl = null;
       if (payment?.payment_screenshot_url) {
-        // Extract file path from the full URL
-        const urlParts = payment.payment_screenshot_url.split('/storage/v1/object/public/payment_screenshots/');
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1];
-          const { data: signedData } = await supabase.storage
-            .from('payment_screenshots')
-            .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
-          
-          if (signedData?.signedUrl) {
-            signedScreenshotUrl = signedData.signedUrl;
-            console.log('Generated signed URL for payment screenshot');
+        console.log('Payment screenshot URL from DB:', payment.payment_screenshot_url);
+        
+        // The payment_screenshot_url is stored as just the filename, not a full URL
+        // So we use it directly as the file path
+        let filePath = payment.payment_screenshot_url;
+        
+        // Remove any URL parts if it happens to be a full URL
+        if (filePath.includes('/storage/v1/object/')) {
+          const parts = filePath.split('payment_screenshots/');
+          if (parts.length > 1) {
+            filePath = parts[1].split('?')[0];
           }
+        }
+        
+        console.log('Using file path for signed URL:', filePath);
+        
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('payment_screenshots')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
+        
+        if (signedError) {
+          console.error('Error creating signed URL:', signedError);
+        }
+        
+        if (signedData?.signedUrl) {
+          signedScreenshotUrl = signedData.signedUrl;
+          console.log('Successfully generated signed URL for payment screenshot');
         } else {
-          // Try extracting from private URL format
-          const privateUrlParts = payment.payment_screenshot_url.split('/storage/v1/object/sign/payment_screenshots/');
-          if (privateUrlParts.length > 1) {
-            const filePath = privateUrlParts[1].split('?')[0];
-            const { data: signedData } = await supabase.storage
-              .from('payment_screenshots')
-              .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-            
-            if (signedData?.signedUrl) {
-              signedScreenshotUrl = signedData.signedUrl;
-              console.log('Generated signed URL from private URL format');
-            }
-          } else {
-            // Try direct file path extraction
-            const pathMatch = payment.payment_screenshot_url.match(/payment_screenshots\/(.+)$/);
-            if (pathMatch && pathMatch[1]) {
-              const filePath = pathMatch[1].split('?')[0];
-              const { data: signedData } = await supabase.storage
-                .from('payment_screenshots')
-                .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-              
-              if (signedData?.signedUrl) {
-                signedScreenshotUrl = signedData.signedUrl;
-                console.log('Generated signed URL from path match');
-              }
-            }
-          }
+          console.log('No signed URL generated, signedData:', signedData);
         }
       }
 
