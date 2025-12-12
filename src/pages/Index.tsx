@@ -525,11 +525,11 @@ const Index = () => {
         </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
-        <div className="container h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src={logo} alt="AppleTechStore" className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-lg" />
-            <div className="min-w-0">
+       <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
+         <div className="container h-18 sm:h-24 flex items-center justify-between gap-2 sm:gap-4">
+           <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
+             <img src={logo} alt="AppleTechStore" className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0 rounded-xl" />
+             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
                 AppleTechStore
               </h1>

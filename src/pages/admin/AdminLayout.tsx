@@ -216,8 +216,8 @@ export default function AdminLayout() {
               )}
             </Button>
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="AppleTechStore" className="h-8 w-8 md:h-10 md:w-10 rounded-lg" />
-              <span className="text-base md:text-xl font-bold truncate">AppleTechStore Admin</span>
+               <img src={logo} alt="AppleTechStore" className="h-10 w-10 md:h-12 md:w-12 rounded-xl" />
+               <span className="text-base md:text-xl font-bold truncate">AppleTechStore Admin</span>
             </Link>
           </div>
           <AuthButton />
