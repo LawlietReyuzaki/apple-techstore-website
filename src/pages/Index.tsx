@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import { DeviceCard } from "@/components/DeviceCard";
 import { DynamicCategoriesSection } from "@/components/DynamicCategoriesSection";
 import { ShopCategoryShowcase } from "@/components/ShopCategoryShowcase";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
@@ -31,6 +32,9 @@ import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones } from "lucide-react";
 import logo from "@/assets/logo.jpg";
+
+// Session storage key for loading screen
+const LOADING_SHOWN_KEY = "appletechstore_loading_shown";
 
 import { useInView } from 'react-intersection-observer';
 import {
@@ -496,15 +500,29 @@ const Index = () => {
     return matchesSearch && matchesPrice;
   });
 
+  // Loading screen state - show only once per session
+  const [showLoading, setShowLoading] = useState(() => {
+    return !sessionStorage.getItem(LOADING_SHOWN_KEY);
+  });
+
+  const handleLoadingComplete = useCallback(() => {
+    sessionStorage.setItem(LOADING_SHOWN_KEY, "true");
+    setShowLoading(false);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="glass-effect text-foreground py-2 border-b">
-        <div className="container flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
-          <span className="truncate">🎉 Welcome to Dilbar Mart - Wholesale Rates & Expert Repairs</span>
-          <span className="hidden sm:block truncate">📞 Free Home Delivery in Bahria Phase 7</span>
+    <>
+      {/* Loading Screen - shows only once per session */}
+      {showLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
+      
+      <div className="min-h-screen bg-background">
+        {/* Top Bar */}
+        <div className="glass-effect text-foreground py-2 border-b">
+          <div className="container flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
+            <span className="truncate">🎉 Welcome to AppleTechStore - Wholesale Rates & Expert Repairs</span>
+            <span className="hidden sm:block truncate">📞 Free Home Delivery in Bahria Phase 7</span>
+          </div>
         </div>
-      </div>
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
@@ -708,7 +726,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-border pt-4 sm:pt-6 text-center text-xs sm:text-sm text-muted-foreground">
-            <p>&copy; 2024 Dilbar Mart. All rights reserved. • Best repair shop in Bahria Phase 7</p>
+            <p>&copy; 2024 AppleTechStore. All rights reserved. • Best repair shop in Bahria Phase 7</p>
           </div>
         </div>
       </footer>
@@ -716,6 +734,7 @@ const Index = () => {
       {/* Floating WhatsApp Button */}
       <WhatsAppFloatingButton />
     </div>
+    </>
   );
 };
 
