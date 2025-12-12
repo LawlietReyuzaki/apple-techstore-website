@@ -109,16 +109,8 @@ export default function Checkout() {
 
       if (itemsError) throw itemsError;
 
-      // Send order placement emails to customer and admin
-      try {
-        await supabase.functions.invoke('send-order-email', {
-          body: { orderId: order.id, type: 'order_placed' }
-        });
-        console.log('Order placement emails triggered successfully');
-      } catch (emailError) {
-        console.error('Error sending order emails:', emailError);
-        // Don't fail the order if email fails
-      }
+      // Note: Email notifications are sent from PaymentSubmission page when customer confirms payment
+      // This prevents duplicate emails to admin
 
       // Clear cart
       clearCart();
