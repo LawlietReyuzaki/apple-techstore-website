@@ -1558,6 +1558,52 @@ This is an automated email.`;
         .limit(1)
         .single();
 
+      // Generate signed URL for payment screenshot (valid for 7 days)
+      let signedScreenshotUrl = null;
+      if (payment?.payment_screenshot_url) {
+        // Extract file path from the full URL
+        const urlParts = payment.payment_screenshot_url.split('/storage/v1/object/public/payment_screenshots/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          const { data: signedData } = await supabase.storage
+            .from('payment_screenshots')
+            .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
+          
+          if (signedData?.signedUrl) {
+            signedScreenshotUrl = signedData.signedUrl;
+            console.log('Generated signed URL for payment screenshot');
+          }
+        } else {
+          // Try extracting from private URL format
+          const privateUrlParts = payment.payment_screenshot_url.split('/storage/v1/object/sign/payment_screenshots/');
+          if (privateUrlParts.length > 1) {
+            const filePath = privateUrlParts[1].split('?')[0];
+            const { data: signedData } = await supabase.storage
+              .from('payment_screenshots')
+              .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+            
+            if (signedData?.signedUrl) {
+              signedScreenshotUrl = signedData.signedUrl;
+              console.log('Generated signed URL from private URL format');
+            }
+          } else {
+            // Try direct file path extraction
+            const pathMatch = payment.payment_screenshot_url.match(/payment_screenshots\/(.+)$/);
+            if (pathMatch && pathMatch[1]) {
+              const filePath = pathMatch[1].split('?')[0];
+              const { data: signedData } = await supabase.storage
+                .from('payment_screenshots')
+                .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+              
+              if (signedData?.signedUrl) {
+                signedScreenshotUrl = signedData.signedUrl;
+                console.log('Generated signed URL from path match');
+              }
+            }
+          }
+        }
+      }
+
       const storeName = "Dilbar Mobiles";
       const storePhone = "+92 334 2228141";
       const storeAddress = "Shop No G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi, Pakistan";
@@ -1790,12 +1836,12 @@ ${storePhone}`;
                   ` : ''}
                   <li><strong>Status:</strong> ${isCOD ? 'Pending (COD)' : 'Payment Submitted'}</li>
                 </ul>
-                ${!isCOD && payment?.payment_screenshot_url ? `
+                ${!isCOD && signedScreenshotUrl ? `
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                   <h4 style="margin: 0 0 10px 0; color: #374151;">Payment Receipt Screenshot</h4>
-                  <img src="${payment.payment_screenshot_url}" alt="Payment Receipt" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px;" />
+                  <img src="${signedScreenshotUrl}" alt="Payment Receipt" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px;" />
                   <p style="font-size: 12px; color: #666; margin-top: 5px;">
-                    <a href="${payment.payment_screenshot_url}" target="_blank" style="color: #2563eb;">View Full Image</a>
+                    <a href="${signedScreenshotUrl}" target="_blank" style="color: #2563eb;">View Full Image</a>
                   </p>
                 </div>
                 ` : ''}
