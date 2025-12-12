@@ -30,7 +30,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
-import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones } from "lucide-react";
+import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones, X } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 // Session storage key for loading screen
@@ -505,6 +505,9 @@ const Index = () => {
     return !sessionStorage.getItem(LOADING_SHOWN_KEY);
   });
 
+  // Logo popup state
+  const [showLogoPopup, setShowLogoPopup] = useState(false);
+
   const handleLoadingComplete = useCallback(() => {
     sessionStorage.setItem(LOADING_SHOWN_KEY, "true");
     setShowLoading(false);
@@ -514,6 +517,28 @@ const Index = () => {
     <>
       {/* Loading Screen - shows only once per session */}
       {showLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
+
+      {/* Logo Popup Modal */}
+      {showLogoPopup && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowLogoPopup(false)}
+        >
+          <div className="relative animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowLogoPopup(false)}
+              className="absolute -top-4 -right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-colors"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+            <img 
+              src={logo} 
+              alt="AppleTechStore" 
+              className="max-w-[80vw] max-h-[80vh] rounded-2xl shadow-2xl border-2 border-white/20"
+            />
+          </div>
+        </div>
+      )}
       
       <div className="min-h-screen bg-background">
         {/* Top Bar */}
@@ -531,11 +556,10 @@ const Index = () => {
              <img 
                src={logo} 
                alt="AppleTechStore" 
-               className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl cursor-pointer transition-transform duration-300 active:scale-150" 
+               className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl cursor-pointer" 
                onClick={(e) => {
                  e.preventDefault();
-                 e.currentTarget.classList.add('scale-150');
-                 setTimeout(() => e.currentTarget.classList.remove('scale-150'), 300);
+                 setShowLogoPopup(true);
                }}
              />
              <div className="min-w-0">
