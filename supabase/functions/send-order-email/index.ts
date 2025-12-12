@@ -1790,6 +1790,15 @@ ${storePhone}`;
                   ` : ''}
                   <li><strong>Status:</strong> ${isCOD ? 'Pending (COD)' : 'Payment Submitted'}</li>
                 </ul>
+                ${!isCOD && payment?.payment_screenshot_url ? `
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                  <h4 style="margin: 0 0 10px 0; color: #374151;">Payment Receipt Screenshot</h4>
+                  <img src="${payment.payment_screenshot_url}" alt="Payment Receipt" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px;" />
+                  <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                    <a href="${payment.payment_screenshot_url}" target="_blank" style="color: #2563eb;">View Full Image</a>
+                  </p>
+                </div>
+                ` : ''}
               </div>
               
               <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
