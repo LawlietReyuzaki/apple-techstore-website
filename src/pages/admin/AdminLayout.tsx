@@ -12,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import logo from "@/assets/logo.jpg";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -214,8 +215,9 @@ export default function AdminLayout() {
                 <Menu className="h-5 w-5" />
               )}
             </Button>
-            <Link to="/" className="text-base md:text-xl font-bold truncate">
-              Dilbar Mobiles Admin
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="AppleTechStore" className="h-8 w-8 md:h-10 md:w-10 rounded-lg" />
+              <span className="text-base md:text-xl font-bold truncate">AppleTechStore Admin</span>
             </Link>
           </div>
           <AuthButton />
