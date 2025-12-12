@@ -531,7 +531,7 @@ const Index = () => {
              <img 
                src={logo} 
                alt="AppleTechStore" 
-               className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl cursor-pointer transition-transform duration-300 active:scale-150 hover:scale-110" 
+               className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl cursor-pointer transition-transform duration-300 active:scale-150" 
                onClick={(e) => {
                  e.preventDefault();
                  e.currentTarget.classList.add('scale-150');
