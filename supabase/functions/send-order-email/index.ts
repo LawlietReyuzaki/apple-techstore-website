@@ -975,6 +975,100 @@ This is an automated email. Please do not reply.`;
         senderEmail,
         cleanPassword
       );
+      console.log('Customer order approved email sent to:', order.customer_email);
+
+      // Also send notification to admin about order being processed
+      const adminApprovedSubject = `Order Processed - #${orderId.slice(0, 8)} | ${order.customer_name}`;
+      
+      const adminApprovedHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #16a34a; margin: 0; font-size: 28px;">✓ Order Processed</h1>
+            </div>
+            
+            <p style="font-size: 14px; color: #555; margin-bottom: 20px;">
+              An order has been approved and is now being processed.
+            </p>
+            
+            <div style="background-color: #f0fdf4; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+              <h2 style="color: #15803d; font-size: 18px; margin-bottom: 15px;">Order Information</h2>
+              <table style="width: 100%; font-size: 14px; color: #333;">
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Order ID:</strong></td>
+                  <td style="padding: 8px 0;">#${orderId.slice(0, 8).toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Customer:</strong></td>
+                  <td style="padding: 8px 0;">${order.customer_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Phone:</strong></td>
+                  <td style="padding: 8px 0;">${order.customer_phone}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Email:</strong></td>
+                  <td style="padding: 8px 0;">${order.customer_email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Address:</strong></td>
+                  <td style="padding: 8px 0;">${order.delivery_address}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Total Amount:</strong></td>
+                  <td style="padding: 8px 0;"><strong style="color: #16a34a; font-size: 16px;">PKR ${order.total_amount.toLocaleString()}</strong></td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+              <h3 style="color: #374151; font-size: 16px; margin-bottom: 10px;">Ordered Products</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                  <tr style="background-color: #f3f4f6;">
+                    <th style="padding: 10px; text-align: left;">Product</th>
+                    <th style="padding: 10px; text-align: center;">Qty</th>
+                    <th style="padding: 10px; text-align: right;">Price</th>
+                    <th style="padding: 10px; text-align: right;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsListHtml}
+                </tbody>
+              </table>
+            </div>
+            
+            <p style="font-size: 14px; color: #555; text-align: center; margin-top: 20px;">
+              Please prepare this order for delivery.
+            </p>
+          </div>
+        </div>
+      `;
+
+      const adminApprovedText = `Order Processed
+
+Order ID: #${orderId.slice(0, 8).toUpperCase()}
+Customer: ${order.customer_name}
+Phone: ${order.customer_phone}
+Email: ${order.customer_email}
+Address: ${order.delivery_address}
+Total Amount: PKR ${order.total_amount.toLocaleString()}
+
+Ordered Products:
+${itemsListText}
+
+Please prepare this order for delivery.`;
+
+      await sendEmailViaSMTP(
+        adminEmail,
+        senderEmail,
+        adminApprovedSubject,
+        adminApprovedText,
+        adminApprovedHtml,
+        senderEmail,
+        cleanPassword
+      );
+      console.log('Admin order processed email sent to:', adminEmail);
 
     } else if (type === 'order_declined' && orderId) {
       // Fetch order details
