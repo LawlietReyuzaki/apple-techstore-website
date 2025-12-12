@@ -115,9 +115,8 @@ export default function Checkout() {
       // Clear cart
       clearCart();
 
-      toast.success("Order placed successfully!", {
-        description: "Confirmation email sent! Redirecting to payment...",
-        icon: <Mail className="h-4 w-4" />,
+      toast.success("Order created!", {
+        description: "Redirecting to payment...",
       });
 
       // Navigate to payment submission page
