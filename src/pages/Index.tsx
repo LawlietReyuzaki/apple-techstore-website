@@ -30,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { devices, Device } from "@/data/devices";
 import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo.jpg";
 
 import { useInView } from 'react-intersection-observer';
 import {
@@ -510,12 +510,12 @@ const Index = () => {
       <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
         <div className="container h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src={logo} alt="Dilbar Mart" className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" />
+            <img src={logo} alt="AppleTechStore" className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-lg" />
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
-                Dilbar Mart
+                AppleTechStore
               </h1>
-              <p className="text-[10px] sm:text-xs text-primary truncate">Wholesale & Repair Shop</p>
+              <p className="text-[10px] sm:text-xs text-primary truncate">Your Destination for Innovation</p>
             </div>
           </Link>
           
