@@ -127,8 +127,21 @@ export default function PaymentSubmission() {
           })
           .eq("id", orderId);
 
+        // Send COD order confirmation email to admin and customer
+        const { error: emailError } = await supabase.functions.invoke('send-order-email', {
+          body: {
+            orderId,
+            type: 'payment_submitted',
+            paymentMethod: 'cod',
+          },
+        });
+
+        if (emailError) {
+          console.error('Email error:', emailError);
+        }
+
         toast.success("Order confirmed!", {
-          description: "You will pay cash when your order is delivered",
+          description: "You will pay cash when your order is delivered. Confirmation email sent!",
         });
 
         navigate("/account/orders");
@@ -178,11 +191,12 @@ export default function PaymentSubmission() {
         })
         .eq("id", orderId);
 
-      // Send payment pending email to admin
+      // Send payment submitted email to admin and customer
       const { error: emailError } = await supabase.functions.invoke('send-order-email', {
         body: {
           orderId,
-          type: 'payment_uploaded',
+          type: 'payment_submitted',
+          paymentMethod: paymentMethod,
         },
       });
 
@@ -191,7 +205,7 @@ export default function PaymentSubmission() {
       }
 
       toast.success("Payment receipt submitted successfully!", {
-        description: "Your payment is being verified by admin",
+        description: "Your payment is being verified by admin. Confirmation email sent!",
       });
 
       navigate("/account/orders");

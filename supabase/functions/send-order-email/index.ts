@@ -8,11 +8,12 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'order_placed' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update' | 'payment_uploaded' | 'payment_approved' | 'payment_declined' | 'payment_refunded';
+  type: 'order' | 'order_placed' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update' | 'payment_uploaded' | 'payment_submitted' | 'payment_approved' | 'payment_declined' | 'payment_refunded';
   visitDate?: string;
   customNote?: string;
   declineReason?: string;
   newStatus?: string;
+  paymentMethod?: string;
 }
 
 async function sendEmailViaSMTP(
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { orderId, repairId, type, visitDate, customNote, declineReason, newStatus }: EmailRequest = await req.json();
+    const { orderId, repairId, type, visitDate, customNote, declineReason, newStatus, paymentMethod }: EmailRequest = await req.json();
 
     if (!orderId && !repairId) {
       return new Response(
@@ -1531,6 +1532,326 @@ This is an automated email.`;
         cleanPassword
       );
       console.info('Admin payment notification email sent to:', adminEmail);
+
+    } else if (type === 'payment_submitted' && orderId) {
+      // Order confirmation on "Confirm Order" button click - supports both COD and digital payments
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get payment details if available (for digital payments)
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const storeName = "Dilbar Mobiles";
+      const storePhone = "+92 334 2228141";
+      const storeAddress = "Shop No G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi, Pakistan";
+      const isCOD = paymentMethod === 'cod';
+      const orderDate = new Date(order.created_at).toLocaleString('en-PK', {
+        dateStyle: 'full',
+        timeStyle: 'short'
+      });
+
+      // Build order items list
+      const itemsListHtml = order.order_items?.map((item: any) => 
+        `<tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product_name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">PKR ${item.product_price?.toLocaleString()}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">PKR ${item.subtotal?.toLocaleString()}</td>
+        </tr>`
+      ).join('') || '';
+
+      const itemsListText = order.order_items?.map((item: any) => 
+        `- ${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal?.toLocaleString()}`
+      ).join('\n') || '';
+
+      // ==== CUSTOMER EMAIL ====
+      const customerSubject = isCOD 
+        ? `Order Confirmed (COD) - #${orderId.slice(0, 8)} | ${storeName}`
+        : `Order Confirmed - Payment Submitted - #${orderId.slice(0, 8)} | ${storeName}`;
+
+      const paymentStatusMessage = isCOD
+        ? `<p style="color: #16a34a; font-weight: bold;">Payment Method: Cash on Delivery</p>
+           <p>You will pay when your order is delivered.</p>`
+        : `<p style="color: #f59e0b; font-weight: bold;">Payment Status: Awaiting Verification</p>
+           <p>Your payment receipt has been submitted. Our team will verify it shortly.</p>`;
+
+      const customerEmailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h1 style="color: #16a34a; margin: 0; font-size: 28px;">✓ Order Confirmed!</h1>
+                </div>
+                
+                <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+                  Dear <strong>${order.customer_name}</strong>,
+                </p>
+                
+                <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;">
+                  Thank you for your order! Your order has been confirmed and is now being processed.
+                </p>
+                
+                <div style="background-color: #f0fdf4; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+                  <h2 style="color: #15803d; font-size: 18px; margin-bottom: 15px;">Order Details</h2>
+                  <table style="width: 100%; font-size: 14px; color: #333;">
+                    <tr>
+                      <td style="padding: 8px 0;"><strong>Order ID:</strong></td>
+                      <td style="padding: 8px 0;">#${orderId.slice(0, 8).toUpperCase()}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0;"><strong>Date:</strong></td>
+                      <td style="padding: 8px 0;">${orderDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0;"><strong>Payment Method:</strong></td>
+                      <td style="padding: 8px 0;">${isCOD ? 'Cash on Delivery' : paymentMethod?.toUpperCase() || 'Digital Payment'}</td>
+                    </tr>
+                  </table>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #374151; font-size: 16px; margin-bottom: 10px;">Order Summary</h3>
+                  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                      <tr style="background-color: #f3f4f6;">
+                        <th style="padding: 10px; text-align: left;">Item</th>
+                        <th style="padding: 10px; text-align: center;">Qty</th>
+                        <th style="padding: 10px; text-align: right;">Price</th>
+                        <th style="padding: 10px; text-align: right;">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${itemsListHtml}
+                    </tbody>
+                    <tfoot>
+                      <tr style="background-color: #f0fdf4;">
+                        <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold;">Total:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: bold; color: #16a34a;">PKR ${order.total_amount?.toLocaleString()}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                
+                <div style="background-color: ${isCOD ? '#f0fdf4' : '#fef3c7'}; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                  ${paymentStatusMessage}
+                </div>
+                
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                  <h4 style="margin: 0 0 10px 0; color: #374151;">Delivery Address</h4>
+                  <p style="margin: 0; color: #555;">${order.delivery_address}</p>
+                </div>
+                
+                <p style="font-size: 14px; color: #555; margin-top: 20px;">
+                  If you have any questions, contact us at <strong>${storePhone}</strong>.
+                </p>
+                
+                <p style="margin-top: 30px;">Thank you for shopping with us!</p>
+                
+                <p style="margin-top: 20px;">Warm regards,<br>
+                <strong>${storeName} Team</strong></p>
+                
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                <p style="font-size: 12px; color: #666; text-align: center;">
+                  ${storeName} | ${storeAddress}<br>
+                  ${storePhone}
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const customerEmailText = `Order Confirmed!
+
+Dear ${order.customer_name},
+
+Thank you for your order! Your order has been confirmed and is now being processed.
+
+Order Details:
+- Order ID: #${orderId.slice(0, 8).toUpperCase()}
+- Date: ${orderDate}
+- Payment Method: ${isCOD ? 'Cash on Delivery' : paymentMethod?.toUpperCase() || 'Digital Payment'}
+
+Order Summary:
+${itemsListText}
+
+Total: PKR ${order.total_amount?.toLocaleString()}
+
+${isCOD ? 'Payment Method: Cash on Delivery\nYou will pay when your order is delivered.' : 'Payment Status: Awaiting Verification\nYour payment receipt has been submitted. Our team will verify it shortly.'}
+
+Delivery Address:
+${order.delivery_address}
+
+If you have any questions, contact us at ${storePhone}.
+
+Thank you for shopping with us!
+
+Warm regards,
+${storeName} Team
+
+---
+${storeName}
+${storeAddress}
+${storePhone}`;
+
+      // Send to customer
+      if (order.customer_email) {
+        await sendEmailViaSMTP(
+          order.customer_email,
+          senderEmail,
+          customerSubject,
+          customerEmailText,
+          customerEmailHtml,
+          senderEmail,
+          cleanPassword
+        );
+        console.info('Customer order confirmation email sent to:', order.customer_email);
+      }
+
+      // ==== ADMIN EMAIL ====
+      const adminSubject = isCOD 
+        ? `New Order (COD) - #${orderId.slice(0, 8)} | ${order.customer_name}`
+        : `New Order - Payment Submitted - #${orderId.slice(0, 8)} | ${order.customer_name}`;
+
+      const adminEmailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #2563eb; margin-bottom: 20px;">New Order Received</h2>
+              
+              <p>A new order has been placed.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${isCOD ? '#16a34a' : '#f59e0b'};">
+                <h3 style="margin-top: 0; color: ${isCOD ? '#16a34a' : '#f59e0b'};">
+                  ${isCOD ? 'Cash on Delivery Order' : 'Payment Submitted – Awaiting Verification'}
+                </h3>
+                <p style="margin: 10px 0 0 0;">Order ID: <strong>#${orderId.slice(0, 8).toUpperCase()}</strong></p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Customer Details</h3>
+                <ul style="list-style: none; padding: 0;">
+                  <li><strong>Name:</strong> ${order.customer_name}</li>
+                  <li><strong>Email:</strong> ${order.customer_email || 'N/A'}</li>
+                  <li><strong>Phone:</strong> ${order.customer_phone}</li>
+                  <li><strong>Address:</strong> ${order.delivery_address}</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Order Details</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <thead>
+                    <tr style="background-color: #f3f4f6;">
+                      <th style="padding: 10px; text-align: left;">Item</th>
+                      <th style="padding: 10px; text-align: center;">Qty</th>
+                      <th style="padding: 10px; text-align: right;">Price</th>
+                      <th style="padding: 10px; text-align: right;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemsListHtml}
+                  </tbody>
+                  <tfoot>
+                    <tr style="background-color: #f0fdf4;">
+                      <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold;">Total:</td>
+                      <td style="padding: 12px; text-align: right; font-weight: bold; color: #16a34a;">PKR ${order.total_amount?.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Payment Information</h3>
+                <ul style="list-style: none; padding: 0;">
+                  <li><strong>Method:</strong> ${isCOD ? 'Cash on Delivery' : paymentMethod?.toUpperCase() || 'Digital Payment'}</li>
+                  <li><strong>Amount:</strong> PKR ${order.total_amount?.toLocaleString()}</li>
+                  ${!isCOD && payment ? `
+                  <li><strong>Transaction ID:</strong> ${payment.transaction_id || 'N/A'}</li>
+                  <li><strong>Sender Number:</strong> ${payment.sender_number || 'N/A'}</li>
+                  ` : ''}
+                  <li><strong>Status:</strong> ${isCOD ? 'Pending (COD)' : 'Payment Submitted'}</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Date & Time:</strong> ${orderDate}</p>
+              </div>
+              
+              <p style="margin-top: 30px;">Please log in to the admin panel to process this order.</p>
+              
+              <p style="margin-top: 20px;"><strong>${storeName} Admin</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const adminEmailText = `New Order Received
+
+A new order has been placed.
+
+${isCOD ? 'Cash on Delivery Order' : 'Payment Submitted – Awaiting Verification'}
+Order ID: #${orderId.slice(0, 8).toUpperCase()}
+
+Customer Details:
+- Name: ${order.customer_name}
+- Email: ${order.customer_email || 'N/A'}
+- Phone: ${order.customer_phone}
+- Address: ${order.delivery_address}
+
+Order Summary:
+${itemsListText}
+
+Total: PKR ${order.total_amount?.toLocaleString()}
+
+Payment Information:
+- Method: ${isCOD ? 'Cash on Delivery' : paymentMethod?.toUpperCase() || 'Digital Payment'}
+- Amount: PKR ${order.total_amount?.toLocaleString()}
+${!isCOD && payment ? `- Transaction ID: ${payment.transaction_id || 'N/A'}
+- Sender Number: ${payment.sender_number || 'N/A'}` : ''}
+- Status: ${isCOD ? 'Pending (COD)' : 'Payment Submitted'}
+
+Date & Time: ${orderDate}
+
+Please log in to the admin panel to process this order.
+
+${storeName} Admin
+
+---
+This is an automated email.`;
+
+      // Send to admin
+      await sendEmailViaSMTP(
+        adminEmail,
+        senderEmail,
+        adminSubject,
+        adminEmailText,
+        adminEmailHtml,
+        senderEmail,
+        cleanPassword
+      );
+      console.info('Admin order notification email sent to:', adminEmail);
 
     } else if (type === 'payment_approved' && orderId) {
       // Payment approved notification
