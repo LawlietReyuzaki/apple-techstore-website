@@ -127,18 +127,6 @@ export default function PaymentSubmission() {
           })
           .eq("id", orderId);
 
-        // Send COD order confirmation email to customer and admin
-        try {
-          await supabase.functions.invoke('send-order-email', {
-            body: {
-              orderId,
-              type: 'cod_confirmed',
-            },
-          });
-        } catch (emailError) {
-          console.error('COD confirmation email error:', emailError);
-        }
-
         toast.success("Order confirmed!", {
           description: "You will pay cash when your order is delivered",
         });
