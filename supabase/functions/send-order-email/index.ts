@@ -1332,7 +1332,7 @@ This is an automated email. Please do not reply.`;
         .single();
 
       const storeName = "Dilbar Mobiles";
-      const adminEmail = "bagankhan159@gmail.com";
+      // Use the dynamic admin email fetched from admin_settings
       subject = `Payment Submitted - Order #${orderId.slice(0, 8)}`;
 
       emailHtml = `
