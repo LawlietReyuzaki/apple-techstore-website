@@ -14,6 +14,8 @@ Deno.serve(async (req) => {
   try {
     const { newEmail, userId } = await req.json();
 
+    console.log(`Attempting to update email for user ${userId} to ${newEmail}`);
+
     if (!newEmail || !userId) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: newEmail and userId" }),
@@ -33,6 +35,25 @@ Deno.serve(async (req) => {
       }
     );
 
+    // First check if the new email is already in use by another user
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error("Error listing users:", listError);
+    } else {
+      const emailExists = existingUsers.users.some(
+        (user) => user.email?.toLowerCase() === newEmail.toLowerCase() && user.id !== userId
+      );
+      
+      if (emailExists) {
+        console.error("Email already in use by another user");
+        return new Response(
+          JSON.stringify({ error: "This email is already in use by another account" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Check if the user is an admin
     const { data: userRoles } = await supabaseAdmin
       .from("user_roles")
@@ -41,6 +62,7 @@ Deno.serve(async (req) => {
       .eq("role", "admin");
 
     const isAdmin = userRoles && userRoles.length > 0;
+    console.log(`User is admin: ${isAdmin}`);
 
     // Update user email directly using admin privileges
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -50,11 +72,21 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error("Error updating user email:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "Failed to update email";
+      if (error.message?.includes("duplicate") || error.message?.includes("already")) {
+        errorMessage = "This email is already in use";
+      }
+      
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: errorMessage }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("Email updated successfully in auth system");
 
     // If the user is an admin, update the admin_settings table
     if (isAdmin) {
