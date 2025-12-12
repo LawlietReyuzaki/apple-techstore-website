@@ -1307,10 +1307,10 @@ This is an automated email. Please do not reply.`;
       );
 
     } else if (type === 'payment_uploaded' && orderId) {
-      // Payment submission notification to ADMIN
+      // Payment submission notification to ADMIN and CUSTOMER
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, order_items(*)')
         .eq('id', orderId)
         .single();
 
@@ -1332,7 +1332,111 @@ This is an automated email. Please do not reply.`;
         .single();
 
       const storeName = "Dilbar Mobiles";
-      const adminEmail = "bagankhan159@gmail.com";
+      
+      // Build order items list for email
+      const itemsListHtml = order.order_items?.map((item: any) => 
+        `<li style="margin: 8px 0;">${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal?.toLocaleString()}</li>`
+      ).join('') || '';
+
+      const itemsListText = order.order_items?.map((item: any) => 
+        `- ${item.product_name} (Qty: ${item.quantity}) - PKR ${item.subtotal?.toLocaleString()}`
+      ).join('\n') || '';
+
+      // ==== CUSTOMER EMAIL ====
+      const customerSubject = `Payment Receipt Submitted - Order #${orderId.slice(0, 8)}`;
+
+      const customerEmailHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <h2 style="color: #2563eb; margin-bottom: 20px;">Payment Receipt Submitted</h2>
+              
+              <p>Dear <strong>${order.customer_name}</strong>,</p>
+              
+              <p>Thank you! Your payment receipt for order <strong>#${orderId.slice(0, 8)}</strong> has been submitted successfully.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <h3 style="margin-top: 0; color: #f59e0b;">Status: Awaiting Verification</h3>
+                <p style="margin: 10px 0 0 0;">Our team is reviewing your payment. You will receive a confirmation email once verified.</p>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Payment Details</h3>
+                <ul style="list-style: none; padding: 0;">
+                  <li><strong>Order ID:</strong> #${orderId.slice(0, 8)}</li>
+                  <li><strong>Amount:</strong> PKR ${order.total_amount?.toLocaleString()}</li>
+                  <li><strong>Payment Method:</strong> ${payment?.payment_method?.toUpperCase() || 'N/A'}</li>
+                  <li><strong>Transaction ID:</strong> ${payment?.transaction_id || 'N/A'}</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Order Summary</h3>
+                <ul style="padding-left: 20px;">
+                  ${itemsListHtml}
+                </ul>
+                <p style="margin-top: 15px;"><strong>Total:</strong> PKR ${order.total_amount?.toLocaleString()}</p>
+              </div>
+              
+              <p>If you have any questions, feel free to contact us.</p>
+              
+              <p style="margin-top: 30px;">Thank you for shopping with us!</p>
+              
+              <p style="margin-top: 20px;">Warm regards,<br>
+              <strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const customerEmailText = `Payment Receipt Submitted
+
+Dear ${order.customer_name},
+
+Thank you! Your payment receipt for order #${orderId.slice(0, 8)} has been submitted successfully.
+
+Status: Awaiting Verification
+Our team is reviewing your payment. You will receive a confirmation email once verified.
+
+Payment Details:
+- Order ID: #${orderId.slice(0, 8)}
+- Amount: PKR ${order.total_amount?.toLocaleString()}
+- Payment Method: ${payment?.payment_method?.toUpperCase() || 'N/A'}
+- Transaction ID: ${payment?.transaction_id || 'N/A'}
+
+Order Summary:
+${itemsListText}
+
+Total: PKR ${order.total_amount?.toLocaleString()}
+
+If you have any questions, feel free to contact us.
+
+Thank you for shopping with us!
+
+Warm regards,
+${storeName} Team
+
+---
+This is an automated email. Please do not reply.`;
+
+      // Send to customer
+      if (order.customer_email) {
+        await sendEmailViaSMTP(
+          order.customer_email,
+          senderEmail,
+          customerSubject,
+          customerEmailText,
+          customerEmailHtml,
+          senderEmail,
+          cleanPassword
+        );
+        console.info('Customer payment submission email sent to:', order.customer_email);
+      }
+
+      // ==== ADMIN EMAIL ====
       subject = `Payment Submitted - Order #${orderId.slice(0, 8)}`;
 
       emailHtml = `
@@ -1349,15 +1453,29 @@ This is an automated email. Please do not reply.`;
               </div>
               
               <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                <h3>Order Details</h3>
+                <h3>Customer Details</h3>
                 <ul style="list-style: none; padding: 0;">
                   <li><strong>Customer:</strong> ${order.customer_name}</li>
                   <li><strong>Email:</strong> ${order.customer_email || 'N/A'}</li>
                   <li><strong>Phone:</strong> ${order.customer_phone}</li>
+                  <li><strong>Address:</strong> ${order.delivery_address}</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Payment Details</h3>
+                <ul style="list-style: none; padding: 0;">
                   <li><strong>Amount:</strong> PKR ${order.total_amount?.toLocaleString()}</li>
                   <li><strong>Payment Method:</strong> ${payment?.payment_method?.toUpperCase() || 'N/A'}</li>
                   <li><strong>Transaction ID:</strong> ${payment?.transaction_id || 'N/A'}</li>
                   <li><strong>Sender Number:</strong> ${payment?.sender_number || 'N/A'}</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Order Items</h3>
+                <ul style="padding-left: 20px;">
+                  ${itemsListHtml}
                 </ul>
               </div>
               
@@ -1380,14 +1498,20 @@ Status: Payment Submitted – Awaiting Verification
 
 Please review and verify the payment in the admin panel.
 
-Order Details:
+Customer Details:
 - Customer: ${order.customer_name}
 - Email: ${order.customer_email || 'N/A'}
 - Phone: ${order.customer_phone}
+- Address: ${order.delivery_address}
+
+Payment Details:
 - Amount: PKR ${order.total_amount?.toLocaleString()}
 - Payment Method: ${payment?.payment_method?.toUpperCase() || 'N/A'}
 - Transaction ID: ${payment?.transaction_id || 'N/A'}
 - Sender Number: ${payment?.sender_number || 'N/A'}
+
+Order Items:
+${itemsListText}
 
 Please log in to the admin panel to verify this payment.
 
@@ -1396,6 +1520,7 @@ ${storeName} Admin
 ---
 This is an automated email.`;
 
+      // Send to admin
       await sendEmailViaSMTP(
         adminEmail,
         senderEmail,
@@ -1405,6 +1530,7 @@ This is an automated email.`;
         senderEmail,
         cleanPassword
       );
+      console.info('Admin payment notification email sent to:', adminEmail);
 
     } else if (type === 'payment_approved' && orderId) {
       // Payment approved notification
