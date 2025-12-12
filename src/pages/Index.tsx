@@ -528,7 +528,7 @@ const Index = () => {
        <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
          <div className="container h-18 sm:h-24 flex items-center justify-between gap-2 sm:gap-4">
            <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
-             <img src={logo} alt="AppleTechStore" className="h-14 w-14 sm:h-20 sm:w-20 flex-shrink-0 rounded-xl" />
+             <img src={logo} alt="AppleTechStore" className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl" />
              <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
                 AppleTechStore
