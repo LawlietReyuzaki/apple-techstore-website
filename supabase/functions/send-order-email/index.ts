@@ -1853,6 +1853,15 @@ This is an automated email.`;
       );
       console.info('Admin order notification email sent to:', adminEmail);
 
+      // Return early to prevent fallback email from being sent
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Payment submitted email sent successfully'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else if (type === 'payment_approved' && orderId) {
       // Payment approved notification
       const { data: order, error: orderError } = await supabase
