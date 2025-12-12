@@ -517,7 +517,7 @@ const Index = () => {
       
       <div className="min-h-screen bg-background">
         {/* Top Bar */}
-        <div className="glass-effect text-foreground py-2 border-b">
+        <div className="bg-gray-900 text-white py-2 border-b border-gray-800">
           <div className="container flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
             <span className="truncate">🎉 Welcome to AppleTechStore - Wholesale Rates & Expert Repairs</span>
             <span className="hidden sm:block truncate">📞 Free Home Delivery in Bahria Phase 7</span>
