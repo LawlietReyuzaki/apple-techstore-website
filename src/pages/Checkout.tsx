@@ -1,19 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { sendOrderConfirmationEmail, notifyAdminNewOrder } from "@/utils/emailNotifications";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { toast } from "sonner";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package, Mail } from "lucide-react";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -111,11 +109,23 @@ export default function Checkout() {
 
       if (itemsError) throw itemsError;
 
+      // Send order placement emails to customer and admin
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: { orderId: order.id, type: 'order_placed' }
+        });
+        console.log('Order placement emails triggered successfully');
+      } catch (emailError) {
+        console.error('Error sending order emails:', emailError);
+        // Don't fail the order if email fails
+      }
+
       // Clear cart
       clearCart();
 
-      toast.success("Order created!", {
-        description: "Redirecting to payment...",
+      toast.success("Order placed successfully!", {
+        description: "Confirmation email sent! Redirecting to payment...",
+        icon: <Mail className="h-4 w-4" />,
       });
 
       // Navigate to payment submission page
