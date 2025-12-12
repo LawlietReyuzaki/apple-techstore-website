@@ -8,7 +8,7 @@ const corsHeaders = {
 interface EmailRequest {
   orderId?: string;
   repairId?: string;
-  type: 'order' | 'order_placed' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update' | 'payment_uploaded' | 'payment_approved' | 'payment_declined' | 'payment_refunded';
+  type: 'order' | 'order_placed' | 'repair' | 'repair_approved' | 'repair_declined' | 'order_approved' | 'order_declined' | 'order_status_update' | 'payment_uploaded' | 'payment_approved' | 'payment_declined' | 'payment_refunded' | 'cod_confirmed';
   visitDate?: string;
   customNote?: string;
   declineReason?: string;
@@ -1653,6 +1653,270 @@ This is an automated email. Please do not reply.`;
         emailHtml,
         senderEmail,
         cleanPassword
+      );
+
+    } else if (type === 'cod_confirmed' && orderId) {
+      // Cash on Delivery order confirmation - send to BOTH customer and admin
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        console.error('Error fetching order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Order not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const storeName = "Dilbar Mobiles";
+      const storeAddress = "Shop No G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi, Pakistan";
+      const storePhone = "+92 334 2228141";
+
+      const orderDate = new Date(order.created_at).toLocaleString('en-PK', {
+        dateStyle: 'full',
+        timeStyle: 'short'
+      });
+
+      const htmlItems = order.order_items
+        .map((item: any) => 
+          `<tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product_name}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs ${item.product_price.toLocaleString()}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs ${item.subtotal.toLocaleString()}</td>
+          </tr>`
+        )
+        .join('');
+
+      const itemsText = order.order_items
+        .map((item: any) => 
+          `${item.product_name} (x${item.quantity}) — Rs ${item.subtotal.toLocaleString()}`
+        )
+        .join('\n');
+
+      // 1. Send email to CUSTOMER
+      if (order.customer_email) {
+        const customerSubject = `COD Order Confirmed - #${order.id.slice(0, 8)} | ${storeName}`;
+        
+        const customerHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #16a34a; margin: 0; font-size: 28px;">✓ COD Order Confirmed!</h1>
+              </div>
+              
+              <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+                Dear <strong>${order.customer_name}</strong>,
+              </p>
+              
+              <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;">
+                Thank you for your order! Your Cash on Delivery order has been confirmed and is being processed.
+              </p>
+              
+              <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e; font-weight: bold;">
+                  💵 Payment Method: Cash on Delivery
+                </p>
+                <p style="margin: 5px 0 0 0; color: #92400e; font-size: 14px;">
+                  Please keep Rs ${order.total_amount.toLocaleString()} ready for payment upon delivery.
+                </p>
+              </div>
+              
+              <div style="background-color: #f0fdf4; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+                <h2 style="color: #15803d; font-size: 18px; margin-bottom: 15px;">Order Details</h2>
+                <table style="width: 100%; font-size: 14px; color: #333;">
+                  <tr>
+                    <td style="padding: 8px 0;"><strong>Order ID:</strong></td>
+                    <td style="padding: 8px 0;">#${order.id.slice(0, 8).toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><strong>Date:</strong></td>
+                    <td style="padding: 8px 0;">${orderDate}</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <h3 style="color: #374151; font-size: 16px; margin-bottom: 10px;">Order Summary</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <thead>
+                    <tr style="background-color: #f3f4f6;">
+                      <th style="padding: 10px; text-align: left;">Item</th>
+                      <th style="padding: 10px; text-align: center;">Qty</th>
+                      <th style="padding: 10px; text-align: right;">Price</th>
+                      <th style="padding: 10px; text-align: right;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${htmlItems}
+                  </tbody>
+                  <tfoot>
+                    <tr style="background-color: #f0fdf4;">
+                      <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold;">Total Amount:</td>
+                      <td style="padding: 12px; text-align: right; font-weight: bold; color: #16a34a; font-size: 16px;">Rs ${order.total_amount.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              
+              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="color: #374151; font-size: 14px; margin-bottom: 10px;">Delivery Address</h3>
+                <p style="margin: 0; color: #555; font-size: 14px;">${order.delivery_address}</p>
+              </div>
+              
+              <div style="background-color: #eff6ff; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="color: #1d4ed8; font-size: 14px; margin-bottom: 10px;">Need Help?</h3>
+                <p style="margin: 0; color: #555; font-size: 14px;">
+                  📍 ${storeAddress}<br>
+                  📞 ${storePhone}
+                </p>
+              </div>
+              
+              <p style="margin-top: 20px; color: #555;">Thank you for shopping with us!</p>
+              
+              <p style="margin-top: 20px;">Regards,<br><strong>${storeName} Team</strong></p>
+              
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        `;
+
+        const customerText = `COD Order Confirmed!
+
+Dear ${order.customer_name},
+
+Thank you for your order! Your Cash on Delivery order has been confirmed and is being processed.
+
+Payment Method: Cash on Delivery
+Please keep Rs ${order.total_amount.toLocaleString()} ready for payment upon delivery.
+
+Order Details:
+Order ID: #${order.id.slice(0, 8).toUpperCase()}
+Date: ${orderDate}
+
+Items:
+${itemsText}
+
+Total Amount: Rs ${order.total_amount.toLocaleString()}
+
+Delivery Address: ${order.delivery_address}
+
+Need Help?
+${storeAddress}
+Phone: ${storePhone}
+
+Thank you for shopping with us!
+
+Regards,
+${storeName} Team`;
+
+        await sendEmailViaSMTP(
+          order.customer_email,
+          senderEmail,
+          customerSubject,
+          customerText,
+          customerHtml,
+          senderEmail,
+          cleanPassword
+        );
+      }
+
+      // 2. Send email to ADMIN
+      const adminSubject = `New COD Order Received - #${order.id.slice(0, 8)}`;
+      
+      const adminHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #f59e0b; margin: 0; font-size: 24px;">💵 New COD Order Received</h1>
+            </div>
+            
+            <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+              <p style="margin: 0; color: #92400e; font-weight: bold;">Payment Method: Cash on Delivery</p>
+              <p style="margin: 5px 0 0 0; color: #92400e;">Collect Rs ${order.total_amount.toLocaleString()} upon delivery</p>
+            </div>
+            
+            <div style="background-color: #f0fdf4; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+              <h2 style="color: #15803d; font-size: 16px; margin-bottom: 10px;">Order #${order.id.slice(0, 8).toUpperCase()}</h2>
+              <p style="margin: 5px 0; color: #333;"><strong>Date:</strong> ${orderDate}</p>
+              <p style="margin: 5px 0; color: #333;"><strong>Total:</strong> Rs ${order.total_amount.toLocaleString()}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+              <h3 style="color: #374151; font-size: 14px; margin-bottom: 10px;">Customer Information</h3>
+              <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customer_name}</p>
+              <p style="margin: 5px 0;"><strong>Phone:</strong> ${order.customer_phone}</p>
+              <p style="margin: 5px 0;"><strong>Email:</strong> ${order.customer_email || 'N/A'}</p>
+              <p style="margin: 5px 0;"><strong>Address:</strong> ${order.delivery_address}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+              <h3 style="color: #374151; font-size: 14px; margin-bottom: 10px;">Order Items</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                  <tr style="background-color: #f3f4f6;">
+                    <th style="padding: 10px; text-align: left;">Item</th>
+                    <th style="padding: 10px; text-align: center;">Qty</th>
+                    <th style="padding: 10px; text-align: right;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order.order_items.map((item: any) => `
+                    <tr>
+                      <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product_name}</td>
+                      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs ${item.subtotal.toLocaleString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            
+            ${order.notes ? `<div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px;"><h3 style="color: #374151; font-size: 14px; margin-bottom: 5px;">Order Notes</h3><p style="margin: 0; color: #555;">${order.notes}</p></div>` : ''}
+          </div>
+        </div>
+      `;
+
+      const adminText = `New COD Order Received
+
+Order #${order.id.slice(0, 8).toUpperCase()}
+Date: ${orderDate}
+Payment Method: Cash on Delivery
+Total: Rs ${order.total_amount.toLocaleString()}
+
+Customer Information:
+Name: ${order.customer_name}
+Phone: ${order.customer_phone}
+Email: ${order.customer_email || 'N/A'}
+Address: ${order.delivery_address}
+
+Items:
+${itemsText}
+
+${order.notes ? `Notes: ${order.notes}` : ''}`;
+
+      await sendEmailViaSMTP(
+        adminEmail,
+        senderEmail,
+        adminSubject,
+        adminText,
+        adminHtml,
+        senderEmail,
+        cleanPassword
+      );
+
+      console.log(`COD confirmation emails sent for order ${orderId}`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'COD confirmation emails sent successfully'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } else if (type === 'repair' && repairId) {
