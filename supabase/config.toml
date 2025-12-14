@@ -10,3 +10,6 @@ verify_jwt = false
 
 [functions.update-user-email]
 verify_jwt = false
+
+[functions.create-order]
+verify_jwt = false
