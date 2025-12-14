@@ -50,67 +50,35 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Get the current session to ensure we have the correct user_id
+      // Get the current session to check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id || null;
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: currentUserId,
-          customer_name: formData.name,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          delivery_address: formData.address,
-          total_amount: grandTotal,
+      // Use edge function to create order (bypasses RLS for guest checkout)
+      const { data, error } = await supabase.functions.invoke('create-order', {
+        body: {
+          customerName: formData.name,
+          customerEmail: formData.email,
+          customerPhone: formData.phone,
+          deliveryAddress: formData.address,
           notes: formData.notes,
-          status: "pending",
-          payment_status: "unpaid",
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = items.map(item => {
-        const itemType = item.product.type || "product";
-        
-        // Determine foreign keys based on item type
-        let productId = null;
-        let sparePartId = null;
-        let shopItemId = null;
-        
-        if (itemType === "product") {
-          productId = item.product.id;
-        } else if (itemType === "spare_part") {
-          sparePartId = item.product.id;
-        } else if (itemType === "shop_item") {
-          shopItemId = item.product.id;
-        }
-        
-        return {
-          order_id: order.id,
-          product_id: productId,
-          spare_part_id: sparePartId,
-          shop_item_id: shopItemId,
-          item_type: itemType,
-          product_name: item.product.name,
-          product_price: item.product.price,
-          quantity: item.quantity,
-          subtotal: item.product.price * item.quantity,
-        };
+          totalAmount: grandTotal,
+          userId: currentUserId,
+          items: items.map(item => ({
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            type: item.product.type || 'product',
+            images: item.product.images,
+          })),
+        },
       });
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      if (itemsError) throw itemsError;
-
-      // Note: Email notifications are sent from PaymentSubmission page when customer confirms payment
-      // This prevents duplicate emails to admin
+      const order = data.order;
 
       // Clear cart
       clearCart();
