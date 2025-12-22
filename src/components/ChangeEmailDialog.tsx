@@ -135,22 +135,26 @@ export function ChangeEmailDialog() {
 
     try {
       // OTP verified, now update the email using admin edge function
-      const { data, error: updateError } = await supabase.functions.invoke("update-user-email", {
+      const response = await supabase.functions.invoke("update-user-email", {
         body: {
           newEmail: newEmail,
           userId: user?.id,
         },
       });
 
-      if (updateError) {
-        throw new Error(updateError.message || "Failed to update email");
+      // Handle the response - check for errors in data first
+      if (response.data?.error) {
+        const errorMsg = response.data.error;
+        if (errorMsg.includes("already in use") || errorMsg.includes("already registered")) {
+          throw new Error("This email is already registered to another account. Please use a different email.");
+        }
+        throw new Error(errorMsg);
       }
 
-      if (data?.error) {
-        if (data.error.includes("already registered") || data.error.includes("already been registered")) {
-          throw new Error("This email is already registered to another account");
-        }
-        throw new Error(data.error);
+      if (response.error) {
+        // Try to parse error from the response
+        console.error("Error updating email:", response.error);
+        throw new Error("Failed to update email. The email may already be in use.");
       }
 
       setStep("success");
