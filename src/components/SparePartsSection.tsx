@@ -37,6 +37,10 @@ interface SparePart {
     id: string;
     name: string;
   };
+  part_qualities?: {
+    id: string;
+    name: string;
+  };
   spare_parts_colors: {
     color_name: string;
     color_code: string;
@@ -51,18 +55,21 @@ export const SparePartsSection = () => {
   const [models, setModels] = useState<any[]>([]);
   const [partCategories, setPartCategories] = useState<any[]>([]);
   const [partTypes, setPartTypes] = useState<any[]>([]);
+  const [partQualities, setPartQualities] = useState<any[]>([]);
   
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedPartCategory, setSelectedPartCategory] = useState<string>("");
   const [selectedPartType, setSelectedPartType] = useState<string>("");
+  const [selectedQuality, setSelectedQuality] = useState<string>("");
   
   const addItem = useProductCartStore((state) => state.addItem);
 
   useEffect(() => {
     fetchPhoneCategories();
     fetchPartCategories();
+    fetchPartQualities();
     fetchSpareParts();
   }, []);
 
@@ -86,7 +93,7 @@ export const SparePartsSection = () => {
 
   useEffect(() => {
     filterParts();
-  }, [selectedModel, selectedPartCategory, selectedPartType, spareParts]);
+  }, [selectedModel, selectedPartCategory, selectedPartType, selectedQuality, spareParts]);
 
   const fetchPhoneCategories = async () => {
     const { data } = await supabase.from("phone_categories").select("*");
@@ -122,6 +129,14 @@ export const SparePartsSection = () => {
     if (data) setPartTypes(data);
   };
 
+  const fetchPartQualities = async () => {
+    const { data } = await supabase
+      .from("part_qualities")
+      .select("*")
+      .order("sort_order");
+    if (data) setPartQualities(data);
+  };
+
   const fetchSpareParts = async () => {
     const { data } = await supabase
       .from("spare_parts")
@@ -141,6 +156,7 @@ export const SparePartsSection = () => {
         ),
         part_categories (id, name),
         part_types (id, name),
+        part_qualities (id, name),
         spare_parts_colors (color_name, color_code)
       `)
       .eq("visible", true)
@@ -185,6 +201,12 @@ export const SparePartsSection = () => {
         part.part_types?.id === selectedPartType
       );
     }
+
+    if (selectedQuality) {
+      filtered = filtered.filter(part => 
+        part.part_qualities?.id === selectedQuality
+      );
+    }
     
     setFilteredParts(filtered);
   };
@@ -208,6 +230,7 @@ export const SparePartsSection = () => {
     setSelectedModel("");
     setSelectedPartCategory("");
     setSelectedPartType("");
+    setSelectedQuality("");
     setBrands([]);
     setModels([]);
     setPartTypes([]);
@@ -252,7 +275,7 @@ export const SparePartsSection = () => {
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="bg-background border-border">
                   <SelectValue placeholder="Phone Category" />
@@ -304,6 +327,17 @@ export const SparePartsSection = () => {
                 <SelectContent className="bg-popover z-[100]">
                   {partTypes.map(type => (
                     <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedQuality} onValueChange={setSelectedQuality}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue placeholder="Quality" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[100]">
+                  {partQualities.map(quality => (
+                    <SelectItem key={quality.id} value={quality.id}>{quality.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

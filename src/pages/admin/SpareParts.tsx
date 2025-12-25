@@ -23,6 +23,7 @@ export default function AdminSpareParts() {
     phone_model_id: "",
     part_category_id: "",
     part_type_id: "",
+    quality_id: "",
     name: "",
     description: "",
     price: "",
@@ -46,6 +47,7 @@ export default function AdminSpareParts() {
           phone_models (name, spare_parts_brands (name)),
           part_categories (name),
           part_types (name),
+          part_qualities (name),
           spare_parts_colors (color_name, color_code)
         `)
         .order("created_at", { ascending: false });
@@ -75,6 +77,14 @@ export default function AdminSpareParts() {
     queryKey: ["part-types"],
     queryFn: async () => {
       const { data } = await supabase.from("part_types").select("*");
+      return data || [];
+    },
+  });
+
+  const { data: partQualities = [] } = useQuery({
+    queryKey: ["part-qualities"],
+    queryFn: async () => {
+      const { data } = await supabase.from("part_qualities").select("*").order("sort_order");
       return data || [];
     },
   });
@@ -215,6 +225,7 @@ export default function AdminSpareParts() {
       phone_model_id: "",
       part_category_id: "",
       part_type_id: "",
+      quality_id: "",
       name: "",
       description: "",
       price: "",
@@ -234,6 +245,7 @@ export default function AdminSpareParts() {
       phone_model_id: formData.phone_model_id,
       part_category_id: formData.part_category_id,
       part_type_id: formData.part_type_id || null,
+      quality_id: formData.quality_id || null,
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
@@ -257,6 +269,7 @@ export default function AdminSpareParts() {
       phone_model_id: part.phone_model_id,
       part_category_id: part.part_category_id,
       part_type_id: part.part_type_id || "",
+      quality_id: part.quality_id || "",
       name: part.name,
       description: part.description || "",
       price: part.price.toString(),
@@ -330,6 +343,20 @@ export default function AdminSpareParts() {
                     <SelectContent className="bg-background z-50">
                       {partTypes.map((type: any) => (
                         <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Quality (Optional)</label>
+                  <Select value={formData.quality_id} onValueChange={(v) => setFormData({...formData, quality_id: v})}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select Quality" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {partQualities.map((quality: any) => (
+                        <SelectItem key={quality.id} value={quality.id}>{quality.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
