@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,10 +19,12 @@ export default function AdminSparePartsConfig() {
   const [brandDialog, setBrandDialog] = useState(false);
   const [modelDialog, setModelDialog] = useState(false);
   const [typeDialog, setTypeDialog] = useState(false);
+  const [qualityDialog, setQualityDialog] = useState(false);
 
   const [brandForm, setBrandForm] = useState({ phone_category_id: "", name: "" });
   const [modelForm, setModelForm] = useState({ brand_id: "", name: "" });
   const [typeForm, setTypeForm] = useState({ category_id: "", name: "" });
+  const [qualityForm, setQualityForm] = useState({ name: "", description: "", sort_order: "0" });
 
   const { data: phoneCategories = [] } = useQuery({
     queryKey: ["phone-categories"],
@@ -65,6 +68,17 @@ export default function AdminSparePartsConfig() {
       const { data } = await supabase
         .from("part_types")
         .select("*, part_categories (name)");
+      return data || [];
+    },
+  });
+
+  const { data: partQualities = [] } = useQuery({
+    queryKey: ["part-qualities"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("part_qualities")
+        .select("*")
+        .order("sort_order");
       return data || [];
     },
   });
@@ -135,6 +149,32 @@ export default function AdminSparePartsConfig() {
     },
   });
 
+  const createQuality = useMutation({
+    mutationFn: async (data: any) => {
+      await supabase.from("part_qualities").insert([{
+        name: data.name,
+        description: data.description,
+        sort_order: parseInt(data.sort_order) || 0
+      }]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["part-qualities"] });
+      toast({ title: "Quality created successfully" });
+      setQualityDialog(false);
+      setQualityForm({ name: "", description: "", sort_order: "0" });
+    },
+  });
+
+  const deleteQuality = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("part_qualities").delete().eq("id", id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["part-qualities"] });
+      toast({ title: "Quality deleted" });
+    },
+  });
+
   return (
     <div className="p-6">
       <Card>
@@ -143,10 +183,11 @@ export default function AdminSparePartsConfig() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="brands">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="brands">Brands</TabsTrigger>
               <TabsTrigger value="models">Models</TabsTrigger>
               <TabsTrigger value="types">Part Types</TabsTrigger>
+              <TabsTrigger value="qualities">Qualities</TabsTrigger>
             </TabsList>
 
             <TabsContent value="brands" className="space-y-4">
@@ -337,6 +378,72 @@ export default function AdminSparePartsConfig() {
                           size="sm"
                           variant="destructive"
                           onClick={() => deletePartType.mutate(type.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="qualities" className="space-y-4">
+              <Dialog open={qualityDialog} onOpenChange={setQualityDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Quality
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Part Quality</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Quality Name (e.g., Original, High Quality)"
+                      value={qualityForm.name}
+                      onChange={(e) => setQualityForm({...qualityForm, name: e.target.value})}
+                    />
+                    <Textarea
+                      placeholder="Description (optional)"
+                      value={qualityForm.description}
+                      onChange={(e) => setQualityForm({...qualityForm, description: e.target.value})}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Sort Order (0 = first)"
+                      value={qualityForm.sort_order}
+                      onChange={(e) => setQualityForm({...qualityForm, sort_order: e.target.value})}
+                    />
+                    <Button onClick={() => createQuality.mutate(qualityForm)} className="w-full">
+                      Create Quality
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Quality Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Sort Order</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {partQualities.map((quality: any) => (
+                    <TableRow key={quality.id}>
+                      <TableCell>{quality.name}</TableCell>
+                      <TableCell>{quality.description || "-"}</TableCell>
+                      <TableCell>{quality.sort_order}</TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteQuality.mutate(quality.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

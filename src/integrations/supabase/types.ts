@@ -240,6 +240,30 @@ export type Database = {
         }
         Relationships: []
       }
+      part_qualities: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       part_requests: {
         Row: {
           admin_notes: string | null
@@ -944,6 +968,7 @@ export type Database = {
           part_type_id: string | null
           phone_model_id: string
           price: number
+          quality_id: string | null
           stock: number
           updated_at: string | null
           visible: boolean | null
@@ -959,6 +984,7 @@ export type Database = {
           part_type_id?: string | null
           phone_model_id: string
           price: number
+          quality_id?: string | null
           stock?: number
           updated_at?: string | null
           visible?: boolean | null
@@ -974,6 +1000,7 @@ export type Database = {
           part_type_id?: string | null
           phone_model_id?: string
           price?: number
+          quality_id?: string | null
           stock?: number
           updated_at?: string | null
           visible?: boolean | null
@@ -998,6 +1025,13 @@ export type Database = {
             columns: ["phone_model_id"]
             isOneToOne: false
             referencedRelation: "phone_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spare_parts_quality_id_fkey"
+            columns: ["quality_id"]
+            isOneToOne: false
+            referencedRelation: "part_qualities"
             referencedColumns: ["id"]
           },
         ]
