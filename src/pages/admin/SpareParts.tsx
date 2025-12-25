@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
+import { Plus, Minus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function AdminSpareParts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -19,6 +20,8 @@ export default function AdminSpareParts() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [newPartTypeName, setNewPartTypeName] = useState("");
+  const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
   const [formData, setFormData] = useState({
     phone_model_id: "",
     part_category_id: "",
@@ -86,6 +89,45 @@ export default function AdminSpareParts() {
     queryFn: async () => {
       const { data } = await supabase.from("part_qualities").select("*").order("sort_order");
       return data || [];
+    },
+  });
+
+  // Mutations for inline part type management
+  const addPartTypeMutation = useMutation({
+    mutationFn: async (name: string) => {
+      if (!formData.part_category_id) {
+        throw new Error("Please select a Part Category first");
+      }
+      const { error } = await supabase
+        .from("part_types")
+        .insert([{ name, category_id: formData.part_category_id }]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["part-types"] });
+      toast({ title: "Part type added" });
+      setNewPartTypeName("");
+      setIsAddTypeOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deletePartTypeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("part_types").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["part-types"] });
+      toast({ title: "Part type deleted" });
+      if (formData.part_type_id) {
+        setFormData({ ...formData, part_type_id: "" });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -336,16 +378,69 @@ export default function AdminSpareParts() {
 
                 <div>
                   <label className="text-sm font-medium">Part Type (Optional)</label>
-                  <Select value={formData.part_type_id} onValueChange={(v) => setFormData({...formData, part_type_id: v})}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select Type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {partTypes.map((type: any) => (
-                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={formData.part_type_id} onValueChange={(v) => setFormData({...formData, part_type_id: v})}>
+                      <SelectTrigger className="bg-background flex-1">
+                        <SelectValue placeholder="Select Type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {partTypes
+                          .filter((type: any) => type.category_id === formData.part_category_id)
+                          .map((type: any) => (
+                            <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Add Part Type Button */}
+                    <Popover open={isAddTypeOpen} onOpenChange={setIsAddTypeOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="icon"
+                          disabled={!formData.part_category_id}
+                          title={!formData.part_category_id ? "Select a category first" : "Add new part type"}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 bg-background z-50" align="end">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">New Part Type</label>
+                          <Input
+                            placeholder="Type name"
+                            value={newPartTypeName}
+                            onChange={(e) => setNewPartTypeName(e.target.value)}
+                          />
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => addPartTypeMutation.mutate(newPartTypeName)}
+                            disabled={!newPartTypeName.trim() || addPartTypeMutation.isPending}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Delete Part Type Button */}
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      disabled={!formData.part_type_id}
+                      title={!formData.part_type_id ? "Select a part type to delete" : "Delete selected part type"}
+                      onClick={() => {
+                        if (formData.part_type_id && confirm("Delete this part type?")) {
+                          deletePartTypeMutation.mutate(formData.part_type_id);
+                        }
+                      }}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
