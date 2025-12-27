@@ -23,7 +23,7 @@ export default function AdminSpareParts() {
   const [newPartTypeName, setNewPartTypeName] = useState("");
   const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
   const [formData, setFormData] = useState({
-    phone_model_id: "",
+    phone_model_name: "",
     part_category_id: "",
     part_type_id: "",
     quality_id: "",
@@ -58,15 +58,7 @@ export default function AdminSpareParts() {
     },
   });
 
-  const { data: phoneModels = [] } = useQuery({
-    queryKey: ["phone-models"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("phone_models")
-        .select("*, spare_parts_brands (name)");
-      return data || [];
-    },
-  });
+  // phoneModels query removed - using manual text input now
 
   const { data: partCategories = [] } = useQuery({
     queryKey: ["part-categories"],
@@ -264,7 +256,7 @@ export default function AdminSpareParts() {
 
   const resetForm = () => {
     setFormData({
-      phone_model_id: "",
+      phone_model_name: "",
       part_category_id: "",
       part_type_id: "",
       quality_id: "",
@@ -284,7 +276,8 @@ export default function AdminSpareParts() {
 
   const handleSubmit = () => {
     const submitData = {
-      phone_model_id: formData.phone_model_id,
+      phone_model_name: formData.phone_model_name,
+      phone_model_id: null, // No longer using phone_model_id
       part_category_id: formData.part_category_id,
       part_type_id: formData.part_type_id || null,
       quality_id: formData.quality_id || null,
@@ -308,7 +301,7 @@ export default function AdminSpareParts() {
   const handleEdit = (part: any) => {
     setEditingPart(part);
     setFormData({
-      phone_model_id: part.phone_model_id,
+      phone_model_name: part.phone_model_name || (part.phone_models ? `${part.phone_models.spare_parts_brands?.name || ''} ${part.phone_models.name}`.trim() : ""),
       part_category_id: part.part_category_id,
       part_type_id: part.part_type_id || "",
       quality_id: part.quality_id || "",
@@ -348,18 +341,11 @@ export default function AdminSpareParts() {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Phone Model</label>
-                  <Select value={formData.phone_model_id} onValueChange={(v) => setFormData({...formData, phone_model_id: v})}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select Model" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {phoneModels.map((model: any) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.spare_parts_brands.name} {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    placeholder="Enter phone model (e.g., iPhone 15 Pro Max, Samsung Galaxy S24)"
+                    value={formData.phone_model_name}
+                    onChange={(e) => setFormData({...formData, phone_model_name: e.target.value})}
+                  />
                 </div>
 
                 <div>
@@ -644,7 +630,7 @@ export default function AdminSpareParts() {
                 <TableRow key={part.id}>
                   <TableCell>{part.name}</TableCell>
                   <TableCell>
-                    {part.phone_models.spare_parts_brands.name} {part.phone_models.name}
+                    {part.phone_model_name || (part.phone_models ? `${part.phone_models.spare_parts_brands?.name || ''} ${part.phone_models.name}`.trim() : '-')}
                   </TableCell>
                   <TableCell>{part.part_categories.name}</TableCell>
                   <TableCell>PKR {part.price}</TableCell>
