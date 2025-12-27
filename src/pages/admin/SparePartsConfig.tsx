@@ -237,10 +237,10 @@ export default function AdminSparePartsConfig() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {brands.map((brand: any) => (
+                {brands.map((brand: any) => (
                     <TableRow key={brand.id}>
                       <TableCell>{brand.name}</TableCell>
-                      <TableCell>{brand.phone_categories.name}</TableCell>
+                      <TableCell>{brand.phone_categories?.name || "-"}</TableCell>
                       <TableCell>
                         <Button
                           size="sm"
@@ -306,7 +306,7 @@ export default function AdminSparePartsConfig() {
                   {models.map((model: any) => (
                     <TableRow key={model.id}>
                       <TableCell>{model.name}</TableCell>
-                      <TableCell>{model.spare_parts_brands.name}</TableCell>
+                      <TableCell>{model.spare_parts_brands?.name || "-"}</TableCell>
                       <TableCell>
                         <Button
                           size="sm"
@@ -372,7 +372,7 @@ export default function AdminSparePartsConfig() {
                   {partTypes.map((type: any) => (
                     <TableRow key={type.id}>
                       <TableCell>{type.name}</TableCell>
-                      <TableCell>{type.part_categories.name}</TableCell>
+                      <TableCell>{type.part_categories?.name || "-"}</TableCell>
                       <TableCell>
                         <Button
                           size="sm"
