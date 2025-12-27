@@ -22,6 +22,8 @@ export default function AdminSpareParts() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [newPartTypeName, setNewPartTypeName] = useState("");
   const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [formData, setFormData] = useState({
     phone_model_name: "",
     part_category_id: "",
@@ -81,6 +83,47 @@ export default function AdminSpareParts() {
     queryFn: async () => {
       const { data } = await supabase.from("part_qualities").select("*").order("sort_order");
       return data || [];
+    },
+  });
+
+  // Mutations for inline part category management
+  const addPartCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase
+        .from("part_categories")
+        .insert([{ name }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["part-categories"] });
+      toast({ title: "Part category added" });
+      setNewCategoryName("");
+      setIsAddCategoryOpen(false);
+      // Auto-select the newly created category
+      setFormData(prev => ({ ...prev, part_category_id: data.id }));
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deletePartCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("part_categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["part-categories"] });
+      toast({ title: "Part category deleted" });
+      if (formData.part_category_id) {
+        setFormData({ ...formData, part_category_id: "", part_type_id: "" });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -350,16 +393,66 @@ export default function AdminSpareParts() {
 
                 <div>
                   <label className="text-sm font-medium">Part Category</label>
-                  <Select value={formData.part_category_id} onValueChange={(v) => setFormData({...formData, part_category_id: v})}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {partCategories.map((cat: any) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={formData.part_category_id} onValueChange={(v) => setFormData({...formData, part_category_id: v, part_type_id: ""})}>
+                      <SelectTrigger className="bg-background flex-1">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {partCategories.map((cat: any) => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Add Part Category Button */}
+                    <Popover open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="icon"
+                          title="Add new part category"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 bg-background z-50" align="end">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">New Part Category</label>
+                          <Input
+                            placeholder="Category name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                          />
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => addPartCategoryMutation.mutate(newCategoryName)}
+                            disabled={!newCategoryName.trim() || addPartCategoryMutation.isPending}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Delete Part Category Button */}
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      disabled={!formData.part_category_id}
+                      title={!formData.part_category_id ? "Select a category to delete" : "Delete selected category"}
+                      onClick={() => {
+                        if (formData.part_category_id && confirm("Delete this category? This will also delete all associated part types.")) {
+                          deletePartCategoryMutation.mutate(formData.part_category_id);
+                        }
+                      }}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
