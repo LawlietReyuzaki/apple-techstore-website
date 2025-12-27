@@ -966,7 +966,8 @@ export type Database = {
           name: string
           part_category_id: string
           part_type_id: string | null
-          phone_model_id: string
+          phone_model_id: string | null
+          phone_model_name: string | null
           price: number
           quality_id: string | null
           stock: number
@@ -982,7 +983,8 @@ export type Database = {
           name: string
           part_category_id: string
           part_type_id?: string | null
-          phone_model_id: string
+          phone_model_id?: string | null
+          phone_model_name?: string | null
           price: number
           quality_id?: string | null
           stock?: number
@@ -998,7 +1000,8 @@ export type Database = {
           name?: string
           part_category_id?: string
           part_type_id?: string | null
-          phone_model_id?: string
+          phone_model_id?: string | null
+          phone_model_name?: string | null
           price?: number
           quality_id?: string | null
           stock?: number
