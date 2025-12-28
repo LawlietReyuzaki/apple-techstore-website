@@ -50,9 +50,8 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Get the current session to check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUserId = session?.user?.id || null;
+      // Use user from auth context instead of making a new auth call
+      const currentUserId = user?.id || null;
 
       // Use edge function to create order (bypasses RLS for guest checkout)
       const { data, error } = await supabase.functions.invoke('create-order', {
