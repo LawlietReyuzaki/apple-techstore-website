@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Phone, ArrowLeft, Wrench, Upload, Shield, Clock, CheckCircle } from "lucide-react";
 import repairHeroImage from "@/assets/hero-expert-repair.png";
 
 const BookRepair = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     deviceMake: "",
@@ -29,9 +31,6 @@ const BookRepair = () => {
     setLoading(true);
 
     try {
-      // Check if user is logged in and get their ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
       // Generate unique tracking code
       const trackingCode = `R-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
@@ -47,7 +46,7 @@ const BookRepair = () => {
         status: "created",
       };
 
-      // Add user_id if logged in
+      // Add user_id if logged in (use user from auth context)
       if (user) {
         insertData.user_id = user.id;
       }
