@@ -75,11 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const becomeLeader = () => {
       isLeader = true;
       writeLeader();
-      try {
-        supabase.auth.startAutoRefresh();
-      } catch {
-        // ignore
-      }
+
+      // NOTE: In browsers, the auth client already manages auto-refresh + cross-tab locking.
+      // Calling startAutoRefresh() manually can create multiple refresh loops and trigger 429s.
+
       if (heartbeatTimer) window.clearInterval(heartbeatTimer);
       heartbeatTimer = window.setInterval(() => {
         writeLeader();
@@ -92,11 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLeader = false;
       if (heartbeatTimer) window.clearInterval(heartbeatTimer);
       heartbeatTimer = null;
-      try {
-        supabase.auth.stopAutoRefresh();
-      } catch {
-        // ignore
-      }
+
+      // Do not call stopAutoRefresh() in the browser; it can prevent session persistence.
     };
 
     const tryClaimLeadership = () => {
