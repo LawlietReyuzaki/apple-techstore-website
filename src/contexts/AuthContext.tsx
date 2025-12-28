@@ -101,12 +101,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const tryClaimLeadership = () => {
       const leader = readLeader();
+
+      // If there is no leader or the leader is stale, take over.
       if (!leader || now() - leader.ts > LEADER_TTL_MS) {
-        becomeLeader();
-      } else {
-        // Someone else is leader
-        becomeFollower();
+        if (!isLeader) becomeLeader();
+        return;
       }
+
+      // If we're already the leader, stay the leader.
+      if (leader.tabId === tabId) {
+        if (!isLeader) becomeLeader();
+        return;
+      }
+
+      // Someone else is leader
+      if (isLeader) becomeFollower();
     };
 
     // Initial claim
