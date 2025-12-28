@@ -136,6 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Throttle profile fetching: avoid doing DB calls on TOKEN_REFRESHED (can trigger refresh storms -> 429)
+    let lastProfileFetchUserId: string | null = null;
+
     // Set up auth state listener FIRST
     const {
       data: { subscription },
@@ -147,12 +150,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
-      // Fetch profile when user changes - use setTimeout to avoid deadlock
+      // Fetch profile when user changes - but NOT on TOKEN_REFRESHED
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 0);
+        const currentUserId = session.user.id;
+        const shouldFetchProfile = event !== "TOKEN_REFRESHED" && lastProfileFetchUserId !== currentUserId;
+
+        if (shouldFetchProfile) {
+          lastProfileFetchUserId = currentUserId;
+          setTimeout(() => {
+            fetchProfile(currentUserId);
+          }, 0);
+        }
       } else {
+        lastProfileFetchUserId = null;
         setProfile(null);
         setRoles([]);
         setLoading(false);
