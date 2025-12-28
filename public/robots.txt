@@ -1,8 +1,19 @@
+# AppleTechStore Robots.txt
+# https://appletechstore.pk
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /account/
+Disallow: /checkout
+Disallow: /payment-submission
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /account/
+Disallow: /checkout
+Disallow: /payment-submission
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +23,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /account/
+Disallow: /checkout
+Disallow: /payment-submission
+
+# Sitemap location
+Sitemap: https://appletechstore.pk/sitemap.xml
