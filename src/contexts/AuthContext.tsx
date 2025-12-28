@@ -45,30 +45,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch profile when user changes - use setTimeout to avoid deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setRoles([]);
-          setLoading(false);
-        }
+    // Avoid multi-tab refresh-token thrashing (can cause rapid /token calls -> 429 -> auto sign-out)
+    const tabId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const LEADER_KEY = "auth_refresh_leader";
+    const HEARTBEAT_MS = 10_000;
+    const LEADER_TTL_MS = 25_000;
+
+    let isLeader = false;
+    let heartbeatTimer: number | null = null;
+    const bc = typeof window !== "undefined" && "BroadcastChannel" in window ? new BroadcastChannel("auth-refresh") : null;
+
+    const now = () => Date.now();
+
+    const readLeader = () => {
+      try {
+        const raw = localStorage.getItem(LEADER_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { tabId: string; ts: number };
+        return parsed;
+      } catch {
+        return null;
       }
-    );
+    };
+
+    const writeLeader = () => {
+      localStorage.setItem(LEADER_KEY, JSON.stringify({ tabId, ts: now() }));
+    };
+
+    const becomeLeader = () => {
+      isLeader = true;
+      writeLeader();
+      try {
+        supabase.auth.startAutoRefresh();
+      } catch {
+        // ignore
+      }
+      if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+      heartbeatTimer = window.setInterval(() => {
+        writeLeader();
+        bc?.postMessage({ type: "leader_heartbeat", tabId });
+      }, HEARTBEAT_MS);
+      bc?.postMessage({ type: "leader", tabId });
+    };
+
+    const becomeFollower = () => {
+      isLeader = false;
+      if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+      try {
+        supabase.auth.stopAutoRefresh();
+      } catch {
+        // ignore
+      }
+    };
+
+    const tryClaimLeadership = () => {
+      const leader = readLeader();
+      if (!leader || now() - leader.ts > LEADER_TTL_MS) {
+        becomeLeader();
+      } else {
+        // Someone else is leader
+        becomeFollower();
+      }
+    };
+
+    // Initial claim
+    tryClaimLeadership();
+
+    // Re-check leadership on visibility changes (returning to tab) and on cross-tab messages
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") tryClaimLeadership();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    bc?.addEventListener("message", (ev) => {
+      const msg = ev.data;
+      if (!msg) return;
+      if (msg.type === "leader" && msg.tabId !== tabId) {
+        // Another tab became leader
+        becomeFollower();
+      }
+      if (msg.type === "leader_heartbeat" && msg.tabId !== tabId) {
+        // Ensure we stay follower while leader is alive
+        becomeFollower();
+      }
+    });
+
+    // Set up auth state listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Helpful for debugging unexpected sign-outs
+      // (doesn't log secrets; just event name)
+      console.info("[auth]", event);
+
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      // Fetch profile when user changes - use setTimeout to avoid deadlock
+      if (session?.user) {
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 0);
+      } else {
+        setProfile(null);
+        setRoles([]);
+        setLoading(false);
+      }
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchProfile(session.user.id);
       } else {
@@ -76,7 +166,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", onVisibility);
+      bc?.close();
+      if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+
+      // Release leadership if we were leader
+      const leader = readLeader();
+      if (leader?.tabId === tabId) {
+        try {
+          localStorage.removeItem(LEADER_KEY);
+        } catch {
+          // ignore
+        }
+      }
+    };
   }, []);
 
   const fetchProfile = async (userId: string) => {
