@@ -516,6 +516,38 @@ export type Database = {
           },
         ]
       }
+      product_colors: {
+        Row: {
+          color_code: string | null
+          color_name: string
+          created_at: string | null
+          id: string
+          product_id: string
+        }
+        Insert: {
+          color_code?: string | null
+          color_name: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+        }
+        Update: {
+          color_code?: string | null
+          color_name?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_colors_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           accessory_subcategory: string | null
