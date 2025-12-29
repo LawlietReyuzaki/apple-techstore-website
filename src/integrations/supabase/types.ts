@@ -102,6 +102,8 @@ export type Database = {
           product_name: string
           product_price: number
           quantity: number
+          selected_color: string | null
+          selected_part_type: string | null
           shop_item_id: string | null
           spare_part_id: string | null
           subtotal: number
@@ -115,6 +117,8 @@ export type Database = {
           product_name: string
           product_price: number
           quantity: number
+          selected_color?: string | null
+          selected_part_type?: string | null
           shop_item_id?: string | null
           spare_part_id?: string | null
           subtotal: number
@@ -128,6 +132,8 @@ export type Database = {
           product_name?: string
           product_price?: number
           quantity?: number
+          selected_color?: string | null
+          selected_part_type?: string | null
           shop_item_id?: string | null
           spare_part_id?: string | null
           subtotal?: number
@@ -548,6 +554,35 @@ export type Database = {
           },
         ]
       }
+      product_part_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          part_type_name: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          part_type_name: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          part_type_name?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_part_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           accessory_subcategory: string | null
@@ -556,6 +591,8 @@ export type Database = {
           created_at: string | null
           description: string | null
           featured: boolean | null
+          has_color_options: boolean | null
+          has_part_type_options: boolean | null
           id: string
           images: string[] | null
           links: string[] | null
@@ -574,6 +611,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          has_color_options?: boolean | null
+          has_part_type_options?: boolean | null
           id?: string
           images?: string[] | null
           links?: string[] | null
@@ -592,6 +631,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          has_color_options?: boolean | null
+          has_part_type_options?: boolean | null
           id?: string
           images?: string[] | null
           links?: string[] | null
