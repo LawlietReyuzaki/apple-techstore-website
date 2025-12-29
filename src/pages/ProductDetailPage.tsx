@@ -37,6 +37,22 @@ export default function ProductDetailPage() {
     },
   });
 
+  const { data: productColors } = useQuery({
+    queryKey: ["product-colors", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_colors")
+        .select("*")
+        .eq("product_id", id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
   const handleAddToCart = () => {
     if (!product) return;
     
@@ -50,9 +66,18 @@ export default function ProductDetailPage() {
       return;
     }
 
+    if (productColors && productColors.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
+
+    const colorName = selectedColor 
+      ? productColors?.find(c => c.id === selectedColor)?.color_name 
+      : null;
+
     addItem({
       id: product.id,
-      name: product.name,
+      name: colorName ? `${product.name} (${colorName})` : product.name,
       brand: product.brand,
       price: product.price,
       wholesale_price: product.wholesale_price,
@@ -200,6 +225,36 @@ export default function ProductDetailPage() {
                 <div>
                   <h3 className="font-semibold mb-2">Description</h3>
                   <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
+                </div>
+              </>
+            )}
+
+            {productColors && productColors.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Select Color</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {productColors.map((color) => (
+                      <button
+                        key={color.id}
+                        onClick={() => setSelectedColor(color.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+                          selectedColor === color.id 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        {color.color_code && (
+                          <span 
+                            className="w-5 h-5 rounded-full border border-border"
+                            style={{ backgroundColor: color.color_code }}
+                          />
+                        )}
+                        <span className="text-sm font-medium">{color.color_name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             )}
