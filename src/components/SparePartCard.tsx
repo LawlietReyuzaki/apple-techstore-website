@@ -1,8 +1,8 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ShoppingCart, Sparkles, CreditCard } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 
@@ -43,6 +43,7 @@ interface SparePartCardProps {
 
 export const SparePartCard = ({ part }: SparePartCardProps) => {
   const addItem = useProductCartStore(state => state.addItem);
+  const navigate = useNavigate();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,6 +56,19 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
       type: 'spare_part',
     });
     toast.success(`${part.name} added to cart!`);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addItem({
+      id: part.id,
+      name: part.name,
+      brand: part.phone_models?.spare_parts_brands?.name || 'Generic',
+      price: part.price,
+      images: part.images,
+      type: 'spare_part',
+    });
+    navigate("/cart");
   };
 
   const imageUrl = part.images && part.images.length > 0 
@@ -153,26 +167,40 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
           </div>
         </CardContent>
         
-        <CardFooter className="p-4 pt-0 flex items-center justify-between gap-2">
-          <div>
-            <p className="text-2xl font-bold text-primary">
-              Rs. {part.price.toLocaleString()}
-            </p>
-            {part.stock > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {part.stock} in stock
+        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                Rs. {part.price.toLocaleString()}
               </p>
-            )}
+              {part.stock > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {part.stock} in stock
+                </p>
+              )}
+            </div>
           </div>
-          <Button 
-            size="sm"
-            onClick={handleAddToCart}
-            disabled={part.stock <= 0}
-            className="gap-2"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Add
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={handleAddToCart}
+              disabled={part.stock <= 0}
+              className="flex-1 gap-1"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Cart
+            </Button>
+            <Button 
+              size="sm"
+              onClick={handleBuyNow}
+              disabled={part.stock <= 0}
+              className="flex-1 gap-1"
+            >
+              <CreditCard className="h-4 w-4" />
+              Buy Now
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </Link>

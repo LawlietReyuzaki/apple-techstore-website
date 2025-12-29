@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ShoppingCart, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Check, AlertCircle, Sparkles, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
@@ -34,6 +34,14 @@ export default function SparePartDetail() {
           ),
           part_types (
             name
+          ),
+          part_qualities (
+            id,
+            name
+          ),
+          spare_parts_colors (
+            color_name,
+            color_code
           )
         `)
         .eq('id', id)
@@ -57,6 +65,11 @@ export default function SparePartDetail() {
       type: 'spare_part',
     });
     toast.success(`${part.name} added to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    navigate("/cart");
   };
 
   if (isLoading) {
@@ -194,12 +207,46 @@ export default function SparePartDetail() {
               </Card>
             )}
 
-            {/* Part Type */}
-            {part.part_types && (
+            {/* Part Type & Quality */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {part.part_types && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold mb-2">Part Type</h3>
+                    <p className="text-muted-foreground">{part.part_types.name}</p>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {part.part_qualities && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      Quality
+                    </h3>
+                    <p className="text-amber-600 dark:text-amber-400 font-medium">{part.part_qualities.name}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Available Colors */}
+            {part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">Part Type</h3>
-                  <p className="text-muted-foreground">{part.part_types.name}</p>
+                  <h3 className="font-semibold mb-3">Available Colors</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {part.spare_parts_colors.map((color, idx) => (
+                      <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-muted/30">
+                        <div
+                          className="w-5 h-5 rounded-full border border-border"
+                          style={{ backgroundColor: color.color_code || '#888' }}
+                        />
+                        <span className="text-sm font-medium">{color.color_name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -223,16 +270,26 @@ export default function SparePartDetail() {
               </CardContent>
             </Card>
 
-            {/* Add to Cart */}
+            {/* Add to Cart & Buy Now */}
             <div className="flex gap-4">
               <Button
                 size="lg"
+                variant="outline"
                 className="flex-1 gap-2"
                 onClick={handleAddToCart}
                 disabled={part.stock <= 0}
               >
                 <ShoppingCart className="h-5 w-5" />
                 Add to Cart
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1 gap-2"
+                onClick={handleBuyNow}
+                disabled={part.stock <= 0}
+              >
+                <CreditCard className="h-5 w-5" />
+                Buy Now
               </Button>
             </div>
           </div>
