@@ -10,14 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Wrench } from "lucide-react";
+import { Search, Filter, Wrench, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function SpareParts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [partTypeFilter, setPartTypeFilter] = useState("all");
+  const [qualityFilter, setQualityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
@@ -36,6 +39,18 @@ export default function SpareParts() {
           ),
           part_categories (
             name
+          ),
+          part_types (
+            id,
+            name
+          ),
+          part_qualities (
+            id,
+            name
+          ),
+          spare_parts_colors (
+            color_name,
+            color_code
           )
         `)
         .eq('visible', true)
@@ -59,14 +74,51 @@ export default function SpareParts() {
     }
   });
 
+  const { data: partTypes } = useQuery({
+    queryKey: ['part-types', categoryFilter],
+    queryFn: async () => {
+      let query = supabase.from('part_types').select('*').order('name');
+      if (categoryFilter !== "all") {
+        query = query.eq('category_id', categoryFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: qualities } = useQuery({
+    queryKey: ['part-qualities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('part_qualities')
+        .select('*')
+        .order('sort_order');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setPartTypeFilter("all");
+    setQualityFilter("all");
+    setSortBy("newest");
+    setAvailabilityFilter("all");
+  };
+
   const filteredParts = (spareParts || []).filter(part => {
     const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (part.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || part.part_category_id === categoryFilter;
+    const matchesPartType = partTypeFilter === "all" || part.part_type_id === partTypeFilter;
+    const matchesQuality = qualityFilter === "all" || part.quality_id === qualityFilter;
     const matchesAvailability = availabilityFilter === "all" || 
                                (availabilityFilter === "available" && part.stock > 0) ||
                                (availabilityFilter === "out-of-stock" && part.stock <= 0);
-    return matchesSearch && matchesCategory && matchesAvailability;
+    return matchesSearch && matchesCategory && matchesPartType && matchesQuality && matchesAvailability;
   }).sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
@@ -108,52 +160,90 @@ export default function SpareParts() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 animate-fade-in">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search spare parts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="space-y-4 mb-8 animate-fade-in">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search spare parts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={categoryFilter} onValueChange={(value) => {
+              setCategoryFilter(value);
+              setPartTypeFilter("all"); // Reset part type when category changes
+            }}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-[100]">
+                <SelectItem value="all">All Categories</SelectItem>
+                {(categories || []).map(category => (
+                  <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={partTypeFilter} onValueChange={setPartTypeFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Part Type" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-[100]">
+                <SelectItem value="all">All Types</SelectItem>
+                {(partTypes || []).map(type => (
+                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={qualityFilter} onValueChange={setQualityFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Sparkles className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Quality" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-[100]">
+                <SelectItem value="all">All Qualities</SelectItem>
+                {(qualities || []).map(quality => (
+                  <SelectItem key={quality.id} value={quality.id}>{quality.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {(categories || []).map(category => (
-                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Availability" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Parts</SelectItem>
-              <SelectItem value="available">In Stock</SelectItem>
-              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-4 w-full md:w-auto">
+              <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[100]">
+                  <SelectItem value="all">All Parts</SelectItem>
+                  <SelectItem value="available">In Stock</SelectItem>
+                  <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="price-low">Price: Low to High</SelectItem>
-              <SelectItem value="price-high">Price: High to Low</SelectItem>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
-            </SelectContent>
-          </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[100]">
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Reset Filters
+            </Button>
+          </div>
         </div>
 
         {/* Products Grid */}
