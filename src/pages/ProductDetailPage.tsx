@@ -13,6 +13,7 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { ProductReviews } from "@/components/ProductReviews";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { useAuth } from "@/hooks/useAuth";
+import { ProductSEO } from "@/components/ProductSEO";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -121,6 +122,17 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductSEO
+        name={product.name}
+        description={product.description}
+        price={product.price}
+        salePrice={product.wholesale_price}
+        brand={product.brand}
+        image={product.images?.[0]}
+        stock={product.stock || 0}
+        url={`/product/${product.id}`}
+        category={product.brand}
+      />
       <header className="border-b bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
