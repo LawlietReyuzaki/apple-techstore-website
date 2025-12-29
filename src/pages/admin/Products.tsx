@@ -46,6 +46,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
+interface ProductColor {
+  id?: string;
+  color_name: string;
+  color_code: string;
+}
+
 interface ProductFormData {
   name: string;
   brand: string;
@@ -61,6 +67,7 @@ interface ProductFormData {
   on_sale: boolean;
   sale_price: string;
   accessory_subcategory: string;
+  colors: ProductColor[];
 }
 
 const ACCESSORY_SUBCATEGORIES = [
@@ -108,7 +115,9 @@ export default function AdminProducts() {
     on_sale: false,
     sale_price: "",
     accessory_subcategory: "none",
+    colors: [],
   });
+  const [newColor, setNewColor] = useState({ color_name: "", color_code: "#000000" });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -206,6 +215,8 @@ export default function AdminProducts() {
         accessory_subcategory: data.accessory_subcategory === "none" ? null : (data.accessory_subcategory || null),
       };
 
+      let productId = editingProduct?.id;
+
       if (editingProduct) {
         const { error } = await supabase
           .from("products")
@@ -213,8 +224,36 @@ export default function AdminProducts() {
           .eq("id", editingProduct.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("products").insert(productData);
+        const { data: newProduct, error } = await supabase
+          .from("products")
+          .insert(productData)
+          .select()
+          .single();
         if (error) throw error;
+        productId = newProduct.id;
+      }
+
+      // Handle colors - delete existing and insert new ones
+      if (productId) {
+        // Delete existing colors
+        await supabase
+          .from("product_colors")
+          .delete()
+          .eq("product_id", productId);
+
+        // Insert new colors
+        if (data.colors.length > 0) {
+          const colorsToInsert = data.colors.map(c => ({
+            product_id: productId,
+            color_name: c.color_name,
+            color_code: c.color_code || null,
+          }));
+          
+          const { error: colorError } = await supabase
+            .from("product_colors")
+            .insert(colorsToInsert);
+          if (colorError) throw colorError;
+        }
       }
     },
     onSuccess: () => {
@@ -259,13 +298,22 @@ export default function AdminProducts() {
       on_sale: false,
       sale_price: "",
       accessory_subcategory: "none",
+      colors: [],
     });
     setImageFiles([]);
     setImagePreviews([]);
+    setNewColor({ color_name: "", color_code: "#000000" });
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = async (product: any) => {
     setEditingProduct(product);
+    
+    // Fetch colors for this product
+    const { data: productColors } = await supabase
+      .from("product_colors")
+      .select("*")
+      .eq("product_id", product.id);
+    
     setFormData({
       name: product.name,
       brand: product.brand,
@@ -281,6 +329,7 @@ export default function AdminProducts() {
       on_sale: product.on_sale || false,
       sale_price: product.sale_price?.toString() || "",
       accessory_subcategory: product.accessory_subcategory || "none",
+      colors: productColors?.map(c => ({ id: c.id, color_name: c.color_name, color_code: c.color_code || "" })) || [],
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -640,6 +689,78 @@ export default function AdminProducts() {
                       />
                     </div>
                   )}
+                </div>
+
+                {/* Color Options */}
+                <div className="space-y-3">
+                  <Label>Available Colors</Label>
+                  
+                  {/* Existing colors */}
+                  {formData.colors.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {formData.colors.map((color, idx) => (
+                        <div 
+                          key={idx} 
+                          className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full"
+                        >
+                          <div 
+                            className="w-4 h-4 rounded-full border border-border"
+                            style={{ backgroundColor: color.color_code || '#ccc' }}
+                          />
+                          <span className="text-sm">{color.color_name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 hover:bg-destructive/20"
+                            onClick={() => setFormData({
+                              ...formData,
+                              colors: formData.colors.filter((_, i) => i !== idx)
+                            })}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Add new color */}
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Color Name</Label>
+                      <Input
+                        placeholder="e.g., Midnight Black"
+                        value={newColor.color_name}
+                        onChange={(e) => setNewColor({ ...newColor, color_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Color</Label>
+                      <Input
+                        type="color"
+                        value={newColor.color_code}
+                        onChange={(e) => setNewColor({ ...newColor, color_code: e.target.value })}
+                        className="h-10 p-1 cursor-pointer"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (newColor.color_name.trim()) {
+                          setFormData({
+                            ...formData,
+                            colors: [...formData.colors, { ...newColor }]
+                          });
+                          setNewColor({ color_name: "", color_code: "#000000" });
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={createOrUpdateMutation.isPending || uploadingImages}>
