@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
@@ -23,6 +23,18 @@ interface SparePart {
   part_categories?: {
     name: string;
   };
+  part_types?: {
+    id: string;
+    name: string;
+  };
+  part_qualities?: {
+    id: string;
+    name: string;
+  };
+  spare_parts_colors?: {
+    color_name: string;
+    color_code: string | null;
+  }[];
 }
 
 interface SparePartCardProps {
@@ -78,19 +90,61 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
         
         <CardContent className="flex-1 p-4">
           <div className="space-y-2">
-            {part.part_categories && (
-              <Badge variant="outline" className="text-xs">
-                {part.part_categories.name}
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-1">
+              {part.part_categories && (
+                <Badge variant="outline" className="text-xs">
+                  {part.part_categories.name}
+                </Badge>
+              )}
+              {part.part_types && (
+                <Badge variant="secondary" className="text-xs">
+                  {part.part_types.name}
+                </Badge>
+              )}
+            </div>
+            
             <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
               {part.name}
             </h3>
+            
             {part.phone_models && (
               <p className="text-sm text-muted-foreground">
                 For {part.phone_models.name}
               </p>
             )}
+            
+            {/* Quality Badge */}
+            {part.part_qualities && (
+              <div className="flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-amber-500" />
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  {part.part_qualities.name}
+                </span>
+              </div>
+            )}
+            
+            {/* Available Colors */}
+            {part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Colors:</span>
+                <div className="flex gap-1">
+                  {part.spare_parts_colors.slice(0, 4).map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: color.color_code || '#888' }}
+                      title={color.color_name}
+                    />
+                  ))}
+                  {part.spare_parts_colors.length > 4 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{part.spare_parts_colors.length - 4}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {part.description && (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {part.description}
