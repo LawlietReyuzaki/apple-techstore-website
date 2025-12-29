@@ -28,5 +28,5 @@ Disallow: /account/
 Disallow: /checkout
 Disallow: /payment-submission
 
-# Sitemap location
-Sitemap: https://appletechstore.pk/sitemap.xml
+# Sitemap location (dynamic)
+Sitemap: https://ekqgsyzxkkrlgzhavnoy.supabase.co/functions/v1/sitemap

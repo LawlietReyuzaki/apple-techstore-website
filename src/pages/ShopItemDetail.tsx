@@ -9,6 +9,7 @@ import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { ProductSEO } from "@/components/ProductSEO";
 
 export default function ShopItemDetail() {
   const { id } = useParams();
@@ -101,6 +102,17 @@ export default function ShopItemDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductSEO
+        name={item.name}
+        description={item.description}
+        price={item.price}
+        salePrice={item.sale_price}
+        brand={item.shop_brands?.name || 'AppleTechStore'}
+        image={item.images?.[0]}
+        stock={item.stock || 0}
+        url={`/shop-item/${item.id}`}
+        category={item.shop_categories?.name}
+      />
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

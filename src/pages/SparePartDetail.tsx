@@ -10,6 +10,7 @@ import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ProductSEO } from "@/components/ProductSEO";
 
 export default function SparePartDetail() {
   const { id } = useParams();
@@ -129,8 +130,21 @@ export default function SparePartDetail() {
 
   const images = part.images && part.images.length > 0 ? part.images : ['/placeholder.svg'];
 
+  const brandName = part.phone_models?.spare_parts_brands?.name || 'Generic';
+  const categoryName = part.part_categories?.name || 'Spare Parts';
+
   return (
     <div className="min-h-screen bg-background">
+      <ProductSEO
+        name={part.name}
+        description={part.description}
+        price={part.price}
+        brand={brandName}
+        image={images[0] !== '/placeholder.svg' ? images[0] : null}
+        stock={part.stock}
+        url={`/spare-part/${part.id}`}
+        category={categoryName}
+      />
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
