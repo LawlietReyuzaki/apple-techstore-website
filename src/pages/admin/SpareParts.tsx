@@ -36,6 +36,7 @@ export default function AdminSpareParts() {
     images: [""],
     visible: true,
     featured: false,
+    has_color_options: false,
     colors: [{ color_name: "", color_code: "" }],
   });
 
@@ -310,6 +311,7 @@ export default function AdminSpareParts() {
       images: [""],
       visible: true,
       featured: false,
+      has_color_options: false,
       colors: [{ color_name: "", color_code: "" }],
     });
     setEditingPart(null);
@@ -331,6 +333,7 @@ export default function AdminSpareParts() {
       images: formData.images.filter(img => img),
       visible: formData.visible,
       featured: formData.featured,
+      has_color_options: formData.has_color_options,
       colors: formData.colors,
     };
 
@@ -355,6 +358,7 @@ export default function AdminSpareParts() {
       images: part.images.length > 0 ? part.images : [""],
       visible: part.visible,
       featured: part.featured,
+      has_color_options: part.has_color_options || false,
       colors: part.spare_parts_colors.length > 0 
         ? part.spare_parts_colors 
         : [{ color_name: "", color_code: "" }],
@@ -646,38 +650,65 @@ export default function AdminSpareParts() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Colors</label>
-                  {formData.colors.map((color, idx) => (
-                    <div key={idx} className="grid grid-cols-2 gap-2 mb-2">
-                      <Input
-                        placeholder="Color Name"
-                        value={color.color_name}
-                        onChange={(e) => {
-                          const newColors = [...formData.colors];
-                          newColors[idx].color_name = e.target.value;
-                          setFormData({...formData, colors: newColors});
-                        }}
-                      />
-                      <Input
-                        type="color"
-                        value={color.color_code || "#000000"}
-                        onChange={(e) => {
-                          const newColors = [...formData.colors];
-                          newColors[idx].color_code = e.target.value;
-                          setFormData({...formData, colors: newColors});
-                        }}
-                      />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.has_color_options}
+                      onCheckedChange={(v) => setFormData({...formData, has_color_options: v})}
+                    />
+                    <label className="text-sm font-medium">Enable Color Selection</label>
+                  </div>
+                  
+                  {formData.has_color_options && (
+                    <div className="pl-4 border-l-2 border-primary/30">
+                      <label className="text-sm font-medium mb-2 block">Available Colors</label>
+                      {formData.colors.map((color, idx) => (
+                        <div key={idx} className="flex items-center gap-2 mb-2">
+                          <Input
+                            placeholder="Color Name"
+                            value={color.color_name}
+                            onChange={(e) => {
+                              const newColors = [...formData.colors];
+                              newColors[idx].color_name = e.target.value;
+                              setFormData({...formData, colors: newColors});
+                            }}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="color"
+                            value={color.color_code || "#000000"}
+                            onChange={(e) => {
+                              const newColors = [...formData.colors];
+                              newColors[idx].color_code = e.target.value;
+                              setFormData({...formData, colors: newColors});
+                            }}
+                            className="w-16"
+                          />
+                          {formData.colors.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newColors = formData.colors.filter((_, i) => i !== idx);
+                                setFormData({...formData, colors: newColors});
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({...formData, colors: [...formData.colors, { color_name: "", color_code: "" }]})}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Color
+                      </Button>
                     </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFormData({...formData, colors: [...formData.colors, { color_name: "", color_code: "" }]})}
-                  >
-                    Add Color
-                  </Button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-4">

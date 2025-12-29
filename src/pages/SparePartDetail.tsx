@@ -9,11 +9,13 @@ import { useState } from "react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 export default function SparePartDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const addItem = useProductCartStore(state => state.addItem);
 
   const { data: part, isLoading } = useQuery({
@@ -40,6 +42,7 @@ export default function SparePartDetail() {
             name
           ),
           spare_parts_colors (
+            id,
             color_name,
             color_code
           )
@@ -56,14 +59,30 @@ export default function SparePartDetail() {
   const handleAddToCart = () => {
     if (!part) return;
     
-    addItem({
-      id: part.id,
-      name: part.name,
-      brand: part.phone_models?.spare_parts_brands?.name || 'Generic',
-      price: part.price,
-      images: part.images,
-      type: 'spare_part',
-    });
+    // Validate color selection if required
+    if (part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
+
+    const selectedColorData = selectedColor 
+      ? part.spare_parts_colors?.find((c: any) => c.id === selectedColor) 
+      : null;
+    
+    addItem(
+      {
+        id: part.id,
+        name: part.name,
+        brand: part.phone_models?.spare_parts_brands?.name || 'Generic',
+        price: part.price,
+        images: part.images,
+        type: 'spare_part',
+      },
+      1,
+      selectedColorData?.color_name || null,
+      selectedColorData?.color_code || null,
+      null
+    );
     toast.success(`${part.name} added to cart!`);
   };
 
@@ -231,13 +250,44 @@ export default function SparePartDetail() {
               )}
             </div>
 
-            {/* Available Colors */}
-            {part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
+            {/* Color Selection */}
+            {part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Select Color <span className="text-destructive">*</span></h3>
+                  <div className="flex flex-wrap gap-3">
+                    {part.spare_parts_colors.map((color: any) => (
+                      <button
+                        key={color.id}
+                        onClick={() => setSelectedColor(color.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+                          selectedColor === color.id 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        {color.color_code && (
+                          <span 
+                            className="w-5 h-5 rounded-full border border-border" 
+                            style={{ backgroundColor: color.color_code }} 
+                          />
+                        )}
+                        <span className="text-sm font-medium">{color.color_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Display-only colors (when color options not enabled but colors exist) */}
+            {!part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-3">Available Colors</h3>
                   <div className="flex flex-wrap gap-3">
-                    {part.spare_parts_colors.map((color, idx) => (
+                    {part.spare_parts_colors.map((color: any, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-muted/30">
                         <div
                           className="w-5 h-5 rounded-full border border-border"
