@@ -49,8 +49,8 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-4">
             <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
             
-            {items.map((item) => (
-              <Card key={item.product.id}>
+            {items.map((item, idx) => (
+              <Card key={`${item.product.id}-${item.selectedColor}-${item.selectedPartType}-${idx}`}>
                 <CardContent className="p-4 md:p-6">
                   <div className="flex gap-4">
                     <div className="w-24 h-24 md:w-32 md:h-32 bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
@@ -72,11 +72,30 @@ export default function Cart() {
                         <div>
                           <h3 className="font-semibold text-lg line-clamp-2">{item.product.name}</h3>
                           <p className="text-sm text-muted-foreground">{item.product.brand}</p>
+                          {/* Display selected color and part type */}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {item.selectedColor && (
+                              <span className="inline-flex items-center gap-1 text-xs bg-secondary/50 px-2 py-0.5 rounded-full">
+                                {item.selectedColorCode && (
+                                  <span 
+                                    className="w-3 h-3 rounded-full border border-border" 
+                                    style={{ backgroundColor: item.selectedColorCode }} 
+                                  />
+                                )}
+                                {item.selectedColor}
+                              </span>
+                            )}
+                            {item.selectedPartType && (
+                              <span className="text-xs bg-secondary/50 px-2 py-0.5 rounded-full">
+                                {item.selectedPartType}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeItem(item.product.id)}
+                          onClick={() => removeItem(item.product.id, item.selectedColor, item.selectedPartType)}
                           className="flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -89,7 +108,7 @@ export default function Cart() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.selectedPartType)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -98,7 +117,7 @@ export default function Cart() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.selectedPartType)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>

@@ -70,6 +70,8 @@ export default function Checkout() {
             quantity: item.quantity,
             type: item.product.type || 'product',
             images: item.product.images,
+            selectedColor: item.selectedColor || null,
+            selectedPartType: item.selectedPartType || null,
           })),
         },
       });
@@ -214,8 +216,8 @@ export default function Checkout() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.product.id} className="flex gap-3">
+                  {items.map((item, idx) => (
+                    <div key={`${item.product.id}-${item.selectedColor}-${idx}`} className="flex gap-3">
                       <div className="w-16 h-16 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
                         {item.product.images?.[0] ? (
                           <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
@@ -227,7 +229,19 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm line-clamp-2">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+                          <span>Qty: {item.quantity}</span>
+                          {item.selectedColor && (
+                            <span className="flex items-center gap-1">
+                              • Color: 
+                              {item.selectedColorCode && (
+                                <span className="w-3 h-3 rounded-full border border-border inline-block" style={{ backgroundColor: item.selectedColorCode }} />
+                              )}
+                              {item.selectedColor}
+                            </span>
+                          )}
+                          {item.selectedPartType && <span>• {item.selectedPartType}</span>}
+                        </div>
                       </div>
                       <p className="font-medium text-sm">Rs. {(item.product.price * item.quantity).toLocaleString()}</p>
                     </div>

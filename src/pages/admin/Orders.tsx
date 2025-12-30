@@ -483,7 +483,19 @@ export default function AdminOrders() {
                     <div key={item.id} className="p-3 flex justify-between">
                       <div>
                         <p className="font-medium">{item.product_name}</p>
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                          <span>Qty: {item.quantity}</span>
+                          {item.selected_color && (
+                            <Badge variant="outline" className="text-xs">
+                              Color: {item.selected_color}
+                            </Badge>
+                          )}
+                          {item.selected_part_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {item.selected_part_type}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <p className="font-medium">Rs. {item.subtotal.toLocaleString()}</p>
                     </div>
