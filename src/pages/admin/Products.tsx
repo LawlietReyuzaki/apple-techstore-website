@@ -520,7 +520,39 @@ const handleEdit = async (product: any) => {
               <DialogHeader>
                 <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); createOrUpdateMutation.mutate(formData); }} className="space-y-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+
+                  // If admin typed a new color but forgot to press "+", include it automatically.
+                  let submitData = formData;
+                  const pendingColorName = newColor.color_name.trim();
+                  if (
+                    submitData.has_color_options &&
+                    pendingColorName &&
+                    !submitData.colors.some(
+                      (c) => c.color_name.trim().toLowerCase() === pendingColorName.toLowerCase()
+                    )
+                  ) {
+                    submitData = {
+                      ...submitData,
+                      colors: [
+                        ...submitData.colors,
+                        { color_name: pendingColorName, color_code: newColor.color_code || "#000000" },
+                      ],
+                    };
+                  }
+
+                  // Require at least one color when color options are enabled.
+                  if (submitData.has_color_options && submitData.colors.length === 0) {
+                    toast.error("Add at least one color before saving");
+                    return;
+                  }
+
+                  createOrUpdateMutation.mutate(submitData);
+                }}
+                className="space-y-4"
+              >
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="name">Product Name *</Label>
