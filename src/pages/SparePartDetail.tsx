@@ -4,19 +4,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ShoppingCart, Check, AlertCircle, Sparkles, CreditCard } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ShoppingCart, Check, AlertCircle, Sparkles, CreditCard, Package } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ProductSEO } from "@/components/ProductSEO";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+interface Variant {
+  id: string;
+  variant_name: string;
+  price: number;
+  stock: number;
+  sort_order: number;
+}
 
 export default function SparePartDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const addItem = useProductCartStore(state => state.addItem);
 
   const { data: part, isLoading } = useQuery({
@@ -57,8 +68,41 @@ export default function SparePartDetail() {
     enabled: !!id
   });
 
+  // Fetch variants
+  const { data: variants = [] } = useQuery({
+    queryKey: ['spare-part-variants', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('spare_part_variants')
+        .select('*')
+        .eq('spare_part_id', id)
+        .order('sort_order');
+      
+      if (error) throw error;
+      return data as Variant[];
+    },
+    enabled: !!id
+  });
+
+  // Auto-select first variant if available
+  useEffect(() => {
+    if (variants.length > 0 && !selectedVariant) {
+      setSelectedVariant(variants[0]);
+    }
+  }, [variants, selectedVariant]);
+
+  const hasVariants = variants.length > 0;
+  const displayPrice = selectedVariant ? selectedVariant.price : part?.price || 0;
+  const displayStock = selectedVariant ? selectedVariant.stock : part?.stock || 0;
+
   const handleAddToCart = () => {
     if (!part) return;
+    
+    // Validate variant selection if required
+    if (hasVariants && !selectedVariant) {
+      toast.error("Please select a variant");
+      return;
+    }
     
     // Validate color selection if required
     if (part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && !selectedColor) {
@@ -75,16 +119,16 @@ export default function SparePartDetail() {
         id: part.id,
         name: part.name,
         brand: part.phone_models?.spare_parts_brands?.name || 'Generic',
-        price: part.price,
+        price: displayPrice,
         images: part.images,
         type: 'spare_part',
       },
       1,
       selectedColorData?.color_name || null,
       selectedColorData?.color_code || null,
-      null
+      selectedVariant?.variant_name || null
     );
-    toast.success(`${part.name} added to cart!`);
+    toast.success(`${part.name}${selectedVariant ? ` (${selectedVariant.variant_name})` : ''} added to cart!`);
   };
 
   const handleBuyNow = () => {
@@ -129,7 +173,6 @@ export default function SparePartDetail() {
   }
 
   const images = part.images && part.images.length > 0 ? part.images : ['/placeholder.svg'];
-
   const brandName = part.phone_models?.spare_parts_brands?.name || 'Generic';
   const categoryName = part.part_categories?.name || 'Spare Parts';
 
@@ -138,10 +181,10 @@ export default function SparePartDetail() {
       <ProductSEO
         name={part.name}
         description={part.description}
-        price={part.price}
+        price={displayPrice}
         brand={brandName}
         image={images[0] !== '/placeholder.svg' ? images[0] : null}
-        stock={part.stock}
+        stock={displayStock}
         url={`/spare-part/${part.id}`}
         category={categoryName}
       />
@@ -204,11 +247,17 @@ export default function SparePartDetail() {
                 {part.featured && (
                   <Badge className="bg-primary">Featured</Badge>
                 )}
-                {part.stock <= 0 && (
+                {displayStock <= 0 && (
                   <Badge variant="destructive">Out of Stock</Badge>
                 )}
-                {part.stock > 0 && part.stock <= 5 && (
+                {displayStock > 0 && displayStock <= 5 && (
                   <Badge className="bg-orange-500">Low Stock</Badge>
+                )}
+                {hasVariants && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Package className="h-3 w-3" />
+                    {variants.length} Options
+                  </Badge>
                 )}
               </div>
               
@@ -225,10 +274,59 @@ export default function SparePartDetail() {
 
               <div className="flex items-baseline gap-2 mb-6">
                 <p className="text-4xl font-bold text-primary">
-                  Rs. {part.price.toLocaleString()}
+                  Rs. {displayPrice.toLocaleString()}
                 </p>
+                {hasVariants && selectedVariant && (
+                  <span className="text-muted-foreground">({selectedVariant.variant_name})</span>
+                )}
               </div>
             </div>
+
+            {/* Variant Selection */}
+            {hasVariants && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Select Option <span className="text-destructive">*</span>
+                  </h3>
+                  <RadioGroup
+                    value={selectedVariant?.id || ''}
+                    onValueChange={(value) => {
+                      const variant = variants.find(v => v.id === value);
+                      setSelectedVariant(variant || null);
+                    }}
+                    className="space-y-2"
+                  >
+                    {variants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                          selectedVariant?.id === variant.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        onClick={() => setSelectedVariant(variant)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value={variant.id} id={variant.id} />
+                          <Label htmlFor={variant.id} className="cursor-pointer font-medium">
+                            {variant.variant_name}
+                          </Label>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-primary">Rs. {variant.price.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </>
+            )}
 
             {/* Description */}
             {part.description && (
@@ -319,10 +417,10 @@ export default function SparePartDetail() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-2">
-                  {part.stock > 0 ? (
+                  {displayStock > 0 ? (
                     <>
                       <Check className="h-5 w-5 text-green-500" />
-                      <span className="font-medium">In Stock ({part.stock} available)</span>
+                      <span className="font-medium">In Stock ({displayStock} available)</span>
                     </>
                   ) : (
                     <>
@@ -341,7 +439,7 @@ export default function SparePartDetail() {
                 variant="outline"
                 className="flex-1 gap-2"
                 onClick={handleAddToCart}
-                disabled={part.stock <= 0}
+                disabled={displayStock <= 0}
               >
                 <ShoppingCart className="h-5 w-5" />
                 Add to Cart
@@ -350,7 +448,7 @@ export default function SparePartDetail() {
                 size="lg"
                 className="flex-1 gap-2"
                 onClick={handleBuyNow}
-                disabled={part.stock <= 0}
+                disabled={displayStock <= 0}
               >
                 <CreditCard className="h-5 w-5" />
                 Buy Now

@@ -19,23 +19,24 @@ export interface CartItem {
   selectedColor?: string | null;
   selectedColorCode?: string | null;
   selectedPartType?: string | null;
+  selectedVariant?: string | null;
 }
 
 interface ProductCartStore {
   items: CartItem[];
   
   // Actions
-  addItem: (product: CartProduct, quantity?: number, selectedColor?: string | null, selectedColorCode?: string | null, selectedPartType?: string | null) => void;
-  updateQuantity: (productId: string, quantity: number, selectedColor?: string | null, selectedPartType?: string | null) => void;
-  removeItem: (productId: string, selectedColor?: string | null, selectedPartType?: string | null) => void;
+  addItem: (product: CartProduct, quantity?: number, selectedColor?: string | null, selectedColorCode?: string | null, selectedPartType?: string | null, selectedVariant?: string | null) => void;
+  updateQuantity: (productId: string, quantity: number, selectedColor?: string | null, selectedPartType?: string | null, selectedVariant?: string | null) => void;
+  removeItem: (productId: string, selectedColor?: string | null, selectedPartType?: string | null, selectedVariant?: string | null) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
 }
 
 // Helper to create unique cart item key
-const getCartItemKey = (productId: string, selectedColor?: string | null, selectedPartType?: string | null) => {
-  return `${productId}-${selectedColor || 'nocolor'}-${selectedPartType || 'noparttype'}`;
+const getCartItemKey = (productId: string, selectedColor?: string | null, selectedPartType?: string | null, selectedVariant?: string | null) => {
+  return `${productId}-${selectedColor || 'nocolor'}-${selectedPartType || 'noparttype'}-${selectedVariant || 'novariant'}`;
 };
 
 export const useProductCartStore = create<ProductCartStore>()(
@@ -43,12 +44,13 @@ export const useProductCartStore = create<ProductCartStore>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product, quantity = 1, selectedColor = null, selectedColorCode = null, selectedPartType = null) => {
+      addItem: (product, quantity = 1, selectedColor = null, selectedColorCode = null, selectedPartType = null, selectedVariant = null) => {
         const { items } = get();
         const existingItem = items.find(i => 
           i.product.id === product.id && 
           i.selectedColor === selectedColor && 
-          i.selectedPartType === selectedPartType
+          i.selectedPartType === selectedPartType &&
+          i.selectedVariant === selectedVariant
         );
         
         if (existingItem) {
@@ -56,7 +58,8 @@ export const useProductCartStore = create<ProductCartStore>()(
             items: items.map(i =>
               i.product.id === product.id && 
               i.selectedColor === selectedColor && 
-              i.selectedPartType === selectedPartType
+              i.selectedPartType === selectedPartType &&
+              i.selectedVariant === selectedVariant
                 ? { ...i, quantity: i.quantity + quantity }
                 : i
             )
@@ -68,15 +71,16 @@ export const useProductCartStore = create<ProductCartStore>()(
               quantity, 
               selectedColor, 
               selectedColorCode,
-              selectedPartType 
+              selectedPartType,
+              selectedVariant
             }] 
           });
         }
       },
 
-      updateQuantity: (productId, quantity, selectedColor = null, selectedPartType = null) => {
+      updateQuantity: (productId, quantity, selectedColor = null, selectedPartType = null, selectedVariant = null) => {
         if (quantity <= 0) {
-          get().removeItem(productId, selectedColor, selectedPartType);
+          get().removeItem(productId, selectedColor, selectedPartType, selectedVariant);
           return;
         }
         
@@ -84,19 +88,21 @@ export const useProductCartStore = create<ProductCartStore>()(
           items: get().items.map(item =>
             item.product.id === productId && 
             item.selectedColor === selectedColor && 
-            item.selectedPartType === selectedPartType
+            item.selectedPartType === selectedPartType &&
+            item.selectedVariant === selectedVariant
               ? { ...item, quantity } 
               : item
           )
         });
       },
 
-      removeItem: (productId, selectedColor = null, selectedPartType = null) => {
+      removeItem: (productId, selectedColor = null, selectedPartType = null, selectedVariant = null) => {
         set({
           items: get().items.filter(item => 
             !(item.product.id === productId && 
               item.selectedColor === selectedColor && 
-              item.selectedPartType === selectedPartType)
+              item.selectedPartType === selectedPartType &&
+              item.selectedVariant === selectedVariant)
           )
         });
       },
