@@ -39,7 +39,7 @@ export default function ProductDetailPage() {
   });
 
   const { data: productColors } = useQuery({
-    queryKey: ["product-colors", id],
+    queryKey: ["product-colors", id, product?.has_color_options],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_colors")
@@ -48,11 +48,11 @@ export default function ProductDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!product?.has_color_options,
+    enabled: !!id && product?.has_color_options === true,
   });
 
   const { data: productPartTypes } = useQuery({
-    queryKey: ["product-part-types", id],
+    queryKey: ["product-part-types", id, product?.has_part_type_options],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_part_types")
@@ -61,7 +61,7 @@ export default function ProductDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!product?.has_part_type_options,
+    enabled: !!id && product?.has_part_type_options === true,
   });
 
   const handleAddToCart = () => {
