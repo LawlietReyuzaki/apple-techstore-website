@@ -249,48 +249,72 @@ const createOrUpdateMutation = useMutation({
 
       // Handle colors - delete existing and insert new ones
       if (productId) {
-        // Delete existing colors
-        await supabase
+        // Delete existing colors first
+        const { error: deleteColorError } = await supabase
           .from("product_colors")
           .delete()
           .eq("product_id", productId);
+        
+        if (deleteColorError) {
+          console.error("Error deleting colors:", deleteColorError);
+          throw deleteColorError;
+        }
 
-        // Insert new colors if color options are enabled
-        if (data.has_color_options && data.colors.length > 0) {
+        // Insert new colors if color options are enabled and colors exist
+        if (data.has_color_options && data.colors && data.colors.length > 0) {
           const colorsToInsert = data.colors.map(c => ({
             product_id: productId,
-            color_name: c.color_name,
+            color_name: c.color_name.trim(),
             color_code: c.color_code || null,
           }));
+          
+          console.log("Inserting colors:", colorsToInsert);
           
           const { error: colorError } = await supabase
             .from("product_colors")
             .insert(colorsToInsert);
-          if (colorError) throw colorError;
+          
+          if (colorError) {
+            console.error("Error inserting colors:", colorError);
+            throw colorError;
+          }
         }
 
         // Delete existing part types
-        await supabase
+        const { error: deletePartTypeError } = await supabase
           .from("product_part_types")
           .delete()
           .eq("product_id", productId);
+        
+        if (deletePartTypeError) {
+          console.error("Error deleting part types:", deletePartTypeError);
+          throw deletePartTypeError;
+        }
 
         // Insert new part types if part type options are enabled
-        if (data.has_part_type_options && data.part_types.length > 0) {
+        if (data.has_part_type_options && data.part_types && data.part_types.length > 0) {
           const partTypesToInsert = data.part_types.map(pt => ({
             product_id: productId,
-            part_type_name: pt.part_type_name,
+            part_type_name: pt.part_type_name.trim(),
           }));
+          
+          console.log("Inserting part types:", partTypesToInsert);
           
           const { error: partTypeError } = await supabase
             .from("product_part_types")
             .insert(partTypesToInsert);
-          if (partTypeError) throw partTypeError;
+          
+          if (partTypeError) {
+            console.error("Error inserting part types:", partTypeError);
+            throw partTypeError;
+          }
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-colors"] });
+      queryClient.invalidateQueries({ queryKey: ["product-part-types"] });
       setIsDialogOpen(false);
       setEditingProduct(null);
       resetForm();
