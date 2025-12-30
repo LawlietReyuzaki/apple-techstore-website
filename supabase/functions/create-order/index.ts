@@ -13,6 +13,8 @@ interface OrderItem {
   quantity: number;
   type: string;
   images?: string[];
+  selectedColor?: string | null;
+  selectedPartType?: string | null;
 }
 
 interface CreateOrderRequest {
@@ -85,7 +87,7 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Order created:", order.id);
 
-    // Create order items
+    // Create order items with selected color and part type
     const orderItems = orderData.items.map((item) => {
       const itemType = item.type || "product";
       
@@ -111,6 +113,8 @@ serve(async (req: Request): Promise<Response> => {
         product_price: item.price,
         quantity: item.quantity,
         subtotal: item.price * item.quantity,
+        selected_color: item.selectedColor || null,
+        selected_part_type: item.selectedPartType || null,
       };
     });
 
