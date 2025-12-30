@@ -10,9 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Minus, Pencil, Trash2, X, Upload } from "lucide-react";
+import { Plus, Minus, Pencil, Trash2, X, Upload, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+
+interface Variant {
+  id?: string;
+  variant_name: string;
+  price: string;
+  stock: string;
+  sort_order: number;
+}
 
 export default function AdminSpareParts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,6 +47,8 @@ export default function AdminSpareParts() {
     featured: false,
     has_color_options: false,
     colors: [{ color_name: "", color_code: "" }],
+    has_variants: false,
+    variants: [{ variant_name: "", price: "", stock: "", sort_order: 0 }] as Variant[],
   });
 
   const { toast } = useToast();
@@ -57,11 +68,22 @@ export default function AdminSpareParts() {
           spare_parts_colors (color_name, color_code)
         `)
         .order("created_at", { ascending: false });
+      
+      // Fetch variants for each spare part
+      if (data) {
+        for (const part of data) {
+          const { data: variants } = await supabase
+            .from("spare_part_variants")
+            .select("*")
+            .eq("spare_part_id", part.id)
+            .order("sort_order");
+          (part as any).variants = variants || [];
+        }
+      }
+      
       return data || [];
     },
   });
-
-  // phoneModels query removed - using manual text input now
 
   const { data: partCategories = [] } = useQuery({
     queryKey: ["part-categories"],
@@ -103,7 +125,6 @@ export default function AdminSpareParts() {
       toast({ title: "Part category added" });
       setNewCategoryName("");
       setIsAddCategoryOpen(false);
-      // Auto-select the newly created category
       setFormData(prev => ({ ...prev, part_category_id: data.id }));
     },
     onError: (error: any) => {
@@ -171,8 +192,6 @@ export default function AdminSpareParts() {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       setImageFiles(prev => [...prev, ...files]);
-      
-      // Create previews
       files.forEach(file => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -229,8 +248,15 @@ export default function AdminSpareParts() {
   const createPartMutation = useMutation({
     mutationFn: async (data: any) => {
       const uploadedImages = await uploadImages();
-      const { colors, ...partData } = data;
+      const { colors, variants, has_variants, ...partData } = data;
       partData.images = uploadedImages;
+      
+      // If using variants, set base price/stock to first variant or 0
+      if (has_variants && variants.length > 0) {
+        const minPrice = Math.min(...variants.filter((v: Variant) => v.price).map((v: Variant) => parseFloat(v.price)));
+        partData.price = minPrice || 0;
+        partData.stock = variants.reduce((sum: number, v: Variant) => sum + (parseInt(v.stock) || 0), 0);
+      }
       
       const { data: part, error } = await supabase
         .from("spare_parts")
@@ -240,6 +266,7 @@ export default function AdminSpareParts() {
       
       if (error) throw error;
 
+      // Insert colors
       if (colors && colors.length > 0) {
         const colorData = colors
           .filter((c: any) => c.color_name)
@@ -247,6 +274,23 @@ export default function AdminSpareParts() {
         
         if (colorData.length > 0) {
           await supabase.from("spare_parts_colors").insert(colorData);
+        }
+      }
+      
+      // Insert variants
+      if (has_variants && variants && variants.length > 0) {
+        const variantData = variants
+          .filter((v: Variant) => v.variant_name)
+          .map((v: Variant, idx: number) => ({
+            spare_part_id: part.id,
+            variant_name: v.variant_name,
+            price: parseFloat(v.price) || 0,
+            stock: parseInt(v.stock) || 0,
+            sort_order: idx,
+          }));
+        
+        if (variantData.length > 0) {
+          await supabase.from("spare_part_variants").insert(variantData);
         }
       }
       
@@ -258,18 +302,28 @@ export default function AdminSpareParts() {
       setIsDialogOpen(false);
       resetForm();
     },
+    onError: (error: any) => {
+      toast({ title: "Error creating spare part", description: error.message, variant: "destructive" });
+    },
   });
 
   const updatePartMutation = useMutation({
     mutationFn: async ({ id, data }: any) => {
       const uploadedImages = await uploadImages();
-      const { colors, ...partData } = data;
+      const { colors, variants, has_variants, ...partData } = data;
       partData.images = uploadedImages;
+      
+      // If using variants, set base price/stock
+      if (has_variants && variants.length > 0) {
+        const minPrice = Math.min(...variants.filter((v: Variant) => v.price).map((v: Variant) => parseFloat(v.price)));
+        partData.price = minPrice || 0;
+        partData.stock = variants.reduce((sum: number, v: Variant) => sum + (parseInt(v.stock) || 0), 0);
+      }
       
       await supabase.from("spare_parts").update(partData).eq("id", id);
       
+      // Update colors
       await supabase.from("spare_parts_colors").delete().eq("spare_part_id", id);
-      
       if (colors && colors.length > 0) {
         const colorData = colors
           .filter((c: any) => c.color_name)
@@ -279,12 +333,33 @@ export default function AdminSpareParts() {
           await supabase.from("spare_parts_colors").insert(colorData);
         }
       }
+      
+      // Update variants
+      await supabase.from("spare_part_variants").delete().eq("spare_part_id", id);
+      if (has_variants && variants && variants.length > 0) {
+        const variantData = variants
+          .filter((v: Variant) => v.variant_name)
+          .map((v: Variant, idx: number) => ({
+            spare_part_id: id,
+            variant_name: v.variant_name,
+            price: parseFloat(v.price) || 0,
+            stock: parseInt(v.stock) || 0,
+            sort_order: idx,
+          }));
+        
+        if (variantData.length > 0) {
+          await supabase.from("spare_part_variants").insert(variantData);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-spare-parts"] });
       toast({ title: "Spare part updated successfully" });
       setIsDialogOpen(false);
       resetForm();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating spare part", description: error.message, variant: "destructive" });
     },
   });
 
@@ -313,6 +388,8 @@ export default function AdminSpareParts() {
       featured: false,
       has_color_options: false,
       colors: [{ color_name: "", color_code: "" }],
+      has_variants: false,
+      variants: [{ variant_name: "", price: "", stock: "", sort_order: 0 }],
     });
     setEditingPart(null);
     setImageFiles([]);
@@ -320,21 +397,32 @@ export default function AdminSpareParts() {
   };
 
   const handleSubmit = () => {
+    // Validate variants if enabled
+    if (formData.has_variants) {
+      const validVariants = formData.variants.filter(v => v.variant_name.trim());
+      if (validVariants.length === 0) {
+        toast({ title: "Add at least one variant", variant: "destructive" });
+        return;
+      }
+    }
+    
     const submitData = {
       phone_model_name: formData.phone_model_name,
-      phone_model_id: null, // No longer using phone_model_id
+      phone_model_id: null,
       part_category_id: formData.part_category_id,
       part_type_id: formData.part_type_id || null,
       quality_id: formData.quality_id || null,
       name: formData.name,
       description: formData.description,
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
+      price: parseFloat(formData.price) || 0,
+      stock: parseInt(formData.stock) || 0,
       images: formData.images.filter(img => img),
       visible: formData.visible,
       featured: formData.featured,
       has_color_options: formData.has_color_options,
       colors: formData.colors,
+      has_variants: formData.has_variants,
+      variants: formData.variants,
     };
 
     if (editingPart) {
@@ -346,6 +434,7 @@ export default function AdminSpareParts() {
 
   const handleEdit = (part: any) => {
     setEditingPart(part);
+    const hasVariants = part.variants && part.variants.length > 0;
     setFormData({
       phone_model_name: part.phone_model_name || (part.phone_models ? `${part.phone_models.spare_parts_brands?.name || ''} ${part.phone_models.name}`.trim() : ""),
       part_category_id: part.part_category_id,
@@ -362,10 +451,42 @@ export default function AdminSpareParts() {
       colors: part.spare_parts_colors.length > 0 
         ? part.spare_parts_colors 
         : [{ color_name: "", color_code: "" }],
+      has_variants: hasVariants,
+      variants: hasVariants 
+        ? part.variants.map((v: any) => ({ 
+            id: v.id,
+            variant_name: v.variant_name, 
+            price: v.price.toString(), 
+            stock: v.stock.toString(),
+            sort_order: v.sort_order 
+          }))
+        : [{ variant_name: "", price: "", stock: "", sort_order: 0 }],
     });
     setImageFiles([]);
     setImagePreviews([]);
     setIsDialogOpen(true);
+  };
+
+  const addVariant = () => {
+    setFormData({
+      ...formData,
+      variants: [...formData.variants, { variant_name: "", price: "", stock: "", sort_order: formData.variants.length }],
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    if (formData.variants.length > 1) {
+      setFormData({
+        ...formData,
+        variants: formData.variants.filter((_, i) => i !== index),
+      });
+    }
+  };
+
+  const updateVariant = (index: number, field: keyof Variant, value: string) => {
+    const newVariants = [...formData.variants];
+    (newVariants[index] as any)[field] = value;
+    setFormData({ ...formData, variants: newVariants });
   };
 
   return (
@@ -409,15 +530,9 @@ export default function AdminSpareParts() {
                       </SelectContent>
                     </Select>
                     
-                    {/* Add Part Category Button */}
                     <Popover open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                       <PopoverTrigger asChild>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="icon"
-                          title="Add new part category"
-                        >
+                        <Button type="button" variant="outline" size="icon" title="Add new part category">
                           <Plus className="h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
@@ -441,7 +556,6 @@ export default function AdminSpareParts() {
                       </PopoverContent>
                     </Popover>
 
-                    {/* Delete Part Category Button */}
                     <Button 
                       type="button" 
                       variant="outline" 
@@ -475,7 +589,6 @@ export default function AdminSpareParts() {
                       </SelectContent>
                     </Select>
                     
-                    {/* Add Part Type Button */}
                     <Popover open={isAddTypeOpen} onOpenChange={setIsAddTypeOpen}>
                       <PopoverTrigger asChild>
                         <Button 
@@ -508,7 +621,6 @@ export default function AdminSpareParts() {
                       </PopoverContent>
                     </Popover>
 
-                    {/* Delete Part Type Button */}
                     <Button 
                       type="button" 
                       variant="outline" 
@@ -552,25 +664,88 @@ export default function AdminSpareParts() {
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="number"
-                    placeholder="Price (PKR)"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Stock"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                  />
+                {/* Variants Section */}
+                <div className="space-y-3 border rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.has_variants}
+                      onCheckedChange={(v) => setFormData({...formData, has_variants: v})}
+                    />
+                    <Label className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Enable Variants (Different prices/stock for options like Original, Copy A, Copy B)
+                    </Label>
+                  </div>
+                  
+                  {formData.has_variants ? (
+                    <div className="space-y-3 mt-3">
+                      <p className="text-sm text-muted-foreground">
+                        Add variants with different prices and stock. The base price shown to customers will be the lowest variant price.
+                      </p>
+                      {formData.variants.map((variant, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30">
+                          <div className="flex-1 grid grid-cols-3 gap-2">
+                            <Input
+                              placeholder="Variant Name (e.g., Original)"
+                              value={variant.variant_name}
+                              onChange={(e) => updateVariant(idx, 'variant_name', e.target.value)}
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Price (PKR)"
+                              value={variant.price}
+                              onChange={(e) => updateVariant(idx, 'price', e.target.value)}
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Stock"
+                              value={variant.stock}
+                              onChange={(e) => updateVariant(idx, 'stock', e.target.value)}
+                            />
+                          </div>
+                          {formData.variants.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeVariant(idx)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                        <Plus className="h-4 w-4 mr-1" /> Add Variant
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div>
+                        <Label>Price (PKR)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Price"
+                          value={formData.price}
+                          onChange={(e) => setFormData({...formData, price: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Stock</Label>
+                        <Input
+                          type="number"
+                          placeholder="Stock"
+                          value={formData.stock}
+                          onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Product Images</label>
                   
-                  {/* Existing images */}
                   {formData.images.filter(img => img).length > 0 && (
                     <div className="mb-4">
                       <p className="text-xs text-muted-foreground mb-2">Existing Images:</p>
@@ -600,7 +775,6 @@ export default function AdminSpareParts() {
                     </div>
                   )}
                   
-                  {/* New image previews */}
                   {imagePreviews.length > 0 && (
                     <div className="mb-4">
                       <p className="text-xs text-muted-foreground mb-2">New Images to Upload:</p>
@@ -627,7 +801,6 @@ export default function AdminSpareParts() {
                     </div>
                   )}
                   
-                  {/* File upload input */}
                   <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
                     <Input
                       id="image-upload"
@@ -745,6 +918,7 @@ export default function AdminSpareParts() {
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead>Variants</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -756,9 +930,27 @@ export default function AdminSpareParts() {
                   <TableCell>
                     {part.phone_model_name || (part.phone_models ? `${part.phone_models.spare_parts_brands?.name || ''} ${part.phone_models.name}`.trim() : '-')}
                   </TableCell>
-                  <TableCell>{part.part_categories.name}</TableCell>
-                  <TableCell>PKR {part.price}</TableCell>
+                  <TableCell>{part.part_categories?.name || '-'}</TableCell>
+                  <TableCell>
+                    {part.variants && part.variants.length > 0 ? (
+                      <span className="text-muted-foreground">
+                        From PKR {Math.min(...part.variants.map((v: any) => v.price)).toLocaleString()}
+                      </span>
+                    ) : (
+                      `PKR ${part.price.toLocaleString()}`
+                    )}
+                  </TableCell>
                   <TableCell>{part.stock}</TableCell>
+                  <TableCell>
+                    {part.variants && part.variants.length > 0 ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <Package className="h-3 w-3" />
+                        {part.variants.length}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={part.visible ? "default" : "secondary"}>
                       {part.visible ? "Visible" : "Hidden"}

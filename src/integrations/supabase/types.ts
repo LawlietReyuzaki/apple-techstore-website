@@ -1029,6 +1029,47 @@ export type Database = {
           },
         ]
       }
+      spare_part_variants: {
+        Row: {
+          created_at: string | null
+          id: string
+          price: number
+          sort_order: number | null
+          spare_part_id: string
+          stock: number
+          updated_at: string | null
+          variant_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          price: number
+          sort_order?: number | null
+          spare_part_id: string
+          stock?: number
+          updated_at?: string | null
+          variant_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          price?: number
+          sort_order?: number | null
+          spare_part_id?: string
+          stock?: number
+          updated_at?: string | null
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spare_part_variants_spare_part_id_fkey"
+            columns: ["spare_part_id"]
+            isOneToOne: false
+            referencedRelation: "spare_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spare_parts: {
         Row: {
           created_at: string | null

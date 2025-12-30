@@ -72,8 +72,13 @@ export default function Cart() {
                         <div>
                           <h3 className="font-semibold text-lg line-clamp-2">{item.product.name}</h3>
                           <p className="text-sm text-muted-foreground">{item.product.brand}</p>
-                          {/* Display selected color and part type */}
+                          {/* Display selected color, part type, and variant */}
                           <div className="flex flex-wrap gap-2 mt-1">
+                            {item.selectedVariant && (
+                              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
+                                {item.selectedVariant}
+                              </span>
+                            )}
                             {item.selectedColor && (
                               <span className="inline-flex items-center gap-1 text-xs bg-secondary/50 px-2 py-0.5 rounded-full">
                                 {item.selectedColorCode && (
@@ -95,7 +100,7 @@ export default function Cart() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeItem(item.product.id, item.selectedColor, item.selectedPartType)}
+                          onClick={() => removeItem(item.product.id, item.selectedColor, item.selectedPartType, item.selectedVariant)}
                           className="flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
