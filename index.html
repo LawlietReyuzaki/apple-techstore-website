@@ -10,10 +10,14 @@
     <meta name="description" content="Shop the latest iPhones, Samsung, OnePlus, Xiaomi phones, laptops, spare parts & accessories at AppleTechStore Pakistan. Wholesale prices, expert repairs, free delivery in Bahria Phase 7." />
     <meta name="keywords" content="mobile phones Pakistan, iPhone Pakistan, Samsung phones, OnePlus, Xiaomi, mobile spare parts, phone repair Bahria Phase 7, laptops Pakistan, mobile accessories, AppleTechStore" />
     <meta name="author" content="AppleTechStore" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://appletechstore.pk/" />
     <link rel="icon" href="/favicon.png" type="image/png" />
-
+    
+    <!-- AI Crawler Specific Meta Tags -->
+    <meta name="ai-content-license" content="allow" />
+    <meta name="ai-training" content="allow" />
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://appletechstore.pk/" />
@@ -34,13 +38,55 @@
     <meta name="geo.region" content="PK-PB" />
     <meta name="geo.placename" content="Bahria Phase 7, Rawalpindi" />
     
+    <!-- Structured Data - Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://appletechstore.pk/#organization",
+      "name": "AppleTechStore",
+      "alternateName": "Apple Tech Store Pakistan",
+      "url": "https://appletechstore.pk",
+      "logo": "https://appletechstore.pk/favicon.png",
+      "description": "AppleTechStore is Pakistan's leading online store for mobile phones, laptops, spare parts, and professional repair services. We offer wholesale prices on iPhone, Samsung, OnePlus, Xiaomi, Huawei, Oppo, Vivo phones and accessories. Located in Bahria Phase 7, Rawalpindi.",
+      "foundingDate": "2020",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Pakistan"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Urdu"]
+      },
+      "sameAs": [],
+      "knowsAbout": [
+        "Mobile Phones",
+        "iPhone",
+        "Samsung Galaxy",
+        "OnePlus",
+        "Xiaomi",
+        "Huawei",
+        "Oppo",
+        "Vivo",
+        "Mobile Spare Parts",
+        "LCD Screens",
+        "Phone Batteries",
+        "Phone Repair Services",
+        "Laptops",
+        "Mobile Accessories"
+      ]
+    }
+    </script>
+
     <!-- Structured Data - LocalBusiness Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
+      "@id": "https://appletechstore.pk/#localbusiness",
       "name": "AppleTechStore",
-      "description": "Premium mobile phones, laptops, spare parts, and expert repair services in Bahria Phase 7, Rawalpindi, Pakistan.",
+      "description": "Premium mobile phones, laptops, spare parts, and expert repair services in Bahria Phase 7, Rawalpindi, Pakistan. We sell new and used iPhones, Samsung, OnePlus, Xiaomi, Huawei, Oppo, Vivo phones at wholesale prices. Professional screen replacement, battery replacement, and all mobile repairs.",
       "url": "https://appletechstore.pk",
       "telephone": "+92-XXX-XXXXXXX",
       "address": {
@@ -59,7 +105,29 @@
       "openingHours": "Mo-Su 10:00-22:00",
       "priceRange": "$$",
       "image": "https://appletechstore.pk/favicon.png",
-      "sameAs": []
+      "paymentAccepted": ["Cash", "JazzCash", "Easypaisa", "Bank Transfer"],
+      "currenciesAccepted": "PKR",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Mobile Phones & Accessories",
+        "itemListElement": [
+          {
+            "@type": "OfferCatalog",
+            "name": "Mobile Phones",
+            "itemListElement": ["iPhone", "Samsung", "OnePlus", "Xiaomi", "Huawei", "Oppo", "Vivo"]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Spare Parts",
+            "itemListElement": ["LCD Screens", "Batteries", "Charging Ports", "Back Panels", "Cameras"]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Services",
+            "itemListElement": ["Screen Repair", "Battery Replacement", "Water Damage Repair", "Software Issues"]
+          }
+        ]
+      }
     }
     </script>
 
@@ -68,13 +136,122 @@
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://appletechstore.pk/#website",
       "name": "AppleTechStore",
       "url": "https://appletechstore.pk",
+      "description": "Pakistan's leading online store for mobile phones, laptops, spare parts and repair services",
+      "publisher": {
+        "@id": "https://appletechstore.pk/#organization"
+      },
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://appletechstore.pk/shop?search={search_term_string}",
         "query-input": "required name=search_term_string"
       }
+    }
+    </script>
+
+    <!-- Structured Data - FAQ Schema for common questions -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What products does AppleTechStore sell?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AppleTechStore sells mobile phones (iPhone, Samsung, OnePlus, Xiaomi, Huawei, Oppo, Vivo), laptops, mobile spare parts (LCD screens, batteries, charging ports, back panels), and mobile accessories. We offer both new and used phones at wholesale prices."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is AppleTechStore located?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AppleTechStore is located in Bahria Phase 7, Rawalpindi, Punjab, Pakistan. We also offer nationwide delivery across Pakistan."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does AppleTechStore offer phone repair services?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, AppleTechStore provides professional phone repair services including screen replacement, battery replacement, charging port repair, water damage repair, and software troubleshooting. All repairs come with warranty."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What payment methods does AppleTechStore accept?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AppleTechStore accepts Cash on Delivery (COD), JazzCash, Easypaisa, and Bank Transfer payments."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does AppleTechStore offer wholesale prices?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, AppleTechStore offers competitive wholesale prices on mobile phones and spare parts. We provide special pricing for bulk orders and resellers."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data - ItemList for main categories -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "AppleTechStore Product Categories",
+      "description": "Browse our main product categories",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Mobile Phones",
+          "url": "https://appletechstore.pk/shop",
+          "description": "New and used mobile phones from Apple, Samsung, OnePlus, Xiaomi, Huawei, Oppo, Vivo"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Spare Parts",
+          "url": "https://appletechstore.pk/spare-parts",
+          "description": "Mobile spare parts including LCD screens, batteries, charging ports, back panels"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Used Phones",
+          "url": "https://appletechstore.pk/phones",
+          "description": "Quality tested used and refurbished phones at affordable prices"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Laptops",
+          "url": "https://appletechstore.pk/laptops",
+          "description": "Laptops and computer accessories"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Accessories",
+          "url": "https://appletechstore.pk/accessories",
+          "description": "Mobile accessories including cases, chargers, cables, and more"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "name": "Phone Repair Services",
+          "url": "https://appletechstore.pk/book-repair",
+          "description": "Professional phone repair services with warranty"
+        }
+      ]
     }
     </script>
   </head>

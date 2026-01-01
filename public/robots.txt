@@ -13,32 +13,82 @@ Disallow: /payment-submission
 User-agent: Googlebot
 Allow: /
 
+User-agent: Googlebot-Image
+Allow: /
+
 User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
 Allow: /
 
 User-agent: Yandex
 Allow: /
 
+User-agent: YandexBot
+Allow: /
+
 User-agent: DuckDuckBot
 Allow: /
 
-# Allow AI crawlers for indexing
+User-agent: Baiduspider
+Allow: /
+
+# Allow AI crawlers - OpenAI/ChatGPT
 User-agent: GPTBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+# Allow AI crawlers - Anthropic/Claude
 User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
 Allow: /
 
 User-agent: Anthropic-AI
 Allow: /
 
+User-agent: anthropic-ai
+Allow: /
+
+# Allow AI crawlers - Google
+User-agent: Google-Extended
+Allow: /
+
+# Allow AI crawlers - Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Allow AI crawlers - Meta
+User-agent: FacebookBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# Allow AI crawlers - Cohere
+User-agent: cohere-ai
+Allow: /
+
+# Allow AI crawlers - Common Crawl
 User-agent: CCBot
 Allow: /
 
-User-agent: Google-Extended
+# Allow AI crawlers - Apple
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Allow AI crawlers - ByteDance
+User-agent: Bytespider
 Allow: /
 
 # Social media crawlers
@@ -52,4 +102,8 @@ User-agent: LinkedInBot
 Allow: /
 
 # Sitemap location (dynamic - fetches from database)
+Sitemap: https://appletechstore.pk/sitemap.xml
 Sitemap: https://ekqgsyzxkkrlgzhavnoy.supabase.co/functions/v1/sitemap
+
+# LLMs.txt - Machine-readable information for AI assistants
+# https://appletechstore.pk/llms.txt
