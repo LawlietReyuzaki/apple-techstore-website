@@ -7,7 +7,7 @@ import { useProductCartStore } from "@/stores/productCartStore";
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, updateQuantity, removeItem, getTotalPrice, getTotalItems } = useProductCartStore();
+  const { items, updateQuantity, removeItem, getTotalPrice, getTotalItems, clearCart } = useProductCartStore();
   
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
@@ -47,7 +47,13 @@ export default function Cart() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold">Shopping Cart</h1>
+              <Button variant="outline" size="sm" onClick={clearCart} className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear Cart
+              </Button>
+            </div>
             
             {items.map((item, idx) => (
               <Card key={`${item.product.id}-${item.selectedColor}-${item.selectedPartType}-${idx}`}>
