@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>${baseUrl}/used-phones</loc>
+    <loc>${baseUrl}/phones</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

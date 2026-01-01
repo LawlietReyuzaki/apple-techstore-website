@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/ProductCard";
 import { ShoppingCart, Search, ArrowLeft, Laptop } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
+import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
 export default function Laptops() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,8 +74,26 @@ export default function Laptops() {
       }
     });
 
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Laptops", url: "/laptops" }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO 
+        title="Laptops | AppleTechStore Pakistan"
+        description="Shop quality laptops at best prices in Pakistan. Gaming laptops, business laptops, MacBooks, and more. Fast delivery across Pakistan."
+        url="/laptops"
+        keywords="laptops Pakistan, gaming laptops, MacBook Pakistan, business laptops, AppleTechStore"
+      />
+      <CollectionSchema 
+        name="Laptops"
+        description="Shop quality laptops including gaming laptops, business laptops, and MacBooks at best prices in Pakistan."
+        url="/laptops"
+        itemCount={filteredProducts?.length || 0}
+      />
+      <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/ProductCard";
 import { ShoppingCart, Search, ArrowLeft } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
+import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
 export default function UsedPhones() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,8 +74,26 @@ export default function UsedPhones() {
       }
     });
 
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Phones", url: "/phones" }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO 
+        title="New & Used Phones | AppleTechStore Pakistan"
+        description="Shop new and certified used mobile phones at best prices in Pakistan. iPhone, Samsung, OnePlus, Xiaomi, and more. Quality guaranteed with warranty."
+        url="/phones"
+        keywords="used phones Pakistan, new phones, iPhone Pakistan, Samsung phones, OnePlus, Xiaomi, AppleTechStore"
+      />
+      <CollectionSchema 
+        name="New & Used Phones"
+        description="Shop new and certified used mobile phones from top brands including iPhone, Samsung, OnePlus, and Xiaomi at best prices in Pakistan."
+        url="/phones"
+        itemCount={filteredProducts?.length || 0}
+      />
+      <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">

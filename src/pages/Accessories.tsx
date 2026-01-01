@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/ProductCard";
 import { ShoppingCart, Search, ArrowLeft, Headphones } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
+import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
 const SUBCATEGORIES = [
   { value: "all", label: "All Accessories" },
@@ -82,8 +83,29 @@ export default function Accessories() {
       }
     });
 
+  const currentSubcategoryLabel = SUBCATEGORIES.find(s => s.value === activeSubcategory)?.label || "Accessories";
+  
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Accessories", url: "/accessories" },
+    ...(activeSubcategory !== "all" ? [{ name: currentSubcategoryLabel, url: `/accessories/${activeSubcategory}` }] : [])
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO 
+        title={`${currentSubcategoryLabel} | AppleTechStore Pakistan`}
+        description={`Shop quality ${currentSubcategoryLabel.toLowerCase()} at best prices in Pakistan. Phone cases, chargers, cables, headphones, and more. Fast delivery.`}
+        url={activeSubcategory === "all" ? "/accessories" : `/accessories/${activeSubcategory}`}
+        keywords="phone accessories Pakistan, mobile accessories, laptop accessories, chargers, cables, headphones, AppleTechStore"
+      />
+      <CollectionSchema 
+        name={currentSubcategoryLabel}
+        description={`Quality ${currentSubcategoryLabel.toLowerCase()} for your devices at best prices in Pakistan.`}
+        url={activeSubcategory === "all" ? "/accessories" : `/accessories/${activeSubcategory}`}
+        itemCount={filteredProducts?.length || 0}
+      />
+      <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">

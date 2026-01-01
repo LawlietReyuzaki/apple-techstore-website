@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
 export default function SpareParts() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,8 +127,26 @@ export default function SpareParts() {
     return 0;
   });
 
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Spare Parts", url: "/spare-parts" }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO 
+        title="Phone Spare Parts | AppleTechStore Pakistan"
+        description="High-quality replacement parts for all major phone brands. LCD screens, batteries, charging ports, and more. Best prices in Pakistan with fast delivery."
+        url="/spare-parts"
+        keywords="phone spare parts Pakistan, LCD screen replacement, phone battery, charging port, AppleTechStore"
+      />
+      <CollectionSchema 
+        name="Phone Spare Parts"
+        description="High-quality replacement parts for all major phone brands including LCD screens, batteries, charging ports, and more."
+        url="/spare-parts"
+        itemCount={filteredParts.length}
+      />
+      <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
