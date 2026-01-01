@@ -22,6 +22,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import shopHeroBg from "@/assets/shop-hero-bg.png";
+import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
 // Map category names to icons
 const getCategoryIcon = (name: string) => {
@@ -287,8 +288,35 @@ export default function Shop() {
   
   const totalCount = displayItems.length;
 
+  const pageTitle = category === "all" 
+    ? "Shop All Products | AppleTechStore Pakistan" 
+    : `${currentCategory?.name || "Shop"} | AppleTechStore Pakistan`;
+  
+  const pageDescription = category === "all"
+    ? "Browse our complete collection of mobile phones, laptops, accessories, and spare parts at best prices in Pakistan. Fast delivery across Pakistan."
+    : currentCategory?.description || `Shop ${currentCategory?.name || "products"} at best prices in Pakistan. Quality products with fast delivery.`;
+
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/shop" },
+    ...(category !== "all" && currentCategory ? [{ name: currentCategory.name, url: `/shop?category=${category}` }] : [])
+  ];
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <PageSEO 
+        title={pageTitle}
+        description={pageDescription}
+        url={category === "all" ? "/shop" : `/shop?category=${category}`}
+        keywords="mobile phones Pakistan, laptops Pakistan, phone accessories, spare parts, AppleTechStore"
+      />
+      <CollectionSchema 
+        name={category === "all" ? "All Products" : currentCategory?.name || "Shop"}
+        description={pageDescription}
+        url={category === "all" ? "/shop" : `/shop?category=${category}`}
+        itemCount={totalCount}
+      />
+      <BreadcrumbSchema items={breadcrumbs} />
       {/* Subtle Animated Background */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse-slow" />
