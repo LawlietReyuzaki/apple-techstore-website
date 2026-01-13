@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones, X } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
-// Session storage key for loading screen
+// Session storage key for loading screen - ensures smooth UX on first visit
 const LOADING_SHOWN_KEY = "appletechstore_loading_shown";
 
 import { useInView } from 'react-intersection-observer';
