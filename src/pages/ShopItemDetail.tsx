@@ -32,17 +32,18 @@ export default function ShopItemDetail() {
     },
   });
 
-  const handleAddToCart = () => {
-    if (!item) return;
+  const handleAddToCart = (): boolean => {
+    if (!item) return false;
     
     if ((item.stock || 0) <= 0) {
-      toast.error("Out of stock");
-      return;
+      toast.error("This item is out of stock");
+      return false;
     }
 
-    if (quantity > (item.stock || 0)) {
-      toast.error(`Only ${item.stock} items available`);
-      return;
+    // Auto-adjust quantity if exceeds stock
+    const adjustedQuantity = Math.min(quantity, item.stock || 1);
+    if (adjustedQuantity < quantity) {
+      toast.info(`Quantity adjusted to ${adjustedQuantity} (max available)`);
     }
 
     addItem({
@@ -52,16 +53,19 @@ export default function ShopItemDetail() {
       price: item.sale_price || item.price,
       images: item.images || [],
       type: 'shop_item',
-    }, quantity);
+    }, adjustedQuantity);
     
     toast.success("Added to cart", {
-      description: `${quantity}x ${item.name}`,
+      description: `${adjustedQuantity}x ${item.name}`,
     });
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    navigate("/cart");
+    const success = handleAddToCart();
+    if (success) {
+      navigate("/checkout");
+    }
   };
 
   if (isLoading) {
