@@ -60,6 +60,10 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (part.stock <= 0) {
+      toast.error("This item is out of stock");
+      return;
+    }
     addItem({
       id: part.id,
       name: part.name,
@@ -68,7 +72,8 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
       images: part.images,
       type: 'spare_part',
     });
-    navigate("/cart");
+    toast.success(`${part.name} added to cart!`);
+    navigate("/checkout");
   };
 
   const imageUrl = part.images && part.images.length > 0 

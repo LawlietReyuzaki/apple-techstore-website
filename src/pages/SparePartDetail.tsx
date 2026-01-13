@@ -95,19 +95,25 @@ export default function SparePartDetail() {
   const displayPrice = selectedVariant ? selectedVariant.price : part?.price || 0;
   const displayStock = selectedVariant ? selectedVariant.stock : part?.stock || 0;
 
-  const handleAddToCart = () => {
-    if (!part) return;
+  const handleAddToCart = (): boolean => {
+    if (!part) return false;
     
     // Validate variant selection if required
     if (hasVariants && !selectedVariant) {
       toast.error("Please select a variant");
-      return;
+      return false;
     }
     
     // Validate color selection if required
     if (part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && !selectedColor) {
       toast.error("Please select a color");
-      return;
+      return false;
+    }
+
+    // Check stock
+    if (displayStock <= 0) {
+      toast.error("This item is out of stock");
+      return false;
     }
 
     const selectedColorData = selectedColor 
@@ -129,11 +135,14 @@ export default function SparePartDetail() {
       selectedVariant?.variant_name || null
     );
     toast.success(`${part.name}${selectedVariant ? ` (${selectedVariant.variant_name})` : ''} added to cart!`);
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    navigate("/cart");
+    const success = handleAddToCart();
+    if (success) {
+      navigate("/checkout");
+    }
   };
 
   if (isLoading) {

@@ -64,15 +64,20 @@ export default function ProductDetailPage() {
     enabled: !!id && product?.has_part_type_options === true,
   });
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    if (product.stock <= 0) { toast.error("Out of stock"); return; }
-    if (quantity > product.stock) { toast.error(`Only ${product.stock} items available`); return; }
+  const handleAddToCart = (): boolean => {
+    if (!product) return false;
+    if (product.stock <= 0) { toast.error("This item is out of stock"); return false; }
     if (product.has_color_options && productColors && productColors.length > 0 && !selectedColor) {
-      toast.error("Please select a color"); return;
+      toast.error("Please select a color"); return false;
     }
     if (product.has_part_type_options && productPartTypes && productPartTypes.length > 0 && !selectedPartType) {
-      toast.error("Please select a part type"); return;
+      toast.error("Please select a part type"); return false;
+    }
+
+    // Auto-adjust quantity if exceeds stock
+    const adjustedQuantity = Math.min(quantity, product.stock);
+    if (adjustedQuantity < quantity) {
+      toast.info(`Quantity adjusted to ${adjustedQuantity} (max available)`);
     }
 
     const selectedColorData = selectedColor ? productColors?.find(c => c.id === selectedColor) : null;
@@ -80,15 +85,21 @@ export default function ProductDetailPage() {
 
     addItem(
       { id: product.id, name: product.name, brand: product.brand, price: product.price, wholesale_price: product.wholesale_price, images: product.images, type: 'product' }, 
-      quantity,
+      adjustedQuantity,
       selectedColorData?.color_name || null,
       selectedColorData?.color_code || null,
       selectedPartTypeData?.part_type_name || null
     );
-    toast.success("Added to cart", { description: `${quantity}x ${product.name}` });
+    toast.success("Added to cart", { description: `${adjustedQuantity}x ${product.name}` });
+    return true;
   };
 
-  const handleBuyNow = () => { handleAddToCart(); navigate("/cart"); };
+  const handleBuyNow = () => {
+    const success = handleAddToCart();
+    if (success) {
+      navigate("/checkout");
+    }
+  };
 
   if (isLoading) {
     return (
