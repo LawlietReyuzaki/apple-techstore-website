@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import BookRepair from "./pages/BookRepair";
@@ -12,6 +13,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminRepairs from "./pages/admin/Repairs";
@@ -41,7 +43,15 @@ import Accessories from "./pages/Accessories";
 import RequestPart from "./pages/RequestPart";
 import RequestPartThankYou from "./pages/RequestPartThankYou";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,  // 5 min — prevents re-fetch on back navigation
+      gcTime:    10 * 60 * 1000, // 10 min — keep cache in memory
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -76,7 +86,15 @@ const App = () => (
           <Route path="/account/orders" element={<AccountOrders />} />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout />
+              </AdminProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="repairs" element={<AdminRepairs />} />
             <Route path="products" element={<AdminProducts />} />

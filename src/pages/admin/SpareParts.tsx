@@ -114,9 +114,7 @@ export default function AdminSpareParts() {
     mutationFn: async (name: string) => {
       const { data, error } = await supabase
         .from("part_categories")
-        .insert([{ name }])
-        .select()
-        .single();
+        .insert([{ name }]);
       if (error) throw error;
       return data;
     },
@@ -260,9 +258,7 @@ export default function AdminSpareParts() {
       
       const { data: part, error } = await supabase
         .from("spare_parts")
-        .insert([partData])
-        .select()
-        .single();
+        .insert([partData]);
       
       if (error) throw error;
 

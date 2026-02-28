@@ -46,6 +46,8 @@ const Signup = () => {
       if (error) {
         if (error.message.includes("already registered")) {
           toast.error("An account with this email already exists");
+        } else if (error.message === "Failed to fetch") {
+          toast.error("Cannot connect to server. Please try again later.");
         } else {
           toast.error(error.message);
         }

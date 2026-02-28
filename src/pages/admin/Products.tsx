@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface ProductColor {
   id?: string;
@@ -240,9 +241,7 @@ const createOrUpdateMutation = useMutation({
       } else {
         const { data: newProduct, error } = await supabase
           .from("products")
-          .insert(productData)
-          .select()
-          .single();
+          .insert(productData);
         if (error) throw error;
         productId = newProduct.id;
       }
@@ -1001,7 +1000,7 @@ const handleEdit = async (product: any) => {
                       <div className="flex gap-3">
                         <div className="w-16 h-16 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
                           {product.images?.[0] ? (
-                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                            <img src={getImageUrl(product.images[0])} alt={product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Package className="h-5 w-5 text-muted-foreground" />
@@ -1064,7 +1063,7 @@ const handleEdit = async (product: any) => {
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
                               {product.images?.[0] ? (
-                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                <img src={getImageUrl(product.images[0])} alt={product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <Package className="h-5 w-5 text-muted-foreground" />

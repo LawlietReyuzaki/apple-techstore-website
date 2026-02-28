@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useParams } from "react-router-dom";
@@ -26,6 +26,14 @@ const SUBCATEGORIES = [
   { value: "computer", label: "Computer Accessories" },
 ];
 
+// Maps subcategory tab value → product category name(s) in the DB
+const SUBCATEGORY_TO_CATEGORY_NAMES: Record<string, string[]> = {
+  mobile:   ["Mobile Accessories"],
+  laptop:   ["Laptop Accessories"],
+  pc:       ["Computer Accessories"],
+  computer: ["Computer Accessories"],
+};
+
 export default function Accessories() {
   const { subcategory } = useParams<{ subcategory?: string }>();
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,42 +41,66 @@ export default function Accessories() {
   const [sortBy, setSortBy] = useState("newest");
   const cartItemsCount = useProductCartStore((state) => state.getTotalItems());
 
-  const { data: accessoriesCategory } = useQuery({
-    queryKey: ["accessories-category"],
+  // ── Shared product-categories query (same key as Shop.tsx — uses React Query cache) ──
+  const { data: productCategories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["product-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id")
-        .eq("name", "Accessories")
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const { data } = await supabase.from("categories").select("id, name");
+      return data || [];
     },
+    staleTime: Infinity,
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["accessories", accessoriesCategory?.id],
+  // category name → UUID map
+  const categoryNameToId = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const cat of productCategories) map[cat.name] = cat.id;
+    return map;
+  }, [productCategories]);
+
+  // All three accessory category IDs (for "All Accessories" tab)
+  const allAccessoryCategoryIds = useMemo(
+    () =>
+      ["Mobile Accessories", "Laptop Accessories", "Computer Accessories"]
+        .map(n => categoryNameToId[n])
+        .filter(Boolean),
+    [categoryNameToId]
+  );
+
+  // IDs to filter by for the currently active subcategory tab
+  const activeCategoryIds = useMemo(() => {
+    if (activeSubcategory === "all") return allAccessoryCategoryIds;
+    const names = SUBCATEGORY_TO_CATEGORY_NAMES[activeSubcategory] ?? [];
+    return names.map(n => categoryNameToId[n]).filter(Boolean);
+  }, [activeSubcategory, categoryNameToId, allAccessoryCategoryIds]);
+
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["accessories-products", activeCategoryIds],
     queryFn: async () => {
-      if (!accessoriesCategory?.id) return [];
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("category_id", accessoriesCategory.id)
-        .order("created_at", { ascending: false });
+      if (!activeCategoryIds.length) return [];
+      let q = supabase.from("products").select("*");
+      if (activeCategoryIds.length === 1) {
+        q = q.eq("category_id", activeCategoryIds[0]);
+      } else {
+        q = q.in("category_id", activeCategoryIds);
+      }
+      q = q.order("created_at", { ascending: false });
+      const { data, error } = await q;
       if (error) throw error;
-      return data;
+      return data || [];
     },
-    enabled: !!accessoriesCategory?.id,
+    enabled: activeCategoryIds.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
+
+  const isLoading = isLoadingCategories || isLoadingProducts;
 
   const filteredProducts = products
     ?.filter((p) => {
-      const matchesSearch =
+      return (
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSubcategory =
-        activeSubcategory === "all" || (p as any).accessory_subcategory === activeSubcategory;
-      return matchesSearch && matchesSubcategory;
+        p.brand.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     })
     .sort((a, b) => {
       switch (sortBy) {

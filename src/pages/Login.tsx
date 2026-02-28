@@ -30,6 +30,8 @@ const Login = () => {
       if (error) {
         if (error.message === "Invalid login credentials") {
           toast.error("Invalid email or password");
+        } else if (error.message === "Failed to fetch") {
+          toast.error("Cannot connect to server. Please try again later.");
         } else {
           toast.error(error.message);
         }

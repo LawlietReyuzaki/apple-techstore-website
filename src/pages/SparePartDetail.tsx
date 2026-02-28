@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProductSEO } from "@/components/ProductSEO";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { getImageUrls } from "@/lib/imageUrl";
 
 interface Variant {
   id: string;
@@ -52,18 +53,27 @@ export default function SparePartDetail() {
           part_qualities (
             id,
             name
-          ),
-          spare_parts_colors (
-            id,
-            color_name,
-            color_code
           )
         `)
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
       return data;
+    },
+    enabled: !!id
+  });
+
+  // Fetch colors separately (one-to-many — not supported by the main query builder)
+  const { data: colors = [] } = useQuery({
+    queryKey: ['spare-part-colors', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('spare_parts_colors')
+        .select('*')
+        .eq('spare_part_id', id);
+      if (error) throw error;
+      return data as { id: string; color_name: string; color_code: string }[];
     },
     enabled: !!id
   });
@@ -105,7 +115,7 @@ export default function SparePartDetail() {
     }
     
     // Validate color selection if required
-    if (part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && !selectedColor) {
+    if (part.has_color_options && colors.length > 0 && !selectedColor) {
       toast.error("Please select a color");
       return false;
     }
@@ -116,8 +126,8 @@ export default function SparePartDetail() {
       return false;
     }
 
-    const selectedColorData = selectedColor 
-      ? part.spare_parts_colors?.find((c: any) => c.id === selectedColor) 
+    const selectedColorData = selectedColor
+      ? colors.find((c) => c.id === selectedColor)
       : null;
     
     addItem(
@@ -181,7 +191,7 @@ export default function SparePartDetail() {
     );
   }
 
-  const images = part.images && part.images.length > 0 ? part.images : ['/placeholder.svg'];
+  const images = getImageUrls(part.images);
   const brandName = part.phone_models?.spare_parts_brands?.name || 'Generic';
   const categoryName = part.part_categories?.name || 'Spare Parts';
 
@@ -223,6 +233,7 @@ export default function SparePartDetail() {
                 src={images[selectedImage]}
                 alt={part.name}
                 className="w-full h-full object-contain p-8"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
               />
             </div>
             {images.length > 1 && (
@@ -239,6 +250,7 @@ export default function SparePartDetail() {
                       src={img}
                       alt={`${part.name} - ${idx + 1}`}
                       className="w-full h-full object-contain p-2"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
                     />
                   </button>
                 ))}
@@ -372,26 +384,26 @@ export default function SparePartDetail() {
             </div>
 
             {/* Color Selection */}
-            {part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
+            {part.has_color_options && colors.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-3">
                   <h3 className="font-semibold">Select Color <span className="text-destructive">*</span></h3>
                   <div className="flex flex-wrap gap-3">
-                    {part.spare_parts_colors.map((color: any) => (
+                    {colors.map((color) => (
                       <button
                         key={color.id}
                         onClick={() => setSelectedColor(color.id)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
-                          selectedColor === color.id 
-                            ? 'border-primary bg-primary/10' 
+                          selectedColor === color.id
+                            ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50'
                         }`}
                       >
                         {color.color_code && (
-                          <span 
-                            className="w-5 h-5 rounded-full border border-border" 
-                            style={{ backgroundColor: color.color_code }} 
+                          <span
+                            className="w-5 h-5 rounded-full border border-border"
+                            style={{ backgroundColor: color.color_code }}
                           />
                         )}
                         <span className="text-sm font-medium">{color.color_name}</span>
@@ -401,14 +413,14 @@ export default function SparePartDetail() {
                 </div>
               </>
             )}
-            
+
             {/* Display-only colors (when color options not enabled but colors exist) */}
-            {!part.has_color_options && part.spare_parts_colors && part.spare_parts_colors.length > 0 && (
+            {!part.has_color_options && colors.length > 0 && (
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-3">Available Colors</h3>
                   <div className="flex flex-wrap gap-3">
-                    {part.spare_parts_colors.map((color: any, idx: number) => (
+                    {colors.map((color, idx) => (
                       <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-muted/30">
                         <div
                           className="w-5 h-5 rounded-full border border-border"

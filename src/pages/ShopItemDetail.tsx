@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { ProductSEO } from "@/components/ProductSEO";
+import { getImageUrl } from "@/lib/imageUrl";
 
 export default function ShopItemDetail() {
   const { id } = useParams();
@@ -136,9 +137,10 @@ export default function ShopItemDetail() {
             <div className="aspect-square bg-secondary/20 rounded-lg overflow-hidden">
               {item.images && item.images.length > 0 ? (
                 <img
-                  src={item.images[selectedImage]}
+                  src={getImageUrl(item.images[selectedImage])}
                   alt={item.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -157,7 +159,7 @@ export default function ShopItemDetail() {
                       selectedImage === idx ? 'border-primary' : 'border-transparent'
                     }`}
                   >
-                    <img src={img} alt={`${item.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(img)} alt={`${item.name} ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                   </button>
                 ))}
               </div>

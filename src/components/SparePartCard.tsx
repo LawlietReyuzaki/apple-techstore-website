@@ -5,6 +5,7 @@ import { ShoppingCart, Sparkles, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface SparePart {
   id: string;
@@ -76,8 +77,8 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
     navigate("/checkout");
   };
 
-  const imageUrl = part.images && part.images.length > 0 
-    ? part.images[0] 
+  const imageUrl = part.images && part.images.length > 0
+    ? getImageUrl(part.images[0])
     : '/placeholder.svg';
 
   return (
@@ -89,6 +90,7 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
             alt={part.name}
             className="w-full h-64 object-contain group-hover:scale-105 transition-transform duration-300 p-4"
             loading="lazy"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
           />
           {part.featured && (
             <Badge className="absolute top-2 left-2 bg-primary">

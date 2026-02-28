@@ -281,7 +281,7 @@ const CategorySection = ({
 };
 
 export const ShopCategoryShowcase = () => {
-  // Fetch categories
+  // Fetch categories — shared cache key with DynamicCategoriesSection
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ["shop-categories-home"],
     queryFn: async () => {
@@ -292,20 +292,23 @@ export const ShopCategoryShowcase = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 10 * 60 * 1000,
   });
 
-  // Fetch items for all categories
+  // Fetch items for all categories — only columns needed for card display
   const { data: allItems = [], isLoading: isLoadingItems } = useQuery({
     queryKey: ["shop-items-home"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shop_items")
-        .select("*")
+        .select("id,name,price,sale_price,images,stock,category_id")
         .eq("visible", true)
-        .gt("stock", 0);
+        .gt("stock", 0)
+        .limit(100);
       if (error) throw error;
       return data || [];
     },
+    staleTime: 10 * 60 * 1000,
   });
 
   // Group items by category and get 4 random items from each

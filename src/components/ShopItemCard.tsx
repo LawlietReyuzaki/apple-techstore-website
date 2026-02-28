@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface ShopItem {
   id: string;
@@ -37,8 +38,8 @@ const DEFAULT_PLACEHOLDER = "/placeholder.svg";
 export function ShopItemCard({ item }: ShopItemCardProps) {
   const { addItem } = useProductCartStore();
 
-  const imageUrl = item.images && item.images.length > 0 
-    ? item.images[0] 
+  const imageUrl = item.images && item.images.length > 0
+    ? getImageUrl(item.images[0])
     : DEFAULT_PLACEHOLDER;
 
   const isOnSale = item.sale_price && item.sale_price < item.price;

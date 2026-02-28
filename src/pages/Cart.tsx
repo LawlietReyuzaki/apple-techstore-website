@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Package } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
+import { getImageUrl } from "@/lib/imageUrl";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -62,9 +63,10 @@ export default function Cart() {
                     <div className="w-24 h-24 md:w-32 md:h-32 bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
                       {item.product.images && item.product.images.length > 0 ? (
                         <img
-                          src={item.product.images[0]}
+                          src={getImageUrl(item.product.images[0])}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

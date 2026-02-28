@@ -105,39 +105,33 @@ const RequestPart = () => {
           part_details: data.part_details || null,
           image_url: imageUrl,
           status: 'pending',
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
-      // Send confirmation emails via edge function
-      try {
-        await supabase.functions.invoke('send-part-request-email', {
-          body: {
-            requestId: partRequest.id,
-            customerName: data.name,
-            customerEmail: data.email,
-            customerPhone: data.phone,
-            category: data.category,
-            partName: data.part_name,
-            partDetails: data.part_details,
-            imageUrl: imageUrl,
-            submittedDate: new Date().toISOString(),
-          },
-        });
-      } catch (emailError) {
-        console.error('Email notification error:', emailError);
-        // Don't fail the submission if email fails
-      }
+      // Send confirmation to customer + notification to admin
+      supabase.functions.invoke('send-part-request-email', {
+        body: {
+          type: 'new',
+          requestId: partRequest?.id || null,
+          customerName: data.name,
+          customerEmail: data.email,
+          customerPhone: data.phone,
+          category: data.category,
+          partName: data.part_name,
+          partDetails: data.part_details,
+          imageUrl: imageUrl,
+          submittedDate: partRequest?.created_at || new Date().toISOString(),
+        },
+      }).catch((emailErr: any) => console.error('[email] part-request new failed:', emailErr?.message));
 
       toast.success('Part request submitted successfully!');
-      navigate('/request-part/thank-you', { 
-        state: { 
-          requestId: partRequest.id,
+      navigate('/request-part/thank-you', {
+        state: {
+          requestId: partRequest?.id,
           partName: data.part_name,
-          submittedDate: partRequest.created_at
-        } 
+          submittedDate: partRequest?.created_at,
+        }
       });
     } catch (error: any) {
       console.error('Submission error:', error);

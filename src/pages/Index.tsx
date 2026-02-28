@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -124,7 +124,7 @@ const SparePartsSection = () => {
   );
 };
 
-const FeaturedDealsSection = ({ localProducts }: { localProducts: any[] }) => {
+const FeaturedDealsSection = memo(({ localProducts }: { localProducts: any[] }) => {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
   
   if (localProducts.length === 0) return null;
@@ -178,9 +178,9 @@ const FeaturedDealsSection = ({ localProducts }: { localProducts: any[] }) => {
       </div>
     </section>
   );
-};
+});
 
-const OurProductsSection = ({ 
+const OurProductsSection = memo(({ 
   displayedProducts, 
   filters, 
   setFilters 
@@ -292,7 +292,7 @@ const OurProductsSection = ({
       </div>
     </section>
   );
-};
+});
 
 const OurServicesSection = () => {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
@@ -374,7 +374,6 @@ const Index = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [localProducts, setLocalProducts] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [displayedDevices, setDisplayedDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -403,43 +402,32 @@ const Index = () => {
     setDisplayedDevices(shuffleArray(devices).slice(0, 6));
   }, []);
 
-  // Apply filters to products in "Our Products" section
-  useEffect(() => {
+  // Derive filtered products synchronously — no extra state or useEffect needed
+  const displayedProducts = useMemo(() => {
     let filtered = [...allProducts];
-
-    // Apply brand filter
     if (filters.brands.length > 0) {
-      filtered = filtered.filter(product => 
-        filters.brands.includes(product.brand)
-      );
+      filtered = filtered.filter(p => filters.brands.includes(p.brand));
     }
-
-    // Apply availability filter
     if (filters.availability === "available") {
-      filtered = filtered.filter(product => product.stock > 0);
+      filtered = filtered.filter(p => p.stock > 0);
     } else if (filters.availability === "coming-soon") {
-      filtered = filtered.filter(product => product.stock <= 0);
+      filtered = filtered.filter(p => p.stock <= 0);
     }
-
-    // Apply price range filter
-    filtered = filtered.filter(product => 
-      product.price >= filters.priceRange[0] && 
-      product.price <= filters.priceRange[1]
+    return filtered.filter(p =>
+      p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
     );
-
-    setDisplayedProducts(filtered);
   }, [filters, allProducts]);
 
   const fetchAllProducts = async () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
-        .order('created_at', { ascending: false });
-      
+        .select("id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale")
+        .order('created_at', { ascending: false })
+        .limit(12);
+
       if (error) throw error;
       setAllProducts(data || []);
-      setDisplayedProducts(data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
@@ -449,7 +437,7 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale")
         .eq("featured", true)
         .limit(4);
 

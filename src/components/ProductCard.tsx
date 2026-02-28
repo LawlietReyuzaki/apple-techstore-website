@@ -7,6 +7,7 @@ import { useProductCartStore } from "@/stores/productCartStore";
 import { toast } from "sonner";
 import { WishlistButton } from "./WishlistButton";
 import { useAuth } from "@/hooks/useAuth";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface Product {
   id: string;
@@ -65,9 +66,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             
             {product.images && product.images.length > 0 ? (
               <img
-                src={product.images[0]}
+                src={getImageUrl(product.images[0])}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">

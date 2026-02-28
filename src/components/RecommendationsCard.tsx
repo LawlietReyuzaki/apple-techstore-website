@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface Product {
   id: string;
@@ -59,13 +60,12 @@ export const RecommendationsCard = ({ currentProductId, categoryId }: Recommenda
           >
             <div className="flex gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors">
               <div className="w-20 h-20 bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
-                {product.images?.[0] && (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                )}
+                <img
+                  src={getImageUrl(product.images?.[0])}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">

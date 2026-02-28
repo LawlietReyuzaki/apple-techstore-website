@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -13,66 +13,109 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/ProductCard";
-import { ShoppingCart, Search, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Search, ArrowLeft, Loader2 } from "lucide-react";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 
+const PAGE_SIZE = 24;
+
 export default function UsedPhones() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [brandFilter, setBrandFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
+  const [searchTerm, setSearchTerm]       = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [brandFilter, setBrandFilter]     = useState("all");
+  const [sortBy, setSortBy]               = useState("newest");
+  const [page, setPage]                   = useState(0);
+  const [products, setProducts]           = useState<any[]>([]);
   const cartItemsCount = useProductCartStore((state) => state.getTotalItems());
 
-  const { data: usedPhonesCategory } = useQuery({
+  // Debounce search input — wait 350 ms before querying
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Reset pagination whenever filters or search change
+  useEffect(() => {
+    setPage(0);
+    setProducts([]);
+  }, [brandFilter, debouncedSearch, sortBy]);
+
+  // ── Category ID (fetched once, cached forever) ─────────────────────────────
+  const { data: category } = useQuery({
     queryKey: ["used-phones-category"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
         .select("id")
-        .eq("name", "Used Phones")
+        .eq("name", "New & Used Phones")
         .maybeSingle();
       if (error) throw error;
       return data;
     },
+    staleTime: Infinity,
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["used-phones", usedPhonesCategory?.id],
+  const categoryId = category?.id ?? null;
+
+  // ── Brand list (fetched once per category, cached forever) ─────────────────
+  const { data: brandsData } = useQuery({
+    queryKey: ["used-phones-brands", categoryId],
     queryFn: async () => {
-      if (!usedPhonesCategory?.id) return [];
       const { data, error } = await supabase
         .from("products")
-        .select("*")
-        .eq("category_id", usedPhonesCategory.id)
-        .order("created_at", { ascending: false });
+        .select("brand")
+        .eq("category_id", categoryId!);
       if (error) throw error;
-      return data;
+      return [...new Set((data ?? []).map((r: any) => r.brand))].sort();
     },
-    enabled: !!usedPhonesCategory?.id,
+    enabled: !!categoryId,
+    staleTime: Infinity,
+  });
+  const brands = brandsData ?? [];
+
+  // ── Paginated products query ───────────────────────────────────────────────
+  const buildQuery = useCallback(
+    (offset: number) => {
+      let q = supabase
+        .from("products")
+        .select("*")
+        .eq("category_id", categoryId!)
+        .limit(PAGE_SIZE)
+        .offset(offset);
+
+      if (brandFilter !== "all")     q = q.eq("brand", brandFilter);
+      if (debouncedSearch.trim())    q = q.ilike("name", `%${debouncedSearch.trim()}%`);
+
+      if      (sortBy === "price_low")  q = q.order("price", { ascending: true });
+      else if (sortBy === "price_high") q = q.order("price", { ascending: false });
+      else if (sortBy === "name")       q = q.order("name",  { ascending: true });
+      else                              q = q.order("created_at", { ascending: false });
+
+      return q;
+    },
+    [categoryId, brandFilter, debouncedSearch, sortBy]
+  );
+
+  const { data: pageData, isLoading, isFetching } = useQuery({
+    queryKey: ["used-phones-products", categoryId, brandFilter, debouncedSearch, sortBy, page],
+    queryFn: async () => {
+      if (!categoryId) return [];
+      const { data, error } = await buildQuery(page * PAGE_SIZE);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!categoryId,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const brands = [...new Set(products?.map((p) => p.brand) || [])];
+  // Accumulate pages — reset on page 0, append on page > 0
+  useEffect(() => {
+    if (!pageData) return;
+    setProducts(prev => page === 0 ? pageData : [...prev, ...pageData]);
+  }, [pageData]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filteredProducts = products
-    ?.filter((p) => {
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesBrand = brandFilter === "all" || p.brand === brandFilter;
-      return matchesSearch && matchesBrand;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price_low":
-          return a.price - b.price;
-        case "price_high":
-          return b.price - a.price;
-        case "name":
-          return a.name.localeCompare(b.name);
-        default:
-          return new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime();
-      }
-    });
+  const hasMore = (pageData?.length ?? 0) === PAGE_SIZE;
+  const isFirstLoad = isLoading && products.length === 0;
 
   const breadcrumbs = [
     { name: "Home", url: "/" },
@@ -81,19 +124,20 @@ export default function UsedPhones() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageSEO 
+      <PageSEO
         title="New & Used Phones | AppleTechStore Pakistan"
         description="Shop new and certified used mobile phones at best prices in Pakistan. iPhone, Samsung, OnePlus, Xiaomi, and more. Quality guaranteed with warranty."
         url="/phones"
         keywords="used phones Pakistan, new phones, iPhone Pakistan, Samsung phones, OnePlus, Xiaomi, AppleTechStore"
       />
-      <CollectionSchema 
+      <CollectionSchema
         name="New & Used Phones"
         description="Shop new and certified used mobile phones from top brands including iPhone, Samsung, OnePlus, and Xiaomi at best prices in Pakistan."
         url="/phones"
-        itemCount={filteredProducts?.length || 0}
+        itemCount={products.length}
       />
       <BreadcrumbSchema items={breadcrumbs} />
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -119,7 +163,7 @@ export default function UsedPhones() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Pre-Owned Mobile Phones</h2>
@@ -148,10 +192,8 @@ export default function UsedPhones() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Brands</SelectItem>
-                {brands.map((brand) => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
+                {brands.map((brand: string) => (
+                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -168,26 +210,58 @@ export default function UsedPhones() {
             </Select>
           </div>
         </div>
+
+        {/* Result count */}
+        {!isFirstLoad && (
+          <p className="text-sm text-muted-foreground mt-3">
+            Showing {products.length} phone{products.length !== 1 ? "s" : ""}
+            {hasMore ? " — scroll down to load more" : ""}
+          </p>
+        )}
       </section>
 
       {/* Products Grid */}
       <section className="container mx-auto px-4 pb-12">
-        {isLoading ? (
+        {isFirstLoad ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-lg" />
             ))}
           </div>
-        ) : filteredProducts && filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+        ) : products.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center mt-10">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  disabled={isFetching}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  {isFetching ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading...</>
+                  ) : (
+                    "Load More Phones"
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No used phones found</p>
-            <Button variant="outline" className="mt-4" onClick={() => { setSearchTerm(""); setBrandFilter("all"); }}>
+            <p className="text-muted-foreground text-lg">No phones found</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => { setSearchTerm(""); setBrandFilter("all"); }}
+            >
               Clear Filters
             </Button>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
@@ -12,10 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Search, Filter, Smartphone, Wrench, Laptop, Headphones, 
+import {
+  Search, Filter, Smartphone, Wrench, Laptop, Headphones,
   Package, Cpu, Monitor, Tv, Wind, UtensilsCrossed, Refrigerator, Shield, FolderOpen,
-  Battery, Zap
+  Battery, Zap, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
@@ -43,6 +43,9 @@ const getCategoryIcon = (name: string) => {
   return Package;
 };
 
+// ── Page size for all paginated queries ─────────────────────────────────────
+const PAGE_SIZE = 24;
+
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [category, setCategory] = useState(searchParams.get("category") || "all");
@@ -51,7 +54,7 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
-  // Fetch dynamic categories from database
+  // ── Shop categories (for category pills UI) ──────────────────────────────
   const { data: shopCategories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ["shop-categories"],
     queryFn: async () => {
@@ -64,263 +67,396 @@ export default function Shop() {
     },
   });
 
+  // ── Product categories (for UUID ↔ slug mapping) ─────────────────────────
+  // These are the 6 valid categories in the `categories` table.
+  // shop_categories and categories share identical names, so we match by name.
+  const { data: productCategories = [] } = useQuery({
+    queryKey: ["product-categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("id, name");
+      return data || [];
+    },
+    staleTime: Infinity, // categories never change mid-session
+  });
+
+  // slug → product category UUID  (e.g. "new-used-phones" → "e087e164-...")
+  const slugToProductCategoryId = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const shopCat of shopCategories) {
+      const prodCat = productCategories.find(pc => pc.name === shopCat.name);
+      if (prodCat) map[shopCat.slug] = prodCat.id;
+    }
+    return map;
+  }, [shopCategories, productCategories]);
+
+  // product category UUID → slug  (e.g. "e087e164-..." → "new-used-phones")
+  const productCategoryIdToSlug = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const [slug, id] of Object.entries(slugToProductCategoryId)) {
+      map[id] = slug;
+    }
+    return map;
+  }, [slugToProductCategoryId]);
+
+  // UUID of "New & Used Phones" — used for condition detection
+  const USED_PHONES_CATEGORY_ID = useMemo(
+    () => productCategories.find(pc => pc.name === "New & Used Phones")?.id ?? "",
+    [productCategories]
+  );
+
   useEffect(() => {
     const categoryParam = searchParams.get("category");
-    if (categoryParam) {
-      setCategory(categoryParam);
-    }
+    if (categoryParam) setCategory(categoryParam);
   }, [searchParams]);
 
   // Get current category details
   const currentCategory = shopCategories.find(c => c.slug === category);
   const CurrentIcon = currentCategory ? getCategoryIcon(currentCategory.name) : Package;
 
-  // Fetch shop_items for dynamic categories
+  // ── Shop items (small dataset, client-side filtered) ─────────────────────
   const { data: shopItems = [], isLoading: isLoadingShopItems } = useQuery({
-    queryKey: ['shop-items'],
+    queryKey: ["shop-items"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('shop_items')
+        .from("shop_items")
         .select(`
           *,
-          shop_categories (
-            id,
-            name,
-            slug
-          ),
-          shop_brands (
-            id,
-            name
-          )
+          shop_categories (id, name, slug),
+          shop_brands    (id, name)
         `)
-        .eq('visible', true)
-        .order('created_at', { ascending: false });
-      
+        .eq("visible", true)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
+  // ── Products: server-side category filter + server-side pagination ────────
+  // The category UUID to filter by (null = "all" = no filter)
+  const productCategoryId = useMemo(
+    () => (category !== "all" ? (slugToProductCategoryId[category] ?? null) : null),
+    [category, slugToProductCategoryId]
+  );
 
-  const { data: spareParts = [], isLoading: isLoadingSpareParts } = useQuery({
-    queryKey: ['spare-parts-shop'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('spare_parts')
+  const [productItems, setProductItems] = useState<any[]>([]);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+
+  const buildProductsQuery = useCallback(
+    (offset: number) => {
+      let q = supabase
+        .from("products")
+        .select("*")
+        .limit(PAGE_SIZE)
+        .offset(offset);
+
+      // ── Server-side filters ──────────────────────────────────────────────
+      if (productCategoryId)           q = q.eq("category_id", productCategoryId);
+      if (brandFilter !== "all")       q = q.eq("brand", brandFilter);
+      if (searchTerm.trim())           q = q.ilike("name", `%${searchTerm.trim()}%`);
+      if (availabilityFilter === "available")     q = q.gt("stock", 0);
+      if (availabilityFilter === "out-of-stock")  q = q.lte("stock", 0);
+
+      // ── Server-side sort ─────────────────────────────────────────────────
+      if (sortBy === "price-low")  q = q.order("price", { ascending: true });
+      else if (sortBy === "price-high") q = q.order("price", { ascending: false });
+      else if (sortBy === "name")  q = q.order("name", { ascending: true });
+      else                         q = q.order("created_at", { ascending: false });
+
+      return q;
+    },
+    [productCategoryId, brandFilter, searchTerm, availabilityFilter, sortBy]
+  );
+
+  // Initial fetch / re-fetch when any filter or category changes
+  useEffect(() => {
+    // Wait until the slug→UUID mapping is ready before making category-filtered queries
+    const mappingReady =
+      category === "all" || Object.keys(slugToProductCategoryId).length > 0;
+    if (!mappingReady) return;
+
+    let cancelled = false;
+    setIsLoadingProducts(true);
+    setProductItems([]);
+
+    buildProductsQuery(0).then(({ data }) => {
+      if (cancelled) return;
+      const rows = data || [];
+      setProductItems(rows);
+      setHasMoreProducts(rows.length >= PAGE_SIZE);
+      setIsLoadingProducts(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [buildProductsQuery, slugToProductCategoryId, category]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (isLoadingMoreProducts || !hasMoreProducts) return;
+    setIsLoadingMoreProducts(true);
+    const { data } = await buildProductsQuery(productItems.length);
+    const rows = data || [];
+    setProductItems(prev => [...prev, ...rows]);
+    setHasMoreProducts(rows.length >= PAGE_SIZE);
+    setIsLoadingMoreProducts(false);
+  }, [isLoadingMoreProducts, hasMoreProducts, productItems.length, buildProductsQuery]);
+
+  // ── Spare parts: server-side pagination (unchanged) ──────────────────────
+  const [sparePartsItems, setSparePartsItems] = useState<any[]>([]);
+  const [hasMoreSpareParts, setHasMoreSpareParts] = useState(true);
+  const [isLoadingSpareParts, setIsLoadingSpareParts] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const sparePartsVisible = category === "all" || category === "mobile-spare-parts";
+
+  const buildSparePartsQuery = useCallback(
+    (offset: number) => {
+      let q = supabase
+        .from("spare_parts")
         .select(`
           *,
-          phone_models (
-            name,
-            spare_parts_brands (
-              name
-            )
-          ),
-          part_categories (
-            name
-          )
+          phone_models (name, spare_parts_brands (name)),
+          part_categories (name)
         `)
-        .eq('visible', true)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
+        .eq("visible", true)
+        .limit(PAGE_SIZE)
+        .offset(offset);
+
+      if (searchTerm.trim())                    q = q.ilike("name", `%${searchTerm.trim()}%`);
+      if (availabilityFilter === "available")   q = q.gt("stock", 0);
+      if (availabilityFilter === "out-of-stock") q = q.lte("stock", 0);
+      if (sortBy === "price-low")  q = q.order("price", { ascending: true });
+      else if (sortBy === "price-high") q = q.order("price", { ascending: false });
+      else if (sortBy === "name")  q = q.order("name", { ascending: true });
+      else                         q = q.order("created_at", { ascending: false });
+
+      return q;
+    },
+    [searchTerm, availabilityFilter, sortBy]
+  );
+
+  useEffect(() => {
+    if (!sparePartsVisible) {
+      setSparePartsItems([]);
+      setHasMoreSpareParts(false);
+      setIsLoadingSpareParts(false);
+      return;
     }
-  });
+    let cancelled = false;
+    setIsLoadingSpareParts(true);
+    buildSparePartsQuery(0).then(({ data }) => {
+      if (cancelled) return;
+      const rows = data || [];
+      setSparePartsItems(rows);
+      setHasMoreSpareParts(rows.length >= PAGE_SIZE);
+      setIsLoadingSpareParts(false);
+    });
+    return () => { cancelled = true; };
+  }, [buildSparePartsQuery, sparePartsVisible]);
+
+  const loadMoreSpareParts = useCallback(async () => {
+    if (isLoadingMore || !hasMoreSpareParts) return;
+    setIsLoadingMore(true);
+    const { data } = await buildSparePartsQuery(sparePartsItems.length);
+    const rows = data || [];
+    setSparePartsItems(prev => [...prev, ...rows]);
+    setHasMoreSpareParts(rows.length >= PAGE_SIZE);
+    setIsLoadingMore(false);
+  }, [isLoadingMore, hasMoreSpareParts, sparePartsItems.length, buildSparePartsQuery]);
 
   const { data: partCategories } = useQuery({
-    queryKey: ['part-categories'],
+    queryKey: ["part-categories"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('part_categories')
-        .select('*')
-        .order('name');
-      
+        .from("part_categories")
+        .select("*")
+        .order("name");
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
-  // Get unique brands from all sources for filtering
-  const shopBrands = Array.from(new Set(shopItems.map(item => item.shop_brands?.name).filter(Boolean)));
-  const productBrands = Array.from(new Set(products.map(p => p.brand).filter(Boolean)));
-  const allBrands = Array.from(new Set([...shopBrands, ...productBrands])).sort();
+  // ── Brands for filter dropdown (from loaded product items) ───────────────
+  const shopBrands = useMemo(
+    () => Array.from(new Set(shopItems.map(i => i.shop_brands?.name).filter(Boolean))),
+    [shopItems]
+  );
+  const productBrands = useMemo(
+    () => Array.from(new Set(productItems.map(p => p.brand).filter(Boolean))),
+    [productItems]
+  );
+  const allBrands = useMemo(
+    () => Array.from(new Set([...shopBrands, ...productBrands])).sort(),
+    [shopBrands, productBrands]
+  );
 
-  // Filter shop items based on current category and filters
-  const filteredShopItems = shopItems.filter(item => {
-    const matchesCategory = category === "all" || item.shop_categories?.slug === category;
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (item.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter === "all" || item.shop_brands?.name === brandFilter;
-    const matchesAvailability = availabilityFilter === "all" || 
-                               (availabilityFilter === "available" && (item.stock || 0) > 0) ||
-                               (availabilityFilter === "out-of-stock" && (item.stock || 0) <= 0);
-    return matchesCategory && matchesSearch && matchesBrand && matchesAvailability;
-  }).sort((a, b) => {
-    if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
-    if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
-    if (sortBy === "name") return a.name.localeCompare(b.name);
-    return 0;
-  });
+  // ── Filter shop items client-side (small dataset) ────────────────────────
+  const filteredShopItems = shopItems
+    .filter(item => {
+      const matchesCategory =
+        category === "all" || item.shop_categories?.slug === category;
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.description?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+      const matchesBrand =
+        brandFilter === "all" || item.shop_brands?.name === brandFilter;
+      const matchesAvailability =
+        availabilityFilter === "all" ||
+        (availabilityFilter === "available"    && (item.stock || 0) > 0) ||
+        (availabilityFilter === "out-of-stock" && (item.stock || 0) <= 0);
+      return matchesCategory && matchesSearch && matchesBrand && matchesAvailability;
+    })
+    .sort((a, b) => {
+      if (sortBy === "price-low")  return (a.price || 0) - (b.price || 0);
+      if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
+      if (sortBy === "name")       return a.name.localeCompare(b.name);
+      return 0;
+    });
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter === "all" || product.brand === brandFilter;
-    const matchesAvailability = availabilityFilter === "all" || 
-                               (availabilityFilter === "available" && (product.stock || 0) > 0) ||
-                               (availabilityFilter === "out-of-stock" && (product.stock || 0) <= 0);
-    return matchesSearch && matchesBrand && matchesAvailability;
-  }).sort((a, b) => {
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "name") return a.name.localeCompare(b.name);
-    if (sortBy === "brand") return a.brand.localeCompare(b.brand);
-    return 0;
-  });
+  // Products are already filtered server-side — no client-side re-filter needed
+  const filteredProducts = productItems;
 
-  const filteredSpareParts = spareParts.filter(part => {
-    const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (part.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesCategory = brandFilter === "all" || part.part_category_id === brandFilter;
-    const matchesAvailability = availabilityFilter === "all" || 
-                               (availabilityFilter === "available" && part.stock > 0) ||
-                               (availabilityFilter === "out-of-stock" && part.stock <= 0);
-    return matchesSearch && matchesCategory && matchesAvailability;
-  }).sort((a, b) => {
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "name") return a.name.localeCompare(b.name);
-    return 0;
-  });
+  // Spare parts: brandFilter currently maps part_category_id — keep as-is
+  const filteredSpareParts = sparePartsItems.filter(
+    part => brandFilter === "all" || part.part_category_id === brandFilter
+  );
 
-  // Determine which items to display based on category
-  const isShopCategory = category !== "all" && shopCategories.some(c => c.slug === category);
-  const isLoading = isLoadingShopItems || isLoadingProducts || isLoadingSpareParts || isLoadingCategories;
-  
-  // Used Phones category ID
-  const USED_PHONES_CATEGORY_ID = 'd6cedc35-4e44-4392-8483-b1ab8f2c11df';
+  // ── Normalize to a unified card format ───────────────────────────────────
 
-  // Map product category_id to shop category slug
-  const getProductShopCategory = (categoryId: string | null) => {
-    // Map from products.category_id to shop_categories slug
-    const categoryMap: Record<string, { id: string; name: string; slug: string }> = {
-      // Accessories category
-      '6065ce07-0cc9-4609-8faa-c6e45897b898': { id: 'mobile-accessories', name: 'Mobile Accessories', slug: 'mobile-accessories' },
-      // Laptops category
-      '739f7b1d-0408-4ebe-85b7-d8caf128f18f': { id: 'laptop-accessories', name: 'Laptop Accessories', slug: 'laptop-accessories' },
-      // Smartphones category
-      '96dd7488-f9d0-43cd-8db9-998be0c29a50': { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
-      // Used Phones category
-      'd6cedc35-4e44-4392-8483-b1ab8f2c11df': { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' },
-    };
-    // Default to new-used-phones for phones without category (like the device catalog phones)
-    return categoryId && categoryMap[categoryId] 
-      ? categoryMap[categoryId] 
-      : { id: 'new-used-phones', name: 'New & Used Phones', slug: 'new-used-phones' };
-  };
-  
-  // Determine condition based on category
-  const getProductCondition = (categoryId: string | null) => {
-    return categoryId === USED_PHONES_CATEGORY_ID ? 'used' : 'new';
-  };
+  // Map product.category_id → { slug, name } using DYNAMIC mapping (no hardcoded UUIDs)
+  const getProductShopCategory = useCallback(
+    (categoryId: string | null) => {
+      const slug = categoryId
+        ? (productCategoryIdToSlug[categoryId] ?? "new-used-phones")
+        : "new-used-phones";
+      const shopCat = shopCategories.find(c => c.slug === slug);
+      return shopCat
+        ? { id: shopCat.id, name: shopCat.name, slug: shopCat.slug }
+        : { id: slug, name: slug, slug };
+    },
+    [productCategoryIdToSlug, shopCategories]
+  );
 
-  // Normalize products to shop item format for unified display
-  const normalizedProducts = filteredProducts.map(product => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    sale_price: product.sale_price,
-    stock: product.stock,
-    images: product.images,
-    featured: product.featured,
-    category_id: product.category_id,
-    shop_categories: getProductShopCategory(product.category_id),
-    shop_brands: { id: product.brand, name: product.brand },
-    condition: getProductCondition(product.category_id),
-    _type: 'product' as const
-  }));
+  const getProductCondition = useCallback(
+    (categoryId: string | null) =>
+      categoryId === USED_PHONES_CATEGORY_ID ? "used" : "new",
+    [USED_PHONES_CATEGORY_ID]
+  );
 
-  // Normalize spare parts to shop item format for unified display
-  // Map to 'mobile-spare-parts' category slug
-  const normalizedSpareParts = filteredSpareParts.map(part => ({
-    id: part.id,
-    name: part.name,
-    description: part.description,
-    price: part.price,
-    sale_price: null,
-    stock: part.stock,
-    images: part.images,
-    featured: part.featured,
-    category_id: part.part_category_id,
-    shop_categories: { id: 'mobile-spare-parts', name: 'Mobile Spare Parts', slug: 'mobile-spare-parts' },
-    shop_brands: { id: part.phone_models?.spare_parts_brands?.name || '', name: part.phone_models?.spare_parts_brands?.name || 'Unknown' },
-    condition: 'new',
-    _type: 'spare_part' as const
-  }));
+  const normalizedProducts = useMemo(
+    () =>
+      filteredProducts.map(product => ({
+        id:            product.id,
+        name:          product.name,
+        description:   product.description,
+        price:         product.price,
+        sale_price:    product.sale_price,
+        stock:         product.stock,
+        images:        product.images,
+        featured:      product.featured,
+        category_id:   product.category_id,
+        shop_categories: getProductShopCategory(product.category_id),
+        shop_brands:   { id: product.brand, name: product.brand },
+        condition:     getProductCondition(product.category_id),
+        _type:         "product" as const,
+      })),
+    [filteredProducts, getProductShopCategory, getProductCondition]
+  );
 
-  // Normalize shop items
-  const normalizedShopItems = filteredShopItems.map(item => ({
-    ...item,
-    _type: 'shop_item' as const
-  }));
-  
-  // Combine all normalized items
-  const allNormalizedItems = [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts];
-  
-  // Get display items - filter by category
-  const displayItems = category === "all" 
-    ? allNormalizedItems
-    : allNormalizedItems.filter(item => item.shop_categories?.slug === category);
-  
+  const normalizedSpareParts = useMemo(
+    () =>
+      filteredSpareParts.map(part => ({
+        id:            part.id,
+        name:          part.name,
+        description:   part.description,
+        price:         part.price,
+        sale_price:    null,
+        stock:         part.stock,
+        images:        part.images,
+        featured:      part.featured,
+        category_id:   part.part_category_id,
+        shop_categories: { id: "mobile-spare-parts", name: "Mobile Spare Parts", slug: "mobile-spare-parts" },
+        shop_brands:   {
+          id:   part.phone_models?.spare_parts_brands?.name || "",
+          name: part.phone_models?.spare_parts_brands?.name || "Unknown",
+        },
+        condition:     "new",
+        _type:         "spare_part" as const,
+      })),
+    [filteredSpareParts]
+  );
+
+  const normalizedShopItems = useMemo(
+    () => filteredShopItems.map(item => ({ ...item, _type: "shop_item" as const })),
+    [filteredShopItems]
+  );
+
+  // ── Combine and filter by selected category ──────────────────────────────
+  // Products are ALREADY server-side filtered by category.
+  // Shop items and spare parts are filtered above.
+  // Only the "all" check matters at this level.
+  const allNormalizedItems = useMemo(
+    () => [...normalizedShopItems, ...normalizedProducts, ...normalizedSpareParts],
+    [normalizedShopItems, normalizedProducts, normalizedSpareParts]
+  );
+
+  const displayItems = useMemo(
+    () =>
+      category === "all"
+        ? allNormalizedItems
+        : allNormalizedItems.filter(item => item.shop_categories?.slug === category),
+    [category, allNormalizedItems]
+  );
+
   const totalCount = displayItems.length;
+  const hasMoreAny = hasMoreProducts || hasMoreSpareParts;
 
-  const pageTitle = category === "all" 
-    ? "Shop All Products | AppleTechStore Pakistan" 
-    : `${currentCategory?.name || "Shop"} | AppleTechStore Pakistan`;
-  
-  const pageDescription = category === "all"
-    ? "Browse our complete collection of mobile phones, laptops, accessories, and spare parts at best prices in Pakistan. Fast delivery across Pakistan."
-    : currentCategory?.description || `Shop ${currentCategory?.name || "products"} at best prices in Pakistan. Quality products with fast delivery.`;
+  const isLoading =
+    isLoadingShopItems ||
+    isLoadingProducts ||
+    isLoadingSpareParts ||
+    isLoadingCategories;
+
+  // ── SEO ──────────────────────────────────────────────────────────────────
+  const pageTitle =
+    category === "all"
+      ? "Shop All Products | AppleTechStore Pakistan"
+      : `${currentCategory?.name || "Shop"} | AppleTechStore Pakistan`;
+
+  const pageDescription =
+    category === "all"
+      ? "Browse our complete collection of mobile phones, laptops, accessories, and spare parts at best prices in Pakistan. Fast delivery across Pakistan."
+      : currentCategory?.description ||
+        `Shop ${currentCategory?.name || "products"} at best prices in Pakistan. Quality products with fast delivery.`;
 
   const breadcrumbs = [
     { name: "Home", url: "/" },
     { name: "Shop", url: "/shop" },
-    ...(category !== "all" && currentCategory ? [{ name: currentCategory.name, url: `/shop?category=${category}` }] : [])
+    ...(category !== "all" && currentCategory
+      ? [{ name: currentCategory.name, url: `/shop?category=${category}` }]
+      : []),
   ];
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <PageSEO 
+      <PageSEO
         title={pageTitle}
         description={pageDescription}
         url={category === "all" ? "/shop" : `/shop?category=${category}`}
         keywords="mobile phones Pakistan, laptops Pakistan, phone accessories, spare parts, AppleTechStore"
       />
-      <CollectionSchema 
+      <CollectionSchema
         name={category === "all" ? "All Products" : currentCategory?.name || "Shop"}
         description={pageDescription}
         url={category === "all" ? "/shop" : `/shop?category=${category}`}
         itemCount={totalCount}
       />
       <BreadcrumbSchema items={breadcrumbs} />
+
       {/* Subtle Animated Background */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse-slow" />
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
       </div>
 
       {/* Minimal Header */}
@@ -331,18 +467,10 @@ export default function Shop() {
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                Home
-              </Link>
-              <Link to="/shop" className="text-primary">
-                Shop
-              </Link>
-              <Link to="/book-repair" className="text-muted-foreground hover:text-foreground transition-colors">
-                Repair
-              </Link>
-              <Link to="/track-repair" className="text-muted-foreground hover:text-foreground transition-colors">
-                Track
-              </Link>
+              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
+              <Link to="/shop" className="text-primary">Shop</Link>
+              <Link to="/book-repair" className="text-muted-foreground hover:text-foreground transition-colors">Repair</Link>
+              <Link to="/track-repair" className="text-muted-foreground hover:text-foreground transition-colors">Track</Link>
             </nav>
             <ProductCartButton />
           </div>
@@ -352,12 +480,11 @@ export default function Shop() {
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Compact Hero Section */}
         <div className="mb-10 text-center relative rounded-2xl overflow-hidden group animate-fade-in">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-700 group-hover:scale-110"
             style={{ backgroundImage: `url(${shopHeroBg})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
-          
           <div className="relative z-10 py-16 px-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md mb-5 border border-white/20">
               <CurrentIcon className="h-8 w-8 text-white" />
@@ -372,10 +499,10 @@ export default function Shop() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex justify-center mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="flex justify-center mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           {isLoadingCategories ? (
             <div className="flex gap-2 flex-wrap justify-center">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-10 w-24 rounded-full" />
               ))}
             </div>
@@ -397,7 +524,7 @@ export default function Shop() {
                 <Package className="h-4 w-4" />
                 All
               </button>
-              {shopCategories.map((cat) => {
+              {shopCategories.map(cat => {
                 const Icon = getCategoryIcon(cat.name);
                 return (
                   <button
@@ -424,18 +551,17 @@ export default function Shop() {
         </div>
 
         {/* Search & Filters Row */}
-        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-4 mb-8 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-4 mb-8 animate-fade-in" style={{ animationDelay: "0.15s" }}>
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search products..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10 h-10 bg-background border-border/50 focus:border-primary/50"
               />
             </div>
-            
             <div className="flex flex-wrap gap-3">
               <Select value={brandFilter} onValueChange={setBrandFilter}>
                 <SelectTrigger className="w-full sm:w-[160px] h-10 bg-background border-border/50">
@@ -475,11 +601,16 @@ export default function Shop() {
               </Select>
             </div>
           </div>
-          
+
           {/* Results count */}
           <div className="mt-3 pt-3 border-t border-border/30">
             <p className="text-sm text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{totalCount}</span> {totalCount === 1 ? 'item' : 'items'}
+              Showing{" "}
+              <span className="font-medium text-foreground">{totalCount}</span>{" "}
+              {totalCount === 1 ? "item" : "items"}
+              {hasMoreAny && (
+                <span className="text-muted-foreground"> &mdash; scroll down for more</span>
+              )}
             </p>
           </div>
         </div>
@@ -496,29 +627,70 @@ export default function Shop() {
             ))}
           </div>
         ) : displayItems.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            {displayItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className="animate-scale-in"
-                style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
-              >
-                <ShopItemCard item={item} />
+          <>
+            <div
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in"
+              style={{ animationDelay: "0.2s" }}
+            >
+              {displayItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="animate-scale-in"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
+                >
+                  <ShopItemCard item={item} />
+                </div>
+              ))}
+            </div>
+
+            {/* Load More — Products */}
+            {hasMoreProducts && !isLoadingSpareParts && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={loadMoreProducts}
+                  disabled={isLoadingMoreProducts}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoadingMoreProducts ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    "Load More Products"
+                  )}
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* Load More — Spare Parts */}
+            {sparePartsVisible && (hasMoreSpareParts || isLoadingMore) && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={loadMoreSpareParts}
+                  disabled={isLoadingMore}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    "Load More Parts"
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 animate-fade-in">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-muted mb-6">
               <CurrentIcon className="h-10 w-10 text-muted-foreground" />
             </div>
-            <p className="text-xl font-semibold mb-2 text-foreground">
-              No items found
-            </p>
-            <p className="text-muted-foreground mb-6">
-              Try adjusting your search or filters
-            </p>
-            <button 
+            <p className="text-xl font-semibold mb-2 text-foreground">No items found</p>
+            <p className="text-muted-foreground mb-6">Try adjusting your search or filters</p>
+            <button
               onClick={() => {
                 setSearchTerm("");
                 setBrandFilter("all");

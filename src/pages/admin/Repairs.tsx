@@ -147,10 +147,30 @@ export default function AdminRepairs() {
           type: "assignment",
         });
       }
+
+      return { id, updates };
     },
-    onSuccess: () => {
+    onSuccess: async ({ id, updates }) => {
       queryClient.invalidateQueries({ queryKey: ["admin-repairs"] });
-      toast.success("Repair updated successfully");
+
+      // Send "device ready for pickup" email when repair is marked complete
+      if (updates.status === "delivered") {
+        try {
+          const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+            body: { repairId: id, type: "repair_completed" },
+          });
+          if (emailError) {
+            console.error("Email error:", emailError);
+            toast.warning("Repair marked complete but email failed to send");
+          } else {
+            toast.success("Repair completed — pickup email sent to customer");
+          }
+        } catch {
+          toast.warning("Repair marked complete but email failed to send");
+        }
+      } else {
+        toast.success("Repair updated successfully");
+      }
     },
     onError: () => {
       toast.error("Failed to update repair");

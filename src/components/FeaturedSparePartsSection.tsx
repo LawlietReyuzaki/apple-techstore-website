@@ -28,10 +28,11 @@ export const FeaturedSparePartsSection = () => {
         .eq('featured', true)
         .order('created_at', { ascending: false })
         .limit(6);
-      
+
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 10 * 60 * 1000,
   });
 
   if (isLoading) {

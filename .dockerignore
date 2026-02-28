@@ -1,0 +1,16 @@
+node_modules
+dist
+.env
+.env.*
+*.local
+.git
+.claude
+*.md
+*.csv
+*.xlsx
+*.sql
+*.py
+*.sh
+*.bat
+*.js.map
+bash.exe.stackdump

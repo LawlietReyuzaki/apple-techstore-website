@@ -9,14 +9,16 @@ export const FlashSaleSection = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale")
         .eq("on_sale", true)
         .gt("stock", 0)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(8);
 
       if (error) throw error;
       return data;
     },
+    staleTime: 10 * 60 * 1000,
   });
 
   if (isLoading) {

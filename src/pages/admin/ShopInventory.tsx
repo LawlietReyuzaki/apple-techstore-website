@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Package, Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface ShopCategory {
   id: string;
@@ -656,7 +657,7 @@ export default function ShopInventory() {
                       <TableRow key={item.id}>
                         <TableCell>
                           {item.images && item.images[0] ? (
-                            <img src={item.images[0]} alt={item.name} className="h-10 w-10 object-cover rounded" />
+                            <img src={getImageUrl(item.images[0])} alt={item.name} className="h-10 w-10 object-cover rounded" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                           ) : (
                             <div className="h-10 w-10 bg-muted rounded flex items-center justify-center">
                               <ImageIcon className="h-5 w-5 text-muted-foreground" />

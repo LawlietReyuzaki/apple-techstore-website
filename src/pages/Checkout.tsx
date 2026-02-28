@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { toast } from "sonner";
 import { Loader2, Package, Mail } from "lucide-react";
+import { getImageUrl } from "@/lib/imageUrl";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -220,7 +221,7 @@ export default function Checkout() {
                     <div key={`${item.product.id}-${item.selectedColor}-${idx}`} className="flex gap-3">
                       <div className="w-16 h-16 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
                         {item.product.images?.[0] ? (
-                          <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                          <img src={getImageUrl(item.product.images[0])} alt={item.product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="h-6 w-6 text-muted-foreground" />

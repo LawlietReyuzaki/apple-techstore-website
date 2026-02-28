@@ -53,13 +53,14 @@ const BookRepair = () => {
 
       const { data, error } = await supabase
         .from("repairs")
-        .insert(insertData)
-        .select()
-        .single();
+        .insert(insertData);
 
       if (error) throw error;
 
-      // Email will be sent by admin when repair is approved
+      // Send booking confirmation to customer + notification to admin
+      supabase.functions.invoke('send-order-email', {
+        body: { type: 'repair_booked', repairId: data.id },
+      }).catch((emailErr: any) => console.error('[email] repair_booked failed:', emailErr?.message));
 
       toast.success("Repair booked successfully!", {
         description: `Your tracking code is: ${trackingCode}`,

@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Credentials — never commit these
+.env
+.env.*
+cloudrun-env.yaml
+*.json.key
+*-service-account*.json
+pdftranslate-a26c5-888e6e18435d.json
+
+# Large data files
+*.csv
+*.xlsx
+images/
+import_log.txt
+bash.exe.stackdump
+~$*

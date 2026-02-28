@@ -1,0 +1,497 @@
+import express from 'express';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import pool from './db.js';
+import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
+import { sendOrderEmails, sendEmailForType, sendPartRequestEmail } from './emailService.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
+const PORT = process.env.LOCAL_API_PORT || process.env.PORT || 3001; // LOCAL_API_PORT for dev, PORT injected by Cloud Run
+const JWT_SECRET = process.env.JWT_SECRET || 'local-dev-secret-change-in-production';
+
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '10mb' }));
+
+// Serve scraped product images from project root /images folder
+app.use('/images', express.static(join(__dirname, '..', 'images')));
+
+// Serve built React frontend (only present in production/Docker)
+const distPath = join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+
+// ── Auth middleware ──────────────────────────────────────────
+function verifyToken(req) {
+  const auth = req.headers.authorization || '';
+  const token = auth.replace('Bearer ', '').trim();
+  if (!token) return null;
+  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
+}
+
+// ── Auth routes ──────────────────────────────────────────────
+
+// POST /auth/v1/signup
+app.post('/auth/v1/signup', async (req, res) => {
+  try {
+    const { email, password, options } = req.body;
+    const meta = options?.data || {};
+
+    if (!email || !password)
+      return res.status(400).json({ error: { message: 'Email and password are required' } });
+
+    // Check duplicate
+    const existing = await pool.query('SELECT id FROM auth.users WHERE email = $1', [email]);
+    if (existing.rows.length > 0)
+      return res.status(400).json({ error: { message: 'User already registered' } });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      `INSERT INTO auth.users (email, encrypted_password, raw_user_meta_data, email_confirmed_at)
+       VALUES ($1, $2, $3, now()) RETURNING id, email, raw_user_meta_data, created_at`,
+      [email, hashed, JSON.stringify(meta)]
+    );
+    const user = result.rows[0];
+
+    // Create profile
+    await pool.query(
+      `INSERT INTO profiles (id, full_name, phone) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+      [user.id, meta.full_name || null, meta.phone || null]
+    );
+
+    // Assign customer role
+    await pool.query(
+      `INSERT INTO user_roles (user_id, role) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
+      [user.id]
+    );
+
+    const token = jwt.sign({ sub: user.id, email: user.email, role: 'authenticated' }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      data: {
+        user: formatUser(user),
+        session: buildSession(token, user),
+      },
+      error: null,
+    });
+  } catch (err) {
+    console.error('Signup error:', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+// POST /auth/v1/token  (sign-in)
+app.post('/auth/v1/token', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const result = await pool.query(
+      'SELECT id, email, encrypted_password, raw_user_meta_data FROM auth.users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+    if (result.rows.length === 0)
+      return res.status(400).json({ error: { message: 'Invalid email or password' } });
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.encrypted_password || '');
+    if (!valid)
+      return res.status(400).json({ error: { message: 'Invalid email or password' } });
+
+    await pool.query('UPDATE auth.users SET last_sign_in_at = now() WHERE id = $1', [user.id]);
+
+    const token = jwt.sign({ sub: user.id, email: user.email, role: 'authenticated' }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      data: {
+        user: formatUser(user),
+        session: buildSession(token, user),
+      },
+      error: null,
+    });
+  } catch (err) {
+    console.error('Signin error:', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+// POST /auth/v1/logout
+app.post('/auth/v1/logout', (req, res) => {
+  res.json({ error: null });
+});
+
+// GET /auth/v1/user
+app.get('/auth/v1/user', async (req, res) => {
+  const claims = verifyToken(req);
+  if (!claims) return res.status(401).json({ error: { message: 'Not authenticated' } });
+
+  const result = await pool.query(
+    'SELECT id, email, raw_user_meta_data FROM auth.users WHERE id = $1',
+    [claims.sub]
+  );
+  if (result.rows.length === 0)
+    return res.status(404).json({ error: { message: 'User not found' } });
+
+  res.json({ data: { user: formatUser(result.rows[0]) }, error: null });
+});
+
+// ── Data routes ──────────────────────────────────────────────
+
+// GET /rest/v1/:table — SELECT
+app.get('/rest/v1/:table', async (req, res) => {
+  try {
+    const { table } = req.params;
+    const { select, filters: rawFilters, order: rawOrder, limit, offset, single } = req.query;
+
+    // Parse select AST
+    const selectAST = parseSelect(select || '*');
+
+    // Build SQL pieces
+    const params = [];
+    const selectClause = buildSelectSQL(table, selectAST);
+    const whereClause  = buildWhereSQL(rawFilters ? JSON.parse(rawFilters) : [], params);
+    const userOrder    = buildOrderSQL(rawOrder ? JSON.parse(rawOrder) : []);
+    const limitClause  = limit  ? `LIMIT ${parseInt(limit)}`    : '';
+    const offsetClause = offset ? `OFFSET ${parseInt(offset)}`  : '';
+
+    // For product/spare_part listings always rank items with images above those without
+    const hasImagesCol = table === 'products' || table === 'spare_parts';
+    const imageFirstExpr = hasImagesCol
+      ? '(t.images IS NOT NULL AND array_length(t.images, 1) > 0) DESC NULLS LAST'
+      : null;
+    const orderClause = imageFirstExpr
+      ? `ORDER BY ${imageFirstExpr}${userOrder ? ', ' + userOrder.replace(/^ORDER BY\s*/i, '') : ''}`
+      : userOrder;
+
+    const sql = `SELECT ${selectClause} FROM ${table} t ${whereClause} ${orderClause} ${limitClause} ${offsetClause}`.trim();
+
+    const result = await pool.query(sql, params);
+
+    if (single === 'true' || single === '1') {
+      if (result.rows.length === 0)
+        return res.json({ data: null, error: null });
+      return res.json({ data: result.rows[0], error: null });
+    }
+
+    res.json({ data: result.rows, error: null });
+  } catch (err) {
+    console.error(`GET /rest/v1/${req.params.table} error:`, err.message);
+    res.status(400).json({ data: null, error: { message: err.message } });
+  }
+});
+
+// POST /rest/v1/:table — INSERT
+app.post('/rest/v1/:table', async (req, res) => {
+  try {
+    const { table } = req.params;
+    const rows = Array.isArray(req.body) ? req.body : [req.body];
+    const { upsert, onConflict } = req.query;
+
+    const inserted = [];
+    for (const row of rows) {
+      const keys = Object.keys(row).filter(k => row[k] !== undefined);
+      if (keys.length === 0) continue;
+
+      const cols = keys.join(', ');
+      const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+      const vals = keys.map(k => row[k]);
+
+      let sql;
+      if (upsert === 'true' && onConflict) {
+        const conflictCols = onConflict;
+        const updateSet = keys.filter(k => k !== conflictCols).map((k, i) => `${k} = EXCLUDED.${k}`).join(', ');
+        sql = `INSERT INTO ${table} (${cols}) VALUES (${placeholders})
+               ON CONFLICT (${conflictCols}) DO ${updateSet ? `UPDATE SET ${updateSet}` : 'NOTHING'}
+               RETURNING *`;
+      } else {
+        sql = `INSERT INTO ${table} (${cols}) VALUES (${placeholders}) RETURNING *`;
+      }
+
+      const result = await pool.query(sql, vals);
+      inserted.push(...result.rows);
+    }
+
+    res.json({ data: inserted.length === 1 ? inserted[0] : inserted, error: null });
+  } catch (err) {
+    console.error(`POST /rest/v1/${req.params.table} error:`, err.message);
+    res.status(400).json({ data: null, error: { message: err.message } });
+  }
+});
+
+// PATCH /rest/v1/:table — UPDATE
+app.patch('/rest/v1/:table', async (req, res) => {
+  try {
+    const { table } = req.params;
+    const { filters: rawFilters } = req.query;
+    const updates = req.body;
+
+    const keys = Object.keys(updates);
+    if (keys.length === 0) return res.json({ data: [], error: null });
+
+    const params = keys.map(k => updates[k]);
+    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+
+    const filters = rawFilters ? JSON.parse(rawFilters) : [];
+    const whereClause = buildWhereSQL(filters, params, 't');
+
+    const sql = `UPDATE ${table} t SET ${setClause} ${whereClause} RETURNING t.*`;
+    const result = await pool.query(sql, params);
+
+    res.json({ data: result.rows, error: null });
+  } catch (err) {
+    console.error(`PATCH /rest/v1/${req.params.table} error:`, err.message);
+    res.status(400).json({ data: null, error: { message: err.message } });
+  }
+});
+
+// DELETE /rest/v1/:table — DELETE
+app.delete('/rest/v1/:table', async (req, res) => {
+  try {
+    const { table } = req.params;
+    const { filters: rawFilters } = req.query;
+    const filters = rawFilters ? JSON.parse(rawFilters) : [];
+
+    const params = [];
+    const whereClause = buildWhereSQL(filters, params, 't');
+
+    const sql = `DELETE FROM ${table} t ${whereClause} RETURNING t.*`;
+    const result = await pool.query(sql, params);
+
+    res.json({ data: result.rows, error: null });
+  } catch (err) {
+    console.error(`DELETE /rest/v1/${req.params.table} error:`, err.message);
+    res.status(400).json({ data: null, error: { message: err.message } });
+  }
+});
+
+// ── Edge functions ───────────────────────────────────────────
+
+// POST /functions/v1/create-order — local replacement for Supabase edge function
+app.post('/functions/v1/create-order', async (req, res) => {
+  try {
+    const {
+      customerName, customerEmail, customerPhone,
+      deliveryAddress, notes, totalAmount, userId, items,
+    } = req.body;
+
+    if (!customerName || !customerPhone || !deliveryAddress) {
+      return res.status(400).json({ error: 'Missing required fields: name, phone, and address are required' });
+    }
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: 'Order must contain at least one item' });
+    }
+
+    // Insert order
+    const orderResult = await pool.query(
+      `INSERT INTO orders
+         (user_id, customer_name, customer_email, customer_phone, delivery_address,
+          total_amount, notes, status, payment_status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'pending','unpaid')
+       RETURNING *`,
+      [userId || null, customerName, customerEmail || null, customerPhone,
+       deliveryAddress, totalAmount, notes || null]
+    );
+    const order = orderResult.rows[0];
+
+    // Insert order items
+    for (const item of items) {
+      const itemType = item.type || 'product';
+      const productId    = itemType === 'product'    ? item.id : null;
+      const sparePartId  = itemType === 'spare_part' ? item.id : null;
+      const shopItemId   = itemType === 'shop_item'  ? item.id : null;
+
+      await pool.query(
+        `INSERT INTO order_items
+           (order_id, product_id, spare_part_id, shop_item_id, item_type,
+            product_name, product_price, quantity, subtotal,
+            selected_color, selected_part_type)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [order.id, productId, sparePartId, shopItemId, itemType,
+         item.name, item.price, item.quantity, item.price * item.quantity,
+         item.selectedColor || null, item.selectedPartType || null]
+      );
+    }
+
+    // Fetch saved items for email (includes subtotals)
+    const savedItems = await pool.query(
+      'SELECT product_name, product_price, quantity, subtotal FROM order_items WHERE order_id = $1',
+      [order.id]
+    );
+
+    // Send emails (fire-and-forget — don't block the response)
+    sendOrderEmails(order, savedItems.rows).catch(err =>
+      console.error('[email] sendOrderEmails failed:', err.message)
+    );
+
+    res.json({ success: true, order, message: 'Order created successfully' });
+  } catch (err) {
+    console.error('create-order error:', err.message);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// POST /functions/v1/send-order-email — real email dispatcher
+app.post('/functions/v1/send-order-email', async (req, res) => {
+  const { type, orderId, repairId, newStatus, declineReason, visitDate, customNote } = req.body;
+
+  if (!type) {
+    return res.status(400).json({ error: 'Missing required field: type' });
+  }
+
+  try {
+    let order = null, items = [], payment = null, repair = null;
+
+    // Fetch order (and optionally items/payment) when orderId is provided
+    if (orderId) {
+      const orderResult = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+      if (!orderResult.rows.length) {
+        return res.status(404).json({ error: `Order ${orderId} not found` });
+      }
+      order = orderResult.rows[0];
+
+      // Fetch order items for types that need them
+      if (['order_approved', 'payment_approved'].includes(type)) {
+        const itemsResult = await pool.query(
+          'SELECT product_name, product_price, quantity, subtotal FROM order_items WHERE order_id = $1',
+          [orderId]
+        );
+        items = itemsResult.rows;
+      }
+
+      // Fetch payment for refund (to get refund_wallet_number set just before this call)
+      if (type === 'payment_refunded') {
+        const paymentResult = await pool.query(
+          'SELECT * FROM payments WHERE order_id = $1 ORDER BY created_at DESC LIMIT 1',
+          [orderId]
+        );
+        payment = paymentResult.rows[0] || null;
+      }
+    }
+
+    // Fetch repair when repairId is provided
+    if (repairId) {
+      const repairResult = await pool.query('SELECT * FROM repairs WHERE id = $1', [repairId]);
+      if (!repairResult.rows.length) {
+        return res.status(404).json({ error: `Repair ${repairId} not found` });
+      }
+      repair = repairResult.rows[0];
+    }
+
+    await sendEmailForType(type, {
+      order, items, payment, repair,
+      newStatus, declineReason, visitDate, customNote,
+    });
+
+    console.log(`[send-order-email] ${type} → success`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`[send-order-email] ${type} failed:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/send-part-request-email — part request notifications
+app.post('/functions/v1/send-part-request-email', async (req, res) => {
+  const { type, requestId, newStatus, adminNotes,
+          customerName, customerEmail, customerPhone,
+          category, partName, partDetails, imageUrl, submittedDate } = req.body;
+
+  if (!type) return res.status(400).json({ error: 'Missing required field: type' });
+
+  try {
+    let request = null;
+
+    // Fetch from DB if requestId provided, otherwise build from inline payload
+    if (requestId) {
+      const result = await pool.query('SELECT * FROM part_requests WHERE id = $1', [requestId]);
+      request = result.rows[0] || null;
+    }
+
+    // Fall back to inline payload (used when DB row isn't saved yet)
+    if (!request) {
+      request = {
+        id: requestId || null,
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+        category,
+        part_name: partName,
+        part_details: partDetails || null,
+        image_url: imageUrl || null,
+        created_at: submittedDate || new Date().toISOString(),
+      };
+    }
+
+    await sendPartRequestEmail(type, { request, newStatus, adminNotes });
+
+    console.log(`[send-part-request-email] ${type} → success`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`[send-part-request-email] ${type} failed:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/* — no-op stub for any other edge functions
+app.post('/functions/v1/:name', (req, res) => {
+  const { name } = req.params;
+  console.log(`[functions stub] ${name} called (no-op in local dev)`);
+  res.json({ success: true, message: `${name} is a no-op in local development` });
+});
+
+// ── Health check ─────────────────────────────────────────────
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (e) {
+    res.status(500).json({ status: 'error', db: e.message });
+  }
+});
+
+// ── Helpers ──────────────────────────────────────────────────
+function formatUser(user) {
+  const meta = typeof user.raw_user_meta_data === 'string'
+    ? JSON.parse(user.raw_user_meta_data || '{}')
+    : (user.raw_user_meta_data || {});
+  return {
+    id: user.id,
+    email: user.email,
+    user_metadata: meta,
+    app_metadata: { role: 'authenticated' },
+    created_at: user.created_at,
+  };
+}
+
+function buildSession(token, user) {
+  const decoded = jwt.decode(token);
+  return {
+    access_token: token,
+    token_type: 'bearer',
+    expires_at: decoded.exp,
+    user: formatUser(user),
+  };
+}
+
+// ── SPA fallback — must be LAST route ─────────────────────────
+// Serves index.html for any non-API route so React Router works
+app.get('*splat', (req, res) => {
+  res.sendFile(join(distPath, 'index.html'));
+});
+
+// ── Start ─────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`\n✅ Local API server running at http://localhost:${PORT}`);
+  console.log(`   Auth:  POST http://localhost:${PORT}/auth/v1/signup`);
+  console.log(`   Auth:  POST http://localhost:${PORT}/auth/v1/token`);
+  console.log(`   Data:  GET  http://localhost:${PORT}/rest/v1/:table`);
+  console.log(`   Health:GET  http://localhost:${PORT}/health\n`);
+});
+
+export default app;

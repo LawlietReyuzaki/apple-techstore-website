@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInView } from "react-intersection-observer";
@@ -57,7 +56,6 @@ const gradientColors = [
 
 export function DynamicCategoriesSection() {
   const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
-  const queryClient = useQueryClient();
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["shop-categories-home"],
@@ -69,31 +67,9 @@ export function DynamicCategoriesSection() {
       if (error) throw error;
       return data as ShopCategory[];
     },
-    staleTime: 1000 * 30,
-    refetchOnWindowFocus: true,
+    staleTime: 10 * 60 * 1000,      // 10 min — categories rarely change
+    refetchOnWindowFocus: false,     // don't refetch when tab regains focus
   });
-
-  // Real-time subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('shop-categories-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shop_categories'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["shop-categories-home"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
 
   if (isLoading) {
     return (

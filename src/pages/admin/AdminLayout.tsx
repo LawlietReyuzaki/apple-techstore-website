@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, Wrench, Users, Settings, Package, ShoppingBag, CreditCard, Smartphone,
-  Menu, X, ChevronDown, ChevronRight, FolderOpen, FileQuestion
+  Menu, X, ChevronDown, ChevronRight, FolderOpen, FileQuestion, LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthButton } from "@/components/AuthButton";
+import { toast } from "sonner";
 import {
   Collapsible,
   CollapsibleContent,
@@ -18,10 +19,17 @@ const MOBILE_BREAKPOINT = 768;
 
 export default function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [isMobile, setIsMobile] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem("admin_session");
+    toast.success("Logged out successfully");
+    navigate("/admin-login");
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -220,7 +228,18 @@ export default function AdminLayout() {
                <span className="text-base md:text-xl font-bold truncate">AppleTechStore Admin</span>
             </Link>
           </div>
-          <AuthButton />
+          <div className="flex items-center gap-2">
+            <AuthButton />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 hidden md:flex"
+              onClick={handleAdminLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Mobile vertical dropdown menu */}
