@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { OAuth2Client } from 'google-auth-library';
 import pool from './db.js';
 import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
 import { sendOrderEmails, sendEmailForType, sendPartRequestEmail } from './emailService.js';
@@ -230,6 +231,115 @@ app.post('/auth/v1/token', async (req, res) => {
   } catch (err) {
     console.error('Signin error:', err.message);
     res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+// POST /auth/v1/admin-token  (admin sign-in — checks user_roles for 'admin')
+app.post('/auth/v1/admin-token', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: { message: 'Email and password required' } });
+
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.encrypted_password, u.raw_user_meta_data
+       FROM auth.users u
+       JOIN user_roles r ON r.user_id = u.id
+       WHERE u.email = $1 AND u.deleted_at IS NULL AND r.role = 'admin'`,
+      [email]
+    );
+    if (result.rows.length === 0)
+      return res.status(400).json({ error: { message: 'Invalid email or password' } });
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.encrypted_password || '');
+    if (!valid)
+      return res.status(400).json({ error: { message: 'Invalid email or password' } });
+
+    await pool.query('UPDATE auth.users SET last_sign_in_at = now() WHERE id = $1', [user.id]);
+
+    const token = jwt.sign({ sub: user.id, email: user.email, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ data: { user: formatUser(user), session: buildSession(token, user) }, error: null });
+  } catch (err) {
+    console.error('Admin signin error:', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+// POST /auth/v1/google  (Google Sign-In — verify ID token, find/create user)
+app.post('/auth/v1/google', async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID)
+      return res.status(500).json({ error: { message: 'Google OAuth not configured' } });
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({ idToken: id_token, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name || email;
+
+    // Find or create user
+    let result = await pool.query(
+      'SELECT id, email, raw_user_meta_data FROM auth.users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+    let user;
+    if (result.rows.length === 0) {
+      const ins = await pool.query(
+        `INSERT INTO auth.users (email, raw_user_meta_data, email_confirmed_at)
+         VALUES ($1, $2, now()) RETURNING id, email, raw_user_meta_data`,
+        [email, JSON.stringify({ full_name: name, provider: 'google' })]
+      );
+      user = ins.rows[0];
+      await pool.query(
+        `INSERT INTO user_roles (user_id, role) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
+        [user.id]
+      );
+    } else {
+      user = result.rows[0];
+    }
+
+    await pool.query('UPDATE auth.users SET last_sign_in_at = now() WHERE id = $1', [user.id]);
+    const token = jwt.sign({ sub: user.id, email: user.email, role: 'authenticated' }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ data: { user: formatUser(user), session: buildSession(token, user) }, error: null });
+  } catch (err) {
+    console.error('Google signin error:', err.message);
+    res.status(400).json({ error: { message: 'Google sign-in failed: ' + err.message } });
+  }
+});
+
+// POST /auth/v1/admin-google  (Google Sign-In for admin — must have admin role)
+app.post('/auth/v1/admin-google', async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID)
+      return res.status(500).json({ error: { message: 'Google OAuth not configured' } });
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({ idToken: id_token, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.raw_user_meta_data
+       FROM auth.users u
+       JOIN user_roles r ON r.user_id = u.id
+       WHERE u.email = $1 AND u.deleted_at IS NULL AND r.role = 'admin'`,
+      [email]
+    );
+    if (result.rows.length === 0)
+      return res.status(403).json({ error: { message: 'Not authorized as admin' } });
+
+    const user = result.rows[0];
+    await pool.query('UPDATE auth.users SET last_sign_in_at = now() WHERE id = $1', [user.id]);
+    const token = jwt.sign({ sub: user.id, email: user.email, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ data: { user: formatUser(user), session: buildSession(token, user) }, error: null });
+  } catch (err) {
+    console.error('Admin Google signin error:', err.message);
+    res.status(400).json({ error: { message: 'Google sign-in failed: ' + err.message } });
   }
 });
 
