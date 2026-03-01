@@ -16,9 +16,10 @@ const AdminLogin = () => {
     password: "",
   });
 
-  // Admin credentials (hardcoded for now)
-  const ADMIN_EMAIL = "email.hassan.cs@gmail.com";
-  const ADMIN_PASSWORD = "admin123";
+  const ADMIN_CREDENTIALS = [
+    { email: "email.hassan.cs@gmail.com", password: "admin123" },
+    { email: "mdcreationz22@gmail.com",   password: "admin123" },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +32,10 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Validate credentials
-      if (formData.email !== ADMIN_EMAIL || formData.password !== ADMIN_PASSWORD) {
+      const validAdmin = ADMIN_CREDENTIALS.find(
+        c => c.email === formData.email && c.password === formData.password
+      );
+      if (!validAdmin) {
         toast.error("Invalid email or password");
         setLoading(false);
         return;
@@ -40,7 +43,7 @@ const AdminLogin = () => {
 
       // Store admin session in localStorage
       const adminSession = {
-        email: ADMIN_EMAIL,
+        email: formData.email,
         token: `admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         loginTime: new Date().toISOString(),
       };
