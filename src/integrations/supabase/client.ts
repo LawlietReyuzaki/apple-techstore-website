@@ -228,6 +228,12 @@ const auth = {
     return { data: { session }, error: null };
   },
 
+  async setSession(session: any) {
+    saveSession(session);
+    emit('SIGNED_IN', session);
+    return { data: { session }, error: null };
+  },
+
   async getUser() {
     const token = getToken();
     if (!token) return { data: { user: null }, error: null };

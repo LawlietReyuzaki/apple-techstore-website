@@ -26,6 +26,7 @@ interface AuthContextType {
   roles: AppRole[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  signInWithGoogle: (idToken: string) => Promise<{ data: any; error: any }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<{ error: any }>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ data: any; error: any }>;
@@ -234,6 +235,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
+  const signInWithGoogle = async (idToken: string) => {
+    try {
+      const apiBase = import.meta.env.VITE_LOCAL_API_URL || '';
+      const res = await fetch(`${apiBase}/auth/v1/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) return { data: null, error: json.error };
+      await (supabase.auth as any).setSession(json.data.session);
+      return { data: json.data, error: null };
+    } catch (e: any) {
+      return { data: null, error: { message: e.message } };
+    }
+  };
+
   const signUp = async (email: string, password: string, fullName: string, phone: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -284,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     loading,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
     updateProfile,

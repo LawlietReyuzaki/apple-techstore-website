@@ -32,6 +32,13 @@ app.use(express.static(distPath));
 
 const SITE = 'https://appletechstore.pk';
 
+// ── Public config (frontend fetches this to get runtime env vars) ────
+app.get('/api/config', (req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+  });
+});
+
 // ── robots.txt ────────────────────────────────────────────────
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(
