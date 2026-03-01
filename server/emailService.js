@@ -4,9 +4,12 @@ dotenv.config();   // must run before reading process.env — ES module imports 
 
 const GMAIL_USER         = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
-const ADMIN_EMAIL        = process.env.ADMIN_EMAIL
-  ? process.env.ADMIN_EMAIL.split(',').map(e => e.trim()).join(', ')
-  : 'email.hassan.cs@gmail.com, mdcreationz22@gmail.com';
+// Always notify both admins — merge env var with hardcoded list
+const ADMIN_EMAILS_HARDCODED = ['email.hassan.cs@gmail.com', 'mdcreationz22@gmail.com'];
+const ADMIN_EMAIL = [
+  ...ADMIN_EMAILS_HARDCODED,
+  ...(process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.split(',').map(e => e.trim()) : []),
+].filter((e, i, arr) => e && arr.indexOf(e) === i).join(', ');
 const SHOP_ADDRESS       = 'Shop G15, China Center 2, Wallayat Complex, Bahria Town Phase 7, Rawalpindi';
 const SHOP_PHONE         = '+92 334 2228141';
 
