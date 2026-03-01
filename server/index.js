@@ -8,6 +8,7 @@ import { dirname, join } from 'path';
 import pool from './db.js';
 import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
 import { sendOrderEmails, sendEmailForType, sendPartRequestEmail } from './emailService.js';
+import { isBot, renderProduct, renderSparePart, renderShopItem } from './botRenderer.js';
 
 dotenv.config();
 
@@ -27,6 +28,117 @@ app.use('/images', express.static(join(__dirname, '..', 'images')));
 // Serve built React frontend (only present in production/Docker)
 const distPath = join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
+
+const SITE = 'https://appletechstore.pk';
+
+// ── robots.txt ────────────────────────────────────────────────
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+`User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: ${SITE}/sitemap.xml
+Sitemap: ${SITE}/sitemap-products.xml
+Sitemap: ${SITE}/sitemap-parts.xml
+`);
+});
+
+// ── sitemap-index ─────────────────────────────────────────────
+app.get('/sitemap.xml', (req, res) => {
+  const now = new Date().toISOString().split('T')[0];
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>${SITE}/sitemap-pages.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-products.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-parts.xml</loc><lastmod>${now}</lastmod></sitemap>
+</sitemapindex>`);
+});
+
+// ── sitemap-pages.xml (static pages) ─────────────────────────
+app.get('/sitemap-pages.xml', (req, res) => {
+  const now = new Date().toISOString().split('T')[0];
+  const pages = ['/', '/shop', '/phones', '/laptops', '/accessories', '/spare-parts', '/book-repair', '/request-part'];
+  const urls = pages.map(p => `  <url><loc>${SITE}${p}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>${p === '/' ? '1.0' : '0.8'}</priority></url>`).join('\n');
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`);
+});
+
+// ── sitemap-products.xml (all products from DB) ───────────────
+app.get('/sitemap-products.xml', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, updated_at FROM products WHERE images IS NOT NULL AND array_length(images,1)>0 ORDER BY updated_at DESC LIMIT 50000`
+    );
+    const urls = rows.map(r => {
+      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      return `  <url><loc>${SITE}/product/${r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+    }).join('\n');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`);
+  } catch (err) {
+    res.status(500).send('Sitemap error');
+  }
+});
+
+// ── sitemap-parts.xml (spare parts) ──────────────────────────
+app.get('/sitemap-parts.xml', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, updated_at FROM spare_parts WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`
+    );
+    const urls = rows.map(r => {
+      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      return `  <url><loc>${SITE}/spare-part/${r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`;
+    }).join('\n');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`);
+  } catch (err) {
+    res.status(500).send('Sitemap error');
+  }
+});
+
+// ── Dynamic rendering for bots ────────────────────────────────
+app.get('/product/:id', async (req, res, next) => {
+  if (!isBot(req.headers['user-agent'])) return next();
+  try {
+    const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return next();
+    res.send(renderProduct(rows[0]));
+  } catch { next(); }
+});
+
+app.get('/spare-part/:id', async (req, res, next) => {
+  if (!isBot(req.headers['user-agent'])) return next();
+  try {
+    const { rows } = await pool.query('SELECT * FROM spare_parts WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return next();
+    res.send(renderSparePart(rows[0]));
+  } catch { next(); }
+});
+
+app.get('/shop-item/:id', async (req, res, next) => {
+  if (!isBot(req.headers['user-agent'])) return next();
+  try {
+    const { rows } = await pool.query('SELECT * FROM shop_items WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return next();
+    res.send(renderShopItem(rows[0]));
+  } catch { next(); }
+});
 
 // ── Auth middleware ──────────────────────────────────────────
 function verifyToken(req) {
@@ -141,6 +253,33 @@ app.get('/auth/v1/user', async (req, res) => {
   res.json({ data: { user: formatUser(result.rows[0]) }, error: null });
 });
 
+// ── Simple in-memory query cache (TTL: 60s for lists, 300s for static tables) ──
+const queryCache = new Map();
+const CACHE_TTL = {
+  products:        60_000,
+  spare_parts:     60_000,
+  shop_items:      60_000,
+  categories:      300_000,
+  shop_categories: 300_000,
+  part_categories: 300_000,
+  shop_brands:     300_000,
+};
+function getCached(key) {
+  const entry = queryCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { queryCache.delete(key); return null; }
+  return entry.data;
+}
+function setCached(key, data, ttl) {
+  queryCache.set(key, { data, expiresAt: Date.now() + ttl });
+}
+// Invalidate cache for a table on writes
+function invalidateTable(table) {
+  for (const key of queryCache.keys()) {
+    if (key.startsWith(`${table}:`)) queryCache.delete(key);
+  }
+}
+
 // ── Data routes ──────────────────────────────────────────────
 
 // GET /rest/v1/:table — SELECT
@@ -148,6 +287,14 @@ app.get('/rest/v1/:table', async (req, res) => {
   try {
     const { table } = req.params;
     const { select, filters: rawFilters, order: rawOrder, limit, offset, single } = req.query;
+
+    // Check cache for list queries (not single-row lookups)
+    const ttl = CACHE_TTL[table];
+    const cacheKey = `${table}:${JSON.stringify(req.query)}`;
+    if (ttl && single !== 'true' && single !== '1') {
+      const cached = getCached(cacheKey);
+      if (cached) return res.json({ data: cached, error: null });
+    }
 
     // Parse select AST
     const selectAST = parseSelect(select || '*');
@@ -174,11 +321,11 @@ app.get('/rest/v1/:table', async (req, res) => {
     const result = await pool.query(sql, params);
 
     if (single === 'true' || single === '1') {
-      if (result.rows.length === 0)
-        return res.json({ data: null, error: null });
+      if (result.rows.length === 0) return res.json({ data: null, error: null });
       return res.json({ data: result.rows[0], error: null });
     }
 
+    if (ttl) setCached(cacheKey, result.rows, ttl);
     res.json({ data: result.rows, error: null });
   } catch (err) {
     console.error(`GET /rest/v1/${req.params.table} error:`, err.message);
@@ -217,6 +364,7 @@ app.post('/rest/v1/:table', async (req, res) => {
       inserted.push(...result.rows);
     }
 
+    invalidateTable(table);
     res.json({ data: inserted.length === 1 ? inserted[0] : inserted, error: null });
   } catch (err) {
     console.error(`POST /rest/v1/${req.params.table} error:`, err.message);
@@ -243,6 +391,7 @@ app.patch('/rest/v1/:table', async (req, res) => {
     const sql = `UPDATE ${table} t SET ${setClause} ${whereClause} RETURNING t.*`;
     const result = await pool.query(sql, params);
 
+    invalidateTable(table);
     res.json({ data: result.rows, error: null });
   } catch (err) {
     console.error(`PATCH /rest/v1/${req.params.table} error:`, err.message);
