@@ -48,7 +48,8 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,  // 5 min — prevents re-fetch on back navigation
       gcTime:    10 * 60 * 1000, // 10 min — keep cache in memory
-      retry: 1,
+      retry: 0,                  // no retries — prevents ERR_INSUFFICIENT_RESOURCES storms
+      refetchOnWindowFocus: false,
     },
   },
 });
