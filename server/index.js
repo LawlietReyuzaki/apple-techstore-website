@@ -41,7 +41,11 @@ app.get('/api/config', (req, res) => {
 
 // ── DB diagnostic (temporary) ─────────────────────────────────
 app.get('/api/db-test', async (req, res) => {
-  const results = {};
+  const results = {
+    connection_mode: process.env.CLOUD_SQL_CONNECTION_NAME
+      ? `unix-socket (/cloudsql/${process.env.CLOUD_SQL_CONNECTION_NAME})`
+      : `tcp (${process.env.DATABASE_HOST || 'localhost'}:${process.env.DATABASE_PORT || '5433'})`,
+  };
   try {
     await pool.query('SELECT 1');
     results.connection = 'OK';
