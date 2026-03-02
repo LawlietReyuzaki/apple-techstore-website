@@ -180,17 +180,25 @@ app.post('/auth/v1/signup', async (req, res) => {
     );
     const user = result.rows[0];
 
-    // Create profile
-    await pool.query(
-      `INSERT INTO profiles (id, full_name, phone) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
-      [user.id, meta.full_name || null, meta.phone || null]
-    );
+    // Create profile — non-fatal if table missing
+    try {
+      await pool.query(
+        `INSERT INTO profiles (id, full_name, phone) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+        [user.id, meta.full_name || null, meta.phone || null]
+      );
+    } catch (profileErr) {
+      console.warn('profiles insert skipped:', profileErr.message);
+    }
 
-    // Assign customer role
-    await pool.query(
-      `INSERT INTO user_roles (user_id, role) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
-      [user.id]
-    );
+    // Assign customer role — non-fatal
+    try {
+      await pool.query(
+        `INSERT INTO user_roles (user_id, role) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
+        [user.id]
+      );
+    } catch (roleErr) {
+      console.warn('user_roles insert skipped:', roleErr.message);
+    }
 
     const token = jwt.sign({ sub: user.id, email: user.email, role: 'authenticated' }, JWT_SECRET, { expiresIn: '7d' });
 
