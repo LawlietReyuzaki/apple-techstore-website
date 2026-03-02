@@ -39,6 +39,32 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+// ── DB diagnostic (temporary) ─────────────────────────────────
+app.get('/api/db-test', async (req, res) => {
+  const results = {};
+  try {
+    await pool.query('SELECT 1');
+    results.connection = 'OK';
+  } catch (e) { results.connection = 'FAIL: ' + e.message; }
+  try {
+    await pool.query('SELECT count(*) FROM auth.users');
+    results.auth_users = 'OK';
+  } catch (e) { results.auth_users = 'FAIL: ' + e.message; }
+  try {
+    await pool.query('SELECT count(*) FROM profiles');
+    results.profiles = 'OK';
+  } catch (e) { results.profiles = 'FAIL: ' + e.message; }
+  try {
+    await pool.query('SELECT count(*) FROM user_roles');
+    results.user_roles = 'OK';
+  } catch (e) { results.user_roles = 'FAIL: ' + e.message; }
+  try {
+    const r = await pool.query(`SELECT typname FROM pg_type WHERE typname = 'app_role'`);
+    results.app_role_enum = r.rows.length > 0 ? 'OK' : 'MISSING';
+  } catch (e) { results.app_role_enum = 'FAIL: ' + e.message; }
+  res.json(results);
+});
+
 // ── robots.txt ────────────────────────────────────────────────
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(
