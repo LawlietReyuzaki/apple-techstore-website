@@ -1,7 +1,9 @@
 // Local PostgreSQL client — replaces Supabase cloud
 // All data goes to http://localhost:3001 → Docker PostgreSQL
 
-const API = import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:3001';
+// Empty string = relative URL (production on Cloud Run, same origin)
+// Local dev: set VITE_LOCAL_API_URL=http://localhost:3001 in .env
+const API = import.meta.env.VITE_LOCAL_API_URL || '';
 const SESSION_KEY = 'local_session';
 
 // ── Session helpers ───────────────────────────────────────────
