@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
@@ -43,7 +43,10 @@ const getCategoryIcon = (name: string) => {
   return Package;
 };
 
-// ── Page size for all paginated queries ─────────────────────────────────────
+// ── Page size for paginated queries ──────────────────────────────────────────
+// Initial load: fewer items for faster first page load
+const INITIAL_PAGE_SIZE = 12;
+// Subsequent loads: more items for better UX when loading more
 const PAGE_SIZE = 24;
 
 export default function Shop() {
@@ -144,11 +147,11 @@ export default function Shop() {
   const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
 
   const buildProductsQuery = useCallback(
-    (offset: number) => {
+    (offset: number, limit: number = PAGE_SIZE) => {
       let q = supabase
         .from("products")
         .select("*")
-        .limit(PAGE_SIZE)
+        .limit(limit)
         .offset(offset);
 
       // ── Server-side filters ──────────────────────────────────────────────
@@ -180,11 +183,11 @@ export default function Shop() {
     setIsLoadingProducts(true);
     setProductItems([]);
 
-    buildProductsQuery(0).then(({ data }) => {
+    buildProductsQuery(0, INITIAL_PAGE_SIZE).then(({ data }) => {
       if (cancelled) return;
       const rows = data || [];
       setProductItems(rows);
-      setHasMoreProducts(rows.length >= PAGE_SIZE);
+      setHasMoreProducts(rows.length >= INITIAL_PAGE_SIZE);
       setIsLoadingProducts(false);
     });
 
@@ -194,7 +197,7 @@ export default function Shop() {
   const loadMoreProducts = useCallback(async () => {
     if (isLoadingMoreProducts || !hasMoreProducts) return;
     setIsLoadingMoreProducts(true);
-    const { data } = await buildProductsQuery(productItems.length);
+    const { data } = await buildProductsQuery(productItems.length, PAGE_SIZE);
     const rows = data || [];
     setProductItems(prev => [...prev, ...rows]);
     setHasMoreProducts(rows.length >= PAGE_SIZE);
@@ -210,7 +213,7 @@ export default function Shop() {
   const sparePartsVisible = category === "all" || category === "mobile-spare-parts";
 
   const buildSparePartsQuery = useCallback(
-    (offset: number) => {
+    (offset: number, limit: number = PAGE_SIZE) => {
       let q = supabase
         .from("spare_parts")
         .select(`
@@ -219,7 +222,7 @@ export default function Shop() {
           part_categories (name)
         `)
         .eq("visible", true)
-        .limit(PAGE_SIZE)
+        .limit(limit)
         .offset(offset);
 
       if (searchTerm.trim())                    q = q.ilike("name", `%${searchTerm.trim()}%`);
@@ -244,11 +247,11 @@ export default function Shop() {
     }
     let cancelled = false;
     setIsLoadingSpareParts(true);
-    buildSparePartsQuery(0).then(({ data }) => {
+    buildSparePartsQuery(0, INITIAL_PAGE_SIZE).then(({ data }) => {
       if (cancelled) return;
       const rows = data || [];
       setSparePartsItems(rows);
-      setHasMoreSpareParts(rows.length >= PAGE_SIZE);
+      setHasMoreSpareParts(rows.length >= INITIAL_PAGE_SIZE);
       setIsLoadingSpareParts(false);
     });
     return () => { cancelled = true; };
@@ -257,7 +260,7 @@ export default function Shop() {
   const loadMoreSpareParts = useCallback(async () => {
     if (isLoadingMore || !hasMoreSpareParts) return;
     setIsLoadingMore(true);
-    const { data } = await buildSparePartsQuery(sparePartsItems.length);
+    const { data } = await buildSparePartsQuery(sparePartsItems.length, PAGE_SIZE);
     const rows = data || [];
     setSparePartsItems(prev => [...prev, ...rows]);
     setHasMoreSpareParts(rows.length >= PAGE_SIZE);
@@ -275,6 +278,27 @@ export default function Shop() {
       return data || [];
     },
   });
+
+  // ── Infinite scroll: auto-load more when "Load More" button comes into view
+  const loadMoreButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreProducts && !isLoadingMoreProducts) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreButtonRef.current;
+    if (currentRef) observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [hasMoreProducts, isLoadingMoreProducts, loadMoreProducts]);
 
   // ── Brands for filter dropdown (from loaded product items) ───────────────
   const shopBrands = useMemo(
@@ -645,7 +669,7 @@ export default function Shop() {
 
             {/* Load More — Products */}
             {hasMoreProducts && !isLoadingSpareParts && (
-              <div className="flex justify-center mt-8">
+              <div ref={loadMoreButtonRef} className="flex justify-center mt-8">
                 <button
                   onClick={loadMoreProducts}
                   disabled={isLoadingMoreProducts}
