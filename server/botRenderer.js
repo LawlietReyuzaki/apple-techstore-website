@@ -93,14 +93,24 @@ function escHtml(str = '') { return String(str).replace(/&/g,'&amp;').replace(/<
 function escAttr(str = '') { return String(str).replace(/"/g,'&quot;').replace(/&/g,'&amp;'); }
 function fmt(n) { return Number(n).toLocaleString('en-PK'); }
 
+/** Convert a DB image path (relative or absolute) to a full https URL for og:image */
+function absImg(path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${SITE}/${path.replace(/^\//, '')}`;
+}
+
 // ── Product page ──────────────────────────────────────────────
 export function renderProduct(product, categoryName) {
   const price = product.wholesale_price || product.price;
-  const image = product.images?.[0] || null;
+  const image = absImg(product.images?.[0]);
+  const productUrl = product.slug ? `/product/${product.slug}` : `/product/${product.id}`;
   const title = `${product.name} - ${product.brand} | ${SITE_NAME}`;
   const description = product.description
     ? product.description.slice(0, 160)
     : `Buy ${product.name} by ${product.brand} in Pakistan. Price: Rs. ${fmt(price)}. ${product.stock > 0 ? 'In stock' : 'Contact us for availability'}.`;
+
+  const absoluteImages = (product.images || []).map(absImg).filter(Boolean);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -108,12 +118,12 @@ export function renderProduct(product, categoryName) {
     name: product.name,
     brand: { '@type': 'Brand', name: product.brand },
     description: description,
-    image: product.images || [],
+    image: absoluteImages,
     sku: product.id,
     category: categoryName || 'Mobile Parts & Phones',
     offers: {
       '@type': 'Offer',
-      url: `${SITE}/product/${product.id}`,
+      url: `${SITE}${productUrl}`,
       priceCurrency: 'PKR',
       price: price,
       availability: product.stock > 0
@@ -130,15 +140,15 @@ export function renderProduct(product, categoryName) {
     <p><strong>Availability:</strong> ${product.stock > 0 ? `In Stock (${product.stock} units)` : 'Out of Stock'}</p>
     ${image ? `<img src="${escAttr(image)}" alt="${escAttr(product.name)}" style="max-width:400px" />` : ''}
     ${description ? `<p>${escHtml(description)}</p>` : ''}
-    <p><a href="${SITE}/product/${product.id}">View on ${SITE_NAME}</a></p>
+    <p><a href="${SITE}${productUrl}">View on ${SITE_NAME}</a></p>
   `;
 
-  return buildHTML({ title, description, url: `/product/${product.id}`, image, jsonLd, bodyContent });
+  return buildHTML({ title, description, url: productUrl, image, jsonLd, bodyContent });
 }
 
 // ── Spare part page ───────────────────────────────────────────
 export function renderSparePart(part) {
-  const image = part.images?.[0] || null;
+  const image = absImg(part.images?.[0]);
   const title = `${part.name} Spare Part | ${SITE_NAME}`;
   const description = part.description
     ? part.description.slice(0, 160)
@@ -149,7 +159,7 @@ export function renderSparePart(part) {
     '@type': 'Product',
     name: part.name,
     description,
-    image: part.images || [],
+    image: (part.images || []).map(absImg).filter(Boolean),
     sku: part.id,
     category: 'Mobile Spare Parts',
     offers: {
@@ -177,7 +187,7 @@ export function renderSparePart(part) {
 
 // ── Shop item page ────────────────────────────────────────────
 export function renderShopItem(item) {
-  const image = item.images?.[0] || null;
+  const image = absImg(item.images?.[0]);
   const price = item.sale_price || item.price;
   const title = `${item.name} | ${SITE_NAME}`;
   const description = item.description
@@ -189,7 +199,7 @@ export function renderShopItem(item) {
     '@type': 'Product',
     name: item.name,
     description,
-    image: item.images || [],
+    image: (item.images || []).map(absImg).filter(Boolean),
     sku: item.id,
     offers: {
       '@type': 'Offer',

@@ -103,7 +103,8 @@ Allow: /
 
 # Sitemap location (dynamic - fetches from database)
 Sitemap: https://appletechstore.pk/sitemap.xml
-Sitemap: https://ekqgsyzxkkrlgzhavnoy.supabase.co/functions/v1/sitemap
+Sitemap: https://appletechstore.pk/sitemap-products.xml
+Sitemap: https://appletechstore.pk/sitemap-parts.xml
 
 # LLMs.txt - Machine-readable information for AI assistants
 # https://appletechstore.pk/llms.txt

@@ -17,3 +17,16 @@ export function getImageUrls(images: string[] | null | undefined): string[] {
   if (!images || images.length === 0) return ['/placeholder.svg'];
   return images.map(getImageUrl);
 }
+
+const SITE_ORIGIN = 'https://appletechstore.pk';
+
+/**
+ * Returns a fully-qualified absolute URL suitable for og:image / twitter:image.
+ * Relative paths get the site origin prepended.
+ */
+export function getAbsoluteImageUrl(path: string | null | undefined): string {
+  if (!path || path.trim() === '') return `${SITE_ORIGIN}/favicon.png`;
+  if (path.startsWith('http')) return path;
+  const withSlash = path.startsWith('/') ? path : `/${path}`;
+  return `${SITE_ORIGIN}${withSlash}`;
+}

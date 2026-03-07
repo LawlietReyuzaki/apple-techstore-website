@@ -1,4 +1,6 @@
-# Logs
+# ────────────────────────────────────────────────────────────────────────────
+# Logs & Debug
+# ────────────────────────────────────────────────────────────────────────────
 logs
 *.log
 npm-debug.log*
@@ -6,16 +8,41 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+bash.exe.stackdump
 
-node_modules
-dist
-dist-ssr
+# ────────────────────────────────────────────────────────────────────────────
+# Dependencies & Build
+# ────────────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+build/
 *.local
+.turbo/
 
-# Editor directories and files
+# ────────────────────────────────────────────────────────────────────────────
+# Environment & Secrets (NEVER COMMIT THESE)
+# ────────────────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.*
+cloudrun-env.yaml
+*.json.key
+*-service-account*.json
+pdftranslate-a26c5-888e6e18435d.json
+
+# ────────────────────────────────────────────────────────────────────────────
+# IDE & Editor
+# ────────────────────────────────────────────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/
+*.sublime-workspace
+*.sublime-project
 .DS_Store
 *.suo
 *.ntvs*
@@ -23,18 +50,41 @@ dist-ssr
 *.sln
 *.sw?
 
-# Credentials — never commit these
-.env
-.env.*
-cloudrun-env.yaml
-*.json.key
-*-service-account*.json
-pdftranslate-a26c5-888e6e18435d.json
+# ────────────────────────────────────────────────────────────────────────────
+# Python (for scraper & utility scripts)
+# ────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
 
-# Large data files
+# ────────────────────────────────────────────────────────────────────────────
+# Large Data Files & Generated Content
+# ────────────────────────────────────────────────────────────────────────────
 *.csv
 *.xlsx
+*.xls
 images/
 import_log.txt
-bash.exe.stackdump
+
+# ────────────────────────────────────────────────────────────────────────────
+# OS Specific Files
+# ────────────────────────────────────────────────────────────────────────────
+Thumbs.db
+.AppleDouble
+._*
+.Spotlight-V100
+.Trashes
+
+# ────────────────────────────────────────────────────────────────────────────
+# Temporary & Generated Files
+# ────────────────────────────────────────────────────────────────────────────
 ~$*
+*.tmp
+*.swp
+.cache/
+

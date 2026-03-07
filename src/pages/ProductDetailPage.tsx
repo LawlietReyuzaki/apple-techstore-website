@@ -65,13 +65,16 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedPartType, setSelectedPartType] = useState<string | null>(null);
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isUUID = UUID_RE.test(id || '');
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("id", id)
+        .eq(isUUID ? "id" : "slug", id)
         .single();
       if (error) throw error;
       return data;
@@ -178,8 +181,8 @@ export default function ProductDetailPage() {
         brand={product.brand}
         image={product.images?.[0]}
         stock={product.stock || 0}
-        url={`/product/${product.id}`}
-        category={product.brand}
+        url={`/product/${(product as any).slug || product.id}`}
+        category="Mobile Spare Parts"
       />
 
       <header className="border-b bg-card/50 backdrop-blur-sm">

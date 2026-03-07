@@ -11,6 +11,7 @@ import { getImageUrl } from "@/lib/imageUrl";
 
 interface Product {
   id: string;
+  slug?: string;
   name: string;
   brand: string;
   price: number;
@@ -56,7 +57,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Link to={`/product/${product.id}`}>
+    <Link to={`/product/${product.slug || product.id}`}>
       <Card className="group hover:shadow-lg transition-all duration-200 hover-scale overflow-hidden">
         <CardContent className="p-0">
           <div className="relative aspect-square bg-secondary/20 overflow-hidden">

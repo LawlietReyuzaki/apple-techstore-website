@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet";
+import { getAbsoluteImageUrl } from "@/lib/imageUrl";
 
 interface ProductSEOProps {
   name: string;
@@ -26,7 +27,7 @@ export function ProductSEO({
   const displayPrice = salePrice && salePrice < price ? salePrice : price;
   const availability = stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
   const fullUrl = `https://appletechstore.pk${url}`;
-  const imageUrl = image || "https://appletechstore.pk/favicon.png";
+  const imageUrl = getAbsoluteImageUrl(image);
   
   const truncatedDescription = description 
     ? description.substring(0, 155) + (description.length > 155 ? "..." : "")

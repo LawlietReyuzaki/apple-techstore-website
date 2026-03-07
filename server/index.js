@@ -117,11 +117,12 @@ ${urls}
 app.get('/sitemap-products.xml', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, updated_at FROM products WHERE images IS NOT NULL AND array_length(images,1)>0 ORDER BY updated_at DESC LIMIT 50000`
+      `SELECT id, slug, updated_at FROM products WHERE images IS NOT NULL AND array_length(images,1)>0 ORDER BY updated_at DESC LIMIT 50000`
     );
     const urls = rows.map(r => {
       const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-      return `  <url><loc>${SITE}/product/${r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      const path = r.slug ? r.slug : r.id;
+      return `  <url><loc>${SITE}/product/${path}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
     }).join('\n');
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -152,12 +153,22 @@ ${urls}
 });
 
 // ── Dynamic rendering for bots ────────────────────────────────
-app.get('/product/:id', async (req, res, next) => {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+app.get('/product/:idOrSlug', async (req, res, next) => {
   if (!isBot(req.headers['user-agent'])) return next();
   try {
-    const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    const { idOrSlug } = req.params;
+    const col = UUID_RE.test(idOrSlug) ? 'p.id' : 'p.slug';
+    const { rows } = await pool.query(
+      `SELECT p.*, c.name AS category_name
+       FROM products p
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE ${col} = $1`,
+      [idOrSlug]
+    );
     if (!rows[0]) return next();
-    res.send(renderProduct(rows[0]));
+    res.send(renderProduct(rows[0], rows[0].category_name));
   } catch { next(); }
 });
 
