@@ -116,44 +116,86 @@ ${urls}
 // ── sitemap-products.xml (all products from DB) ───────────────
 app.get('/sitemap-products.xml', async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT id, slug, updated_at FROM products WHERE images IS NOT NULL AND array_length(images,1)>0 ORDER BY updated_at DESC LIMIT 50000`
-    );
+    // Try with slug column; fall back to id-only if migration hasn't run yet.
+    let rows;
+    try {
+      ({ rows } = await pool.query(
+        `SELECT id, slug, updated_at FROM products
+         WHERE images IS NOT NULL AND array_length(images,1) > 0
+         ORDER BY updated_at DESC LIMIT 50000`
+      ));
+    } catch (colErr) {
+      // slug column missing — use id only until migration runs
+      ({ rows } = await pool.query(
+        `SELECT id, NULL AS slug, updated_at FROM products
+         WHERE images IS NOT NULL AND array_length(images,1) > 0
+         ORDER BY updated_at DESC LIMIT 50000`
+      ));
+    }
+
+    const today = new Date().toISOString().split('T')[0];
     const urls = rows.map(r => {
-      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-      const path = r.slug ? r.slug : r.id;
-      return `  <url><loc>${SITE}/product/${path}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : today;
+      const loc = r.slug ? r.slug : r.id;
+      return `  <url><loc>${SITE}/product/${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
     }).join('\n');
+
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`);
   } catch (err) {
-    res.status(500).send('Sitemap error');
+    console.error('[sitemap-products] Error:', err.message);
+    res.status(500).type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
   }
 });
 
 // ── sitemap-parts.xml (spare parts) ──────────────────────────
 app.get('/sitemap-parts.xml', async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT id, updated_at FROM spare_parts WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`
-    );
+    // Try with visible filter; fall back to no filter if column missing.
+    let rows;
+    try {
+      ({ rows } = await pool.query(
+        `SELECT id, updated_at FROM spare_parts
+         WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`
+      ));
+    } catch (colErr) {
+      ({ rows } = await pool.query(
+        `SELECT id, updated_at FROM spare_parts
+         ORDER BY updated_at DESC LIMIT 50000`
+      ));
+    }
+
+    const today = new Date().toISOString().split('T')[0];
     const urls = rows.map(r => {
-      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : today;
       return `  <url><loc>${SITE}/spare-part/${r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`;
     }).join('\n');
+
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`);
   } catch (err) {
-    res.status(500).send('Sitemap error');
+    console.error('[sitemap-parts] Error:', err.message);
+    res.status(500).type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
   }
 });
 
 // ── Dynamic rendering for bots ────────────────────────────────
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Sets headers required for dynamic rendering to work correctly behind CDNs/proxies.
+// Vary: User-Agent tells any caching layer that the response differs per bot/human.
+// Without this, a CDN may cache the SPA HTML and serve it to Googlebot.
+function setBotHeaders(res) {
+  res.set('Vary', 'User-Agent');
+  res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+  res.set('X-Robots-Tag', 'index, follow');
+}
 
 app.get('/product/:idOrSlug', async (req, res, next) => {
   if (!isBot(req.headers['user-agent'])) return next();
@@ -168,6 +210,7 @@ app.get('/product/:idOrSlug', async (req, res, next) => {
       [idOrSlug]
     );
     if (!rows[0]) return next();
+    setBotHeaders(res);
     res.send(renderProduct(rows[0], rows[0].category_name));
   } catch { next(); }
 });
@@ -177,6 +220,7 @@ app.get('/spare-part/:id', async (req, res, next) => {
   try {
     const { rows } = await pool.query('SELECT * FROM spare_parts WHERE id = $1', [req.params.id]);
     if (!rows[0]) return next();
+    setBotHeaders(res);
     res.send(renderSparePart(rows[0]));
   } catch { next(); }
 });
@@ -186,8 +230,33 @@ app.get('/shop-item/:id', async (req, res, next) => {
   try {
     const { rows } = await pool.query('SELECT * FROM shop_items WHERE id = $1', [req.params.id]);
     if (!rows[0]) return next();
+    setBotHeaders(res);
     res.send(renderShopItem(rows[0]));
   } catch { next(); }
+});
+
+// ── SEO debug endpoint ────────────────────────────────────────
+// GET /api/seo-debug?url=/product/some-slug
+// Returns what headers + bot-detection result the server would use for a given path.
+app.get('/api/seo-debug', (req, res) => {
+  const ua = req.headers['user-agent'] || '';
+  const xRobots = res.getHeader('X-Robots-Tag') || '(not set on this response)';
+  res.json({
+    your_user_agent: ua,
+    bot_detected: isBot(ua),
+    incoming_headers: {
+      'x-forwarded-for': req.headers['x-forwarded-for'] || null,
+      'x-robots-tag': req.headers['x-robots-tag'] || null,
+      'cache-control': req.headers['cache-control'] || null,
+    },
+    what_bots_get: {
+      'Vary': 'User-Agent',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'X-Robots-Tag': 'index, follow',
+      'Content-Type': 'text/html; charset=utf-8',
+    },
+    test_tip: 'To simulate Googlebot add header: User-Agent: Googlebot/2.1',
+  });
 });
 
 // ── Auth middleware ──────────────────────────────────────────

@@ -30,6 +30,8 @@ build/
 cloudrun-env.yaml
 *.json.key
 *-service-account*.json
+server/scripts/google-service-account.json
+server/scripts/.index-progress.json
 pdftranslate-a26c5-888e6e18435d.json
 
 # ────────────────────────────────────────────────────────────────────────────
