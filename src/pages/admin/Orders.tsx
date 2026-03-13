@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,13 +35,21 @@ import { Package, Phone, Mail, MapPin } from "lucide-react";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { isAdmin, loading: authLoading } = useAuth();
-  const [statusFilter, setStatusFilter] = useState("pending");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "pending");
+
+  // Sync filter when URL param changes (e.g. clicking dashboard cards)
+  useEffect(() => {
+    const f = searchParams.get("filter");
+    if (f) setStatusFilter(f);
+  }, [searchParams]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [approveConfirmId, setApproveConfirmId] = useState<string | null>(null);
   const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
+  const [approveDueDate, setApproveDueDate] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -67,6 +75,7 @@ export default function AdminOrders() {
             created_at
           )
         `)
+        .gte("created_at", "2026-03-12")
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -124,10 +133,12 @@ export default function AdminOrders() {
   });
 
   const approveOrderMutation = useMutation({
-    mutationFn: async (orderId: string) => {
+    mutationFn: async ({ orderId, dueDate }: { orderId: string; dueDate: string }) => {
+      const updateData: any = { status: "processing" };
+      if (dueDate) updateData.due_date = new Date(dueDate).toISOString();
       const { error } = await supabase
         .from("orders")
-        .update({ status: "processing" })
+        .update(updateData)
         .eq("id", orderId);
 
       if (error) throw error;
@@ -145,6 +156,7 @@ export default function AdminOrders() {
       }
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setApproveConfirmId(null);
+      setApproveDueDate("");
     },
     onError: () => {
       toast.error("Failed to approve order");
@@ -437,9 +449,15 @@ export default function AdminOrders() {
                     <p className="font-mono text-sm">{selectedOrder.id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Date</p>
+                    <p className="text-sm text-muted-foreground">Order Date</p>
                     <p className="text-sm">{format(new Date(selectedOrder.created_at), "PPP")}</p>
                   </div>
+                  {selectedOrder.due_date && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Due Date</p>
+                      <p className="text-sm font-medium">{format(new Date(selectedOrder.due_date), "PPP")}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-muted-foreground">Payment Method</p>
                     <Badge variant="outline" className="uppercase">
@@ -638,18 +656,28 @@ export default function AdminOrders() {
       </Dialog>
 
       {/* Approve Confirmation Dialog */}
-      <Dialog open={!!approveConfirmId} onOpenChange={(open) => !open && setApproveConfirmId(null)}>
+      <Dialog open={!!approveConfirmId} onOpenChange={(open) => { if (!open) { setApproveConfirmId(null); setApproveDueDate(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Order</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p>Are you sure you want to approve this order? The customer will receive a confirmation email.</p>
+            <div className="space-y-2">
+              <Label>Due Date (optional — set expected delivery/completion date)</Label>
+              <input
+                type="date"
+                className="w-full p-2 border rounded-md text-sm"
+                value={approveDueDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setApproveDueDate(e.target.value)}
+              />
+            </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setApproveConfirmId(null)}>
+              <Button variant="outline" onClick={() => { setApproveConfirmId(null); setApproveDueDate(""); }}>
                 Cancel
               </Button>
-              <Button onClick={() => approveConfirmId && approveOrderMutation.mutate(approveConfirmId)}>
+              <Button onClick={() => approveConfirmId && approveOrderMutation.mutate({ orderId: approveConfirmId, dueDate: approveDueDate })}>
                 Approve & Send Email
               </Button>
             </div>

@@ -655,6 +655,50 @@ app.delete('/rest/v1/:table', async (req, res) => {
   }
 });
 
+// ── Admin cleanup ────────────────────────────────────────────
+// POST /admin/clear-test-data — deletes all orders+repairs before March 12, 2026
+app.post('/admin/clear-test-data', async (req, res) => {
+  try {
+    const cutoff = '2026-03-12T00:00:00Z';
+    // Get old order IDs first
+    const oldOrders = await pool.query(
+      "SELECT id FROM orders WHERE created_at < $1", [cutoff]
+    );
+    const orderIds = oldOrders.rows.map(r => r.id);
+
+    if (orderIds.length > 0) {
+      // Clear circular FK on orders first
+      await pool.query(
+        "UPDATE orders SET payment_id = NULL WHERE created_at < $1", [cutoff]
+      );
+      // Delete dependent rows
+      await pool.query(
+        "DELETE FROM payments WHERE order_id = ANY($1::uuid[])", [orderIds]
+      );
+      await pool.query(
+        "DELETE FROM order_items WHERE order_id = ANY($1::uuid[])", [orderIds]
+      );
+      await pool.query(
+        "DELETE FROM orders WHERE created_at < $1", [cutoff]
+      );
+    }
+
+    // Delete old repairs
+    const repairsResult = await pool.query(
+      "DELETE FROM repairs WHERE created_at < $1 RETURNING id", [cutoff]
+    );
+
+    res.json({
+      success: true,
+      deletedOrders: orderIds.length,
+      deletedRepairs: repairsResult.rowCount,
+    });
+  } catch (err) {
+    console.error('[clear-test-data] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Edge functions ───────────────────────────────────────────
 
 // POST /functions/v1/create-order — local replacement for Supabase edge function
@@ -871,6 +915,11 @@ app.get('*splat', (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────
+// Run migrations on startup
+pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ")
+  .then(() => console.log('[migration] orders.due_date column ready'))
+  .catch(err => console.warn('[migration] orders.due_date:', err.message));
+
 app.listen(PORT, () => {
   console.log(`\n✅ Local API server running at http://localhost:${PORT}`);
   console.log(`   Auth:  POST http://localhost:${PORT}/auth/v1/signup`);

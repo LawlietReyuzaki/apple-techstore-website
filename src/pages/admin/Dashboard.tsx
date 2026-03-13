@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wrench, Clock, CheckCircle, AlertCircle, Mail, Package } from "lucide-react";
+import { ShoppingBag, Clock, CheckCircle, AlertCircle, Mail, Package, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, isPast } from "date-fns";
 
@@ -20,23 +20,25 @@ export default function AdminDashboard() {
     }
   }, [isAdmin, authLoading, navigate]);
 
-  const { data: repairStats } = useQuery({
-    queryKey: ["repair-stats"],
+  const { data: orderStats } = useQuery({
+    queryKey: ["order-stats"],
     queryFn: async () => {
-      const { data: repairs, error } = await supabase
-        .from("repairs")
-        .select("status");
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select("status")
+        .gte("created_at", "2026-03-12");
 
       if (error) throw error;
 
       return {
-        total: repairs?.length || 0,
-        pending: repairs?.filter(r => r.status === "created").length || 0,
-        inProgress: repairs?.filter(r => r.status === "in_progress").length || 0,
-        completed: repairs?.filter(r => r.status === "delivered").length || 0,
+        total: orders?.length || 0,
+        pending: orders?.filter(o => o.status === "pending").length || 0,
+        processing: orders?.filter(o => o.status === "processing" || o.status === "shipped").length || 0,
+        completed: orders?.filter(o => o.status === "delivered").length || 0,
       };
     },
     enabled: isAdmin,
+    refetchInterval: 30000,
   });
 
   const { data: pendingOrders } = useQuery({
@@ -46,6 +48,7 @@ export default function AdminDashboard() {
         .from("orders")
         .select("*")
         .in("status", ["pending", "processing", "packed", "shipped"])
+        .gte("created_at", "2026-03-12")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -62,6 +65,7 @@ export default function AdminDashboard() {
         .from("repairs")
         .select("*")
         .in("status", ["created", "in_progress"])
+        .gte("created_at", "2026-03-12")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -142,12 +146,16 @@ export default function AdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const getTimeStatus = (createdAt: string) => {
-    const created = new Date(createdAt);
-    const hoursPassed = (currentTime.getTime() - created.getTime()) / (1000 * 60 * 60);
-    const dueDate = new Date(created);
-    dueDate.setHours(dueDate.getHours() + 48); // 48 hour deadline
-    
+  const getTimeStatus = (createdAt: string, dueDateOverride?: string | null) => {
+    let dueDate: Date;
+    if (dueDateOverride) {
+      dueDate = new Date(dueDateOverride);
+    } else {
+      // No admin-set due date: show pending, no deadline
+      dueDate = new Date(createdAt);
+      dueDate.setFullYear(dueDate.getFullYear() + 10); // far future = not overdue
+    }
+
     const isLate = isPast(dueDate);
     const timeLeft = formatDistanceToNow(dueDate, { addSuffix: true });
 
@@ -169,43 +177,59 @@ export default function AdminDashboard() {
       <h1 className="text-xl md:text-3xl font-bold mb-4 md:mb-8">Dashboard Overview</h1>
 
       <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4 mb-6 md:mb-8 animate-fade-in">
-        <Card className="hover-scale transition-all duration-200">
+        <Card
+          className="hover-scale transition-all duration-200 cursor-pointer hover:border-primary"
+          onClick={() => navigate("/admin/orders?filter=all")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6 md:pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">Total Repairs</CardTitle>
-            <Wrench className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingBag className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg md:text-2xl font-bold">{repairStats?.total || 0}</div>
+            <div className="text-lg md:text-2xl font-bold">{orderStats?.total ?? "—"}</div>
+            <p className="text-xs text-muted-foreground mt-1">since Mar 12</p>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale transition-all duration-200">
+        <Card
+          className="hover-scale transition-all duration-200 cursor-pointer hover:border-yellow-500"
+          onClick={() => navigate("/admin/orders?filter=pending")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6 md:pb-2">
             <CardTitle className="text-xs md:text-sm font-medium">Pending</CardTitle>
             <Clock className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg md:text-2xl font-bold">{repairStats?.pending || 0}</div>
+            <div className="text-lg md:text-2xl font-bold text-yellow-600">{orderStats?.pending ?? "—"}</div>
+            <p className="text-xs text-muted-foreground mt-1">awaiting approval</p>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale transition-all duration-200">
+        <Card
+          className="hover-scale transition-all duration-200 cursor-pointer hover:border-blue-500"
+          onClick={() => navigate("/admin/orders?filter=processing")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6 md:pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Approved</CardTitle>
             <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg md:text-2xl font-bold">{repairStats?.inProgress || 0}</div>
+            <div className="text-lg md:text-2xl font-bold text-blue-600">{orderStats?.processing ?? "—"}</div>
+            <p className="text-xs text-muted-foreground mt-1">in progress / shipped</p>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale transition-all duration-200">
+        <Card
+          className="hover-scale transition-all duration-200 cursor-pointer hover:border-green-500"
+          onClick={() => navigate("/admin/orders?filter=delivered")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6 md:pb-2">
             <CardTitle className="text-xs md:text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-3 w-3 md:h-4 md:w-4 text-green-500" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-lg md:text-2xl font-bold">{repairStats?.completed || 0}</div>
+            <div className="text-lg md:text-2xl font-bold text-green-600">{orderStats?.completed ?? "—"}</div>
+            <p className="text-xs text-muted-foreground mt-1">delivered</p>
           </CardContent>
         </Card>
       </div>
@@ -219,7 +243,7 @@ export default function AdminDashboard() {
         <div className="grid gap-3 md:gap-4">
           {pendingOrders && pendingOrders.length > 0 ? (
             pendingOrders.map((order) => {
-              const { isLate, timeLeft, dueDate } = getTimeStatus(order.created_at!);
+              const { isLate, timeLeft, dueDate } = getTimeStatus(order.created_at!, order.due_date);
               return (
                 <Card key={order.id} className={`${isLate ? "border-red-500 border-2" : ""}`}>
                   <CardContent className="p-3 md:p-6">
@@ -238,13 +262,19 @@ export default function AdminDashboard() {
                         <p className="text-xs md:text-sm text-muted-foreground truncate">Email: {order.customer_email}</p>
                         <p className="text-xs md:text-sm text-muted-foreground">Status: {order.status}</p>
                         <div className="mt-2">
-                          <p className="text-xs md:text-sm">
-                            <span className="font-semibold">Due:</span>{" "}
-                            {dueDate.toLocaleDateString()}
-                          </p>
-                          <p className={`text-xs md:text-sm font-semibold ${isLate ? "text-red-500" : "text-green-500"}`}>
-                            {isLate ? "Overdue" : "Due"} {timeLeft}
-                          </p>
+                          {order.due_date ? (
+                            <>
+                              <p className="text-xs md:text-sm">
+                                <span className="font-semibold">Due:</span>{" "}
+                                {dueDate.toLocaleDateString()}
+                              </p>
+                              <p className={`text-xs md:text-sm font-semibold ${isLate ? "text-red-500" : "text-green-500"}`}>
+                                {isLate ? "Overdue" : "Due"} {timeLeft}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-xs md:text-sm text-muted-foreground">Due date: not set by admin</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-row md:flex-col gap-2">
@@ -298,7 +328,7 @@ export default function AdminDashboard() {
         <div className="grid gap-3 md:gap-4">
           {pendingRepairs && pendingRepairs.length > 0 ? (
             pendingRepairs.map((repair) => {
-              const { isLate, timeLeft, dueDate } = getTimeStatus(repair.created_at);
+              const { isLate, timeLeft, dueDate } = getTimeStatus(repair.created_at, repair.due_date);
               return (
                 <Card key={repair.id} className={`${isLate ? "border-red-500 border-2" : ""}`}>
                   <CardContent className="p-3 md:p-6">
@@ -323,13 +353,19 @@ export default function AdminDashboard() {
                         <p className="text-xs md:text-sm text-muted-foreground truncate">Issue: {repair.issue}</p>
                         <p className="text-xs md:text-sm text-muted-foreground">Status: {repair.status}</p>
                         <div className="mt-2">
-                          <p className="text-xs md:text-sm">
-                            <span className="font-semibold">Due:</span>{" "}
-                            {dueDate.toLocaleDateString()}
-                          </p>
-                          <p className={`text-xs md:text-sm font-semibold ${isLate ? "text-red-500" : "text-green-500"}`}>
-                            {isLate ? "Overdue" : "Due"} {timeLeft}
-                          </p>
+                          {repair.due_date ? (
+                            <>
+                              <p className="text-xs md:text-sm">
+                                <span className="font-semibold">Due:</span>{" "}
+                                {dueDate.toLocaleDateString()}
+                              </p>
+                              <p className={`text-xs md:text-sm font-semibold ${isLate ? "text-red-500" : "text-green-500"}`}>
+                                {isLate ? "Overdue" : "Due"} {timeLeft}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-xs md:text-sm text-muted-foreground">Due date: not set</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-row md:flex-col gap-2">
