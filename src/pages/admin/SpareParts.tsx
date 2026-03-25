@@ -301,6 +301,7 @@ export default function AdminSpareParts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-spare-parts"] });
+      queryClient.invalidateQueries({ queryKey: ["spare-parts-public"] });
       toast({ title: "Spare part created successfully" });
       setIsDialogOpen(false);
       resetForm();
@@ -358,6 +359,10 @@ export default function AdminSpareParts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-spare-parts"] });
+      queryClient.invalidateQueries({ queryKey: ["spare-parts-public"] });
+      if (editingPart?.id) {
+        queryClient.invalidateQueries({ queryKey: ["spare-part", editingPart.id] });
+      }
       toast({ title: "Spare part updated successfully" });
       setIsDialogOpen(false);
       resetForm();
@@ -377,6 +382,7 @@ export default function AdminSpareParts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-spare-parts"] });
+      queryClient.invalidateQueries({ queryKey: ["spare-parts-public"] });
       toast({ title: "Spare part deleted successfully" });
     },
   });
@@ -685,11 +691,15 @@ export default function AdminSpareParts() {
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
 
-                <Textarea
-                  placeholder="Description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                />
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    placeholder="Enter a description for this spare part (shown in the shop listing and detail page)"
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  />
+                </div>
 
                 {/* Variants Section */}
                 <div className="space-y-3 border rounded-lg p-4">
