@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -57,31 +57,38 @@ export default function AdminSpareParts() {
   const { data: spareParts = [] } = useQuery({
     queryKey: ["admin-spare-parts"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("spare_parts")
         .select(`
           *,
           phone_models (name, spare_parts_brands (name)),
           part_categories (name),
           part_types (name),
-          part_qualities (name),
-          spare_parts_colors (color_name, color_code)
+          part_qualities (name)
         `)
         .order("created_at", { ascending: false });
-      
-      // Fetch variants for each spare part
-      if (data) {
-        for (const part of data) {
-          const { data: variants } = await supabase
-            .from("spare_part_variants")
-            .select("*")
-            .eq("spare_part_id", part.id)
-            .order("sort_order");
-          (part as any).variants = variants || [];
-        }
+
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) return [];
+
+      // Single bulk query instead of N+1 per part
+      const partIds = data.map((p: any) => p.id);
+      const { data: allVariants } = await supabase
+        .from("spare_part_variants")
+        .select("*")
+        .in("spare_part_id", partIds)
+        .order("sort_order");
+
+      const variantsByPartId: Record<string, any[]> = {};
+      for (const v of (allVariants || [])) {
+        if (!variantsByPartId[v.spare_part_id]) variantsByPartId[v.spare_part_id] = [];
+        variantsByPartId[v.spare_part_id].push(v);
       }
-      
-      return data || [];
+      for (const part of data) {
+        (part as any).variants = variantsByPartId[(part as any).id] || [];
+      }
+
+      return data;
     },
   });
 
@@ -316,8 +323,9 @@ export default function AdminSpareParts() {
         partData.stock = variants.reduce((sum: number, v: Variant) => sum + (parseInt(v.stock) || 0), 0);
       }
       
-      await supabase.from("spare_parts").update(partData).eq("id", id);
-      
+      const { error: updateError } = await supabase.from("spare_parts").update(partData).eq("id", id);
+      if (updateError) throw updateError;
+
       // Update colors
       await supabase.from("spare_parts_colors").delete().eq("spare_part_id", id);
       if (colors && colors.length > 0) {
@@ -361,7 +369,11 @@ export default function AdminSpareParts() {
 
   const deletePartMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("spare_parts").delete().eq("id", id);
+      // Delete related records first — no ON DELETE CASCADE on these FKs
+      await supabase.from("spare_parts_colors").delete().eq("spare_part_id", id);
+      await supabase.from("spare_part_variants").delete().eq("spare_part_id", id);
+      const { error } = await supabase.from("spare_parts").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-spare-parts"] });
@@ -393,6 +405,10 @@ export default function AdminSpareParts() {
   };
 
   const handleSubmit = () => {
+    if (!formData.part_category_id) {
+      toast({ title: "Please select a Part Category", variant: "destructive" });
+      return;
+    }
     // Validate variants if enabled
     if (formData.has_variants) {
       const validVariants = formData.variants.filter(v => v.variant_name.trim());
@@ -428,33 +444,45 @@ export default function AdminSpareParts() {
     }
   };
 
-  const handleEdit = (part: any) => {
+  const handleEdit = async (part: any) => {
     setEditingPart(part);
     const hasVariants = part.variants && part.variants.length > 0;
+    const existingImages = Array.isArray(part.images) ? part.images.filter(Boolean) : [];
+
+    // Fetch colors separately — spare_parts_colors is one-to-many, not in main query
+    let colors: { color_name: string; color_code: string }[] = [];
+    try {
+      const { data: colorsData } = await supabase
+        .from("spare_parts_colors")
+        .select("color_name, color_code")
+        .eq("spare_part_id", part.id);
+      colors = colorsData || [];
+    } catch {
+      colors = [];
+    }
+
     setFormData({
       phone_model_name: part.phone_model_name || (part.phone_models ? `${part.phone_models.spare_parts_brands?.name || ''} ${part.phone_models.name}`.trim() : ""),
-      part_category_id: part.part_category_id,
+      part_category_id: part.part_category_id || "",
       part_type_id: part.part_type_id || "",
       quality_id: part.quality_id || "",
       name: part.name,
       description: part.description || "",
-      price: part.price.toString(),
-      stock: part.stock.toString(),
-      images: part.images.length > 0 ? part.images : [""],
-      visible: part.visible,
-      featured: part.featured,
+      price: (part.price ?? 0).toString(),
+      stock: (part.stock ?? 0).toString(),
+      images: existingImages.length > 0 ? existingImages : [""],
+      visible: part.visible ?? true,
+      featured: part.featured ?? false,
       has_color_options: part.has_color_options || false,
-      colors: part.spare_parts_colors.length > 0 
-        ? part.spare_parts_colors 
-        : [{ color_name: "", color_code: "" }],
+      colors: colors.length > 0 ? colors : [{ color_name: "", color_code: "" }],
       has_variants: hasVariants,
-      variants: hasVariants 
-        ? part.variants.map((v: any) => ({ 
+      variants: hasVariants
+        ? part.variants.map((v: any) => ({
             id: v.id,
-            variant_name: v.variant_name, 
-            price: v.price.toString(), 
-            stock: v.stock.toString(),
-            sort_order: v.sort_order 
+            variant_name: v.variant_name,
+            price: (v.price ?? 0).toString(),
+            stock: (v.stock ?? 0).toString(),
+            sort_order: v.sort_order,
           }))
         : [{ variant_name: "", price: "", stock: "", sort_order: 0 }],
     });
@@ -500,6 +528,9 @@ export default function AdminSpareParts() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingPart ? "Edit" : "Add"} Spare Part</DialogTitle>
+                <DialogDescription className="sr-only">
+                  {editingPart ? "Edit existing spare part details and inventory" : "Add a new spare part to the inventory"}
+                </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-4">

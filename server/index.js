@@ -540,7 +540,11 @@ app.get('/rest/v1/:table', async (req, res) => {
     const selectClause = buildSelectSQL(table, selectAST);
     const whereClause  = buildWhereSQL(rawFilters ? JSON.parse(rawFilters) : [], params);
     const userOrder    = buildOrderSQL(rawOrder ? JSON.parse(rawOrder) : []);
-    const limitClause  = limit  ? `LIMIT ${parseInt(limit)}`    : '';
+    // Cap at 1000 rows to prevent OOM — callers must use limit+offset for pagination
+    const MAX_ROWS = 1000;
+    const requestedLimit = limit ? parseInt(limit) : null;
+    const effectiveLimit = requestedLimit ? Math.min(requestedLimit, MAX_ROWS) : MAX_ROWS;
+    const limitClause  = `LIMIT ${effectiveLimit}`;
     const offsetClause = offset ? `OFFSET ${parseInt(offset)}`  : '';
 
     // For product/spare_part listings always rank items with images above those without

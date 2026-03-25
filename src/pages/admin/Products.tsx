@@ -151,7 +151,8 @@ const [formData, setFormData] = useState<ProductFormData>({
       const { data, error } = await supabase
         .from("products")
         .select("*, categories(name)")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
 
       if (error) throw error;
       return data;
