@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { promises as fsPromises } from 'fs';
 import { OAuth2Client } from 'google-auth-library';
 import pool from './db.js';
 import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
@@ -38,6 +39,39 @@ app.get('/api/config', (req, res) => {
   res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
   });
+});
+
+// ── Image upload (base64 JSON → local filesystem) ────────────
+// Bucket name maps to subfolder under project-root /images/
+// NOTE: On Cloud Run the filesystem is ephemeral — images survive until
+// the next deployment/restart.  Migrate to GCS for permanent storage.
+app.post('/api/upload-image', async (req, res) => {
+  try {
+    const { base64, fileName, bucket } = req.body;
+    if (!base64 || !fileName) {
+      return res.status(400).json({ error: 'Missing required fields: base64, fileName' });
+    }
+
+    // Sanitise filename — allow alphanum, dash, underscore, dot only
+    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200);
+    if (!safeName) return res.status(400).json({ error: 'Invalid fileName' });
+
+    const subfolder =
+      bucket === 'spare-parts-images' ? 'spare-parts' :
+      bucket === 'product-images'     ? 'products'    : 'uploads';
+
+    const imagesDir = join(__dirname, '..', 'images', subfolder);
+    await fsPromises.mkdir(imagesDir, { recursive: true });
+
+    const buffer = Buffer.from(base64, 'base64');
+    await fsPromises.writeFile(join(imagesDir, safeName), buffer);
+
+    // Return relative path — getImageUrl() in the frontend adds the leading slash
+    res.json({ path: `images/${subfolder}/${safeName}` });
+  } catch (err) {
+    console.error('[upload-image] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── DB diagnostic (temporary) ─────────────────────────────────

@@ -265,12 +265,49 @@ const auth = {
   },
 };
 
-// ── Storage stub (no-op for local dev) ───────────────────────
+// ── Storage — uploads files to the local Express API ─────────
+// Files are written to project-root /images/<subfolder>/ and served
+// by Express (production) or the Vite configureServer plugin (dev).
 const storage = {
-  from: (_bucket: string) => ({
-    upload: async (_path: string, _file: any) => ({ data: { path: _path }, error: null }),
-    getPublicUrl: (_path: string) => ({ data: { publicUrl: '' } }),
-  }),
+  from: (bucket: string) => {
+    const subfolder =
+      bucket === 'spare-parts-images' ? 'spare-parts' :
+      bucket === 'product-images'     ? 'products'    : 'uploads';
+
+    return {
+      // Upload a File/Blob — converts to base64 and POSTs to /api/upload-image
+      upload: async (filePath: string, file: any): Promise<{ data: any; error: any }> => {
+        try {
+          // FileReader converts the binary File to a base64 data-URL safely
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              resolve(dataUrl.split(',')[1]); // strip "data:image/...;base64," prefix
+            };
+            reader.onerror = () => reject(new Error('Failed to read image file'));
+            reader.readAsDataURL(file);
+          });
+
+          const res = await fetch(`${API}/api/upload-image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ base64, fileName: filePath, bucket }),
+          });
+          const json = await res.json();
+          if (!res.ok) return { data: null, error: { message: json.error || 'Upload failed' } };
+          return { data: { path: json.path }, error: null };
+        } catch (e: any) {
+          return { data: null, error: { message: e.message } };
+        }
+      },
+
+      // Return the relative path — getImageUrl() in imageUrl.ts adds the leading /
+      getPublicUrl: (filePath: string) => ({
+        data: { publicUrl: `images/${subfolder}/${filePath}` },
+      }),
+    };
+  },
 };
 
 // ── Realtime stub (no-op for local dev — no WebSocket needed) ─
