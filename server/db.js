@@ -4,17 +4,12 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// On Cloud Run, connect via Unix socket (Cloud SQL mounts socket automatically).
-// Locally, connect via TCP.
-const connectionName = process.env.CLOUD_SQL_CONNECTION_NAME;
-
-const pool = connectionName
+// Use DATABASE_URL if set (Cloud Run / production).
+// Fall back to individual env vars for local development.
+const pool = process.env.DATABASE_URL
   ? new Pool({
-      host:     `/cloudsql/${connectionName}`,
-      database: process.env.DATABASE_NAME     || 'mydatabase',
-      user:     process.env.DATABASE_USER     || 'admin',
-      password: process.env.DATABASE_PASSWORD || '123456',
-      max:      10,
+      connectionString:        process.env.DATABASE_URL,
+      max:                     10,
       idleTimeoutMillis:       30000,
       connectionTimeoutMillis: 10000,
     })
