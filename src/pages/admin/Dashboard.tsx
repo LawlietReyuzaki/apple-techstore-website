@@ -38,7 +38,6 @@ export default function AdminDashboard() {
       };
     },
     enabled: isAdmin,
-    refetchInterval: 30000,
   });
 
   const { data: pendingOrders } = useQuery({
@@ -55,7 +54,6 @@ export default function AdminDashboard() {
       return data || [];
     },
     enabled: isAdmin,
-    refetchInterval: 30000, // Refresh every 30 seconds for timer updates
   });
 
   const { data: pendingRepairs } = useQuery({
@@ -72,7 +70,6 @@ export default function AdminDashboard() {
       return data || [];
     },
     enabled: isAdmin,
-    refetchInterval: 30000, // Refresh every 30 seconds for timer updates
   });
 
   const queryClient = useQueryClient();

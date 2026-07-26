@@ -279,26 +279,14 @@ export default function Shop() {
     },
   });
 
-  // ── Infinite scroll: auto-load more when "Load More" button comes into view
+  // ── Load-more is user-initiated only (explicit "Load More" button click). ──
+  // NOTE: A previous IntersectionObserver here auto-called loadMoreProducts()
+  // whenever the sentinel was in view. Because the effect re-subscribed on every
+  // load (loadMoreProducts changes with productItems.length) and IntersectionObserver
+  // fires its callback immediately on observe(), an always-on/idle tab looped
+  // product fetches ~1/sec with NO user action (~94k req/day, permanently active
+  // Cloud Run instance). Removed — products now load only when the user clicks.
   const loadMoreButtonRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMoreProducts && !isLoadingMoreProducts) {
-          loadMoreProducts();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const currentRef = loadMoreButtonRef.current;
-    if (currentRef) observer.observe(currentRef);
-
-    return () => {
-      if (currentRef) observer.unobserve(currentRef);
-    };
-  }, [hasMoreProducts, isLoadingMoreProducts, loadMoreProducts]);
 
   // ── Brands for filter dropdown (from loaded product items) ───────────────
   const shopBrands = useMemo(
