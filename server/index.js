@@ -12,6 +12,7 @@ import pool from './db.js';
 import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
 import { sendOrderEmails, sendEmailForType, sendPartRequestEmail } from './emailService.js';
 import { isBot, renderProduct, renderSparePart, renderShopItem } from './botRenderer.js';
+import { Storage } from '@google-cloud/storage';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ const PORT = process.env.LOCAL_API_PORT || process.env.PORT || 3001; // LOCAL_AP
 const JWT_SECRET = process.env.JWT_SECRET || 'local-dev-secret-change-in-production';
 
 app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '25mb' }));
 
 // Serve scraped product images from project root /images folder
 app.use('/images', express.static(join(__dirname, '..', 'images')));
@@ -70,6 +71,81 @@ app.post('/api/upload-image', async (req, res) => {
     res.json({ path: `images/${subfolder}/${safeName}` });
   } catch (err) {
     console.error('[upload-image] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: missing images + permanent GCS upload ─────────────
+// Images uploaded here go to the public GCS bucket (permanent) and the URL
+// is written straight into the item's images[] column — so they survive
+// deploys and are reused everywhere the item renders.
+const GCS_BUCKET = 'dilbar-product-images';
+let gcsBucket = null;
+try {
+  // On Cloud Run this uses the service account's default credentials (ADC).
+  gcsBucket = new Storage().bucket(GCS_BUCKET);
+} catch (e) {
+  console.error('[gcs] init failed:', e.message);
+}
+
+// Condition matching an item that has NO usable image
+const NO_IMAGE_SQL = `images IS NULL OR array_length(images, 1) IS NULL OR btrim(array_to_string(images, '')) = ''`;
+
+app.get('/api/admin/missing-images', async (req, res) => {
+  try {
+    const products = (await pool.query(
+      `SELECT id, name, brand FROM products WHERE ${NO_IMAGE_SQL} ORDER BY name`)).rows;
+    const spare_parts = (await pool.query(
+      `SELECT id, name FROM spare_parts WHERE ${NO_IMAGE_SQL} ORDER BY name`)).rows;
+    res.json({
+      products, spare_parts,
+      counts: { products: products.length, spare_parts: spare_parts.length },
+    });
+  } catch (err) {
+    console.error('[missing-images] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/upload-image-gcs', async (req, res) => {
+  try {
+    const { base64, fileName, table, id } = req.body;
+    if (!base64 || !fileName || !table || !id) {
+      return res.status(400).json({ error: 'Missing required fields: base64, fileName, table, id' });
+    }
+    if (!['products', 'spare_parts'].includes(table)) {
+      return res.status(400).json({ error: 'Invalid table' });
+    }
+    if (!gcsBucket) return res.status(500).json({ error: 'Image storage is not configured on the server' });
+
+    const ext = (String(fileName).split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    const destination = `images/admin-uploads/${id}-${Date.now()}.${ext}`;
+    const buffer = Buffer.from(base64, 'base64');
+
+    await gcsBucket.file(destination).save(buffer, {
+      resumable: false,
+      contentType,
+      metadata: { cacheControl: 'public, max-age=31536000' },
+    });
+    const url = `https://storage.googleapis.com/${GCS_BUCKET}/${destination}`;
+
+    // Drop any empty strings, then append the new URL → guarantees images[0] is real
+    const upd = await pool.query(
+      `UPDATE ${table}
+         SET images = array_append(
+           ARRAY(SELECT e FROM unnest(COALESCE(images, ARRAY[]::text[])) AS e WHERE btrim(e) <> ''),
+           $1
+         )
+       WHERE id = $2
+       RETURNING images`,
+      [url, id]
+    );
+    if (upd.rowCount === 0) return res.status(404).json({ error: 'Item not found' });
+
+    res.json({ url, images: upd.rows[0].images });
+  } catch (err) {
+    console.error('[upload-image-gcs] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

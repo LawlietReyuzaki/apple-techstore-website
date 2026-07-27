@@ -27,6 +27,7 @@ import AdminSparePartsConfig from "./pages/admin/SparePartsConfig";
 import AdminShopInventory from "./pages/admin/ShopInventory";
 import AdminCategoryManagement from "./pages/admin/CategoryManagement";
 import AdminPartRequests from "./pages/admin/PartRequests";
+import AdminMissingImages from "./pages/admin/MissingImages";
 import Shop from "./pages/Shop";
 import SpareParts from "./pages/SpareParts";
 import SparePartDetail from "./pages/SparePartDetail";
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="shop-inventory" element={<AdminShopInventory />} />
             <Route path="categories" element={<AdminCategoryManagement />} />
             <Route path="part-requests" element={<AdminPartRequests />} />
+            <Route path="missing-images" element={<AdminMissingImages />} />
             <Route path="technicians" element={<AdminTechnicians />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
