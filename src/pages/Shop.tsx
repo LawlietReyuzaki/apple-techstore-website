@@ -267,6 +267,14 @@ export default function Shop() {
     setIsLoadingMore(false);
   }, [isLoadingMore, hasMoreSpareParts, sparePartsItems.length, buildSparePartsQuery]);
 
+  // ── Single "Load More" for the current view ──────────────────────────────
+  // Advances whichever sources are visible in the selected category (products
+  // and/or spare parts), so shoppers see just one button — not one per table.
+  const loadMoreAll = useCallback(() => {
+    if (hasMoreProducts) loadMoreProducts();
+    if (sparePartsVisible && hasMoreSpareParts) loadMoreSpareParts();
+  }, [hasMoreProducts, sparePartsVisible, hasMoreSpareParts, loadMoreProducts, loadMoreSpareParts]);
+
   const { data: partCategories } = useQuery({
     queryKey: ["part-categories"],
     queryFn: async () => {
@@ -660,41 +668,21 @@ export default function Shop() {
               ))}
             </div>
 
-            {/* Load More — Products */}
-            {hasMoreProducts && !isLoadingSpareParts && (
+            {/* Load More — single button for the selected category */}
+            {(hasMoreProducts || (sparePartsVisible && hasMoreSpareParts)) && (
               <div ref={loadMoreButtonRef} className="flex justify-center mt-8">
                 <button
-                  onClick={loadMoreProducts}
-                  disabled={isLoadingMoreProducts}
+                  onClick={loadMoreAll}
+                  disabled={isLoadingMoreProducts || isLoadingMore}
                   className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isLoadingMoreProducts ? (
+                  {(isLoadingMoreProducts || isLoadingMore) ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading more...
                     </>
                   ) : (
-                    "Load More Products"
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Load More — Spare Parts */}
-            {sparePartsVisible && (hasMoreSpareParts || isLoadingMore) && (
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={loadMoreSpareParts}
-                  disabled={isLoadingMore}
-                  className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading more...
-                    </>
-                  ) : (
-                    "Load More Parts"
+                    "Load More"
                   )}
                 </button>
               </div>
