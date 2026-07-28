@@ -412,13 +412,18 @@ export default function Shop() {
     [normalizedShopItems, normalizedProducts, normalizedSpareParts]
   );
 
-  const displayItems = useMemo(
-    () =>
+  // Rank items WITH a real image ahead of image-less ones (stable sort keeps
+  // the existing order within each group). A "real" image = a non-empty string.
+  const hasRealImage = (it: any) =>
+    Array.isArray(it.images) && it.images.some((u: any) => typeof u === "string" && u.trim() !== "");
+
+  const displayItems = useMemo(() => {
+    const base =
       category === "all"
         ? allNormalizedItems
-        : allNormalizedItems.filter(item => item.shop_categories?.slug === category),
-    [category, allNormalizedItems]
-  );
+        : allNormalizedItems.filter(item => item.shop_categories?.slug === category);
+    return [...base].sort((a, b) => (hasRealImage(b) ? 1 : 0) - (hasRealImage(a) ? 1 : 0));
+  }, [category, allNormalizedItems]);
 
   const totalCount = displayItems.length;
   const hasMoreAny = hasMoreProducts || hasMoreSpareParts;

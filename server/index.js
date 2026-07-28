@@ -659,8 +659,10 @@ app.get('/rest/v1/:table', async (req, res) => {
 
     // For product/spare_part listings always rank items with images above those without
     const hasImagesCol = table === 'products' || table === 'spare_parts';
+    // TRUE only when the item has at least one NON-EMPTY image string.
+    // (array_length>0 wrongly counted arrays of empty strings like ['','',''] as "has image".)
     const imageFirstExpr = hasImagesCol
-      ? '(t.images IS NOT NULL AND array_length(t.images, 1) > 0) DESC NULLS LAST'
+      ? "(t.images IS NOT NULL AND btrim(array_to_string(t.images, '')) <> '') DESC"
       : null;
     const orderClause = imageFirstExpr
       ? `ORDER BY ${imageFirstExpr}${userOrder ? ', ' + userOrder.replace(/^ORDER BY\s*/i, '') : ''}`
