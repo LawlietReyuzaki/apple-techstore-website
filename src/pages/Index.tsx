@@ -22,6 +22,7 @@ import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { DeviceCard } from "@/components/DeviceCard";
 import { DynamicCategoriesSection } from "@/components/DynamicCategoriesSection";
 import { ShopCategoryShowcase } from "@/components/ShopCategoryShowcase";
+import { CatalogShortcuts } from "@/components/CatalogShortcuts";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useAuth } from "@/hooks/useAuth";
@@ -577,6 +578,15 @@ const Index = () => {
                 Shop
               </Button>
             </Link>
+            <Link to="/brands" className="hidden lg:block">
+              <Button variant="ghost" size="sm">Shop by Brand</Button>
+            </Link>
+            <Link to="/parts" className="hidden lg:block">
+              <Button variant="ghost" size="sm">
+                <Wrench className="h-4 w-4 mr-2" />
+                Shop by Part
+              </Button>
+            </Link>
             <Link to="/phones" className="hidden xl:block">
               <Button variant="ghost" size="sm">
                 <Smartphone className="h-4 w-4 mr-2" />
@@ -626,6 +636,15 @@ const Index = () => {
                       Shop
                     </Button>
                   </Link>
+                  <Link to="/brands" className="block">
+                    <Button className="w-full" variant="outline">Shop by Brand</Button>
+                  </Link>
+                  <Link to="/parts" className="block">
+                    <Button className="w-full" variant="outline">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Shop by Part
+                    </Button>
+                  </Link>
                   <Link to="/phones" className="block">
                     <Button className="w-full" variant="outline">
                       <Smartphone className="h-4 w-4 mr-2" />
@@ -667,6 +686,9 @@ const Index = () => {
       <div className="container py-4 sm:py-6">
         <HeroCarousel />
       </div>
+
+      {/* Shop by Brand / Part / Phone price — new category pages */}
+      <CatalogShortcuts />
 
       {/* Promo Section with Repair & Parts Banners */}
       <PromoSection />

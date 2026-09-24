@@ -490,12 +490,14 @@ export default function Shop() {
       <header className="bg-background/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-foreground hover:text-primary transition-colors">
-            Dilbar Mobiles
+            AppleTechStore
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
               <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
               <Link to="/shop" className="text-primary">Shop</Link>
+              <Link to="/brands" className="text-muted-foreground hover:text-foreground transition-colors">Shop by Brand</Link>
+              <Link to="/parts" className="text-muted-foreground hover:text-foreground transition-colors">Shop by Part</Link>
               <Link to="/book-repair" className="text-muted-foreground hover:text-foreground transition-colors">Repair</Link>
               <Link to="/track-repair" className="text-muted-foreground hover:text-foreground transition-colors">Track</Link>
             </nav>

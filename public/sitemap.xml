@@ -11,4 +11,7 @@
   <sitemap>
     <loc>https://appletechstore.pk/sitemap-parts.xml</loc>
   </sitemap>
+  <sitemap>
+    <loc>https://appletechstore.pk/sitemap-categories.xml</loc>
+  </sitemap>
 </sitemapindex>

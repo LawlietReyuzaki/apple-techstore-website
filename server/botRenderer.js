@@ -258,6 +258,66 @@ export function shopItemMeta(item) {
   };
 }
 
+// ── Category page (/brands/…, /parts/…, /phones/price/…) ──────
+/**
+ * @param cat      catalog_categories row
+ * @param items    first page of catalog_items rows ({ name, url_path, main_image, price, … })
+ * @param links    child/sibling category links [{ name, path, count }]
+ * @param crumbs   [{ name, url }]
+ */
+export function categoryMeta(cat, items = [], links = [], crumbs = []) {
+  const firstImage = items.find((i) => i.main_image)?.main_image;
+  const list = items.slice(0, 24);
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: cat.heading,
+      description: cat.description,
+      url: `${SITE}${cat.path}`,
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: cat.item_count,
+        itemListElement: list.map((it, i) => ({
+          '@type': 'ListItem', position: i + 1, url: `${SITE}${it.url_path}`, name: it.name,
+        })),
+      },
+    },
+    breadcrumbLd(crumbs),
+  ];
+  const trail = crumbs
+    .map((c, i) => (i === crumbs.length - 1
+      ? `<span>${escHtml(c.name)}</span>`
+      : `<a href="${escAttr(c.url)}" style="color:inherit">${escHtml(c.name)}</a>`))
+    .join(' &rsaquo; ');
+  const linkHtml = links.length
+    ? `<ul style="display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;padding:0">${links.slice(0, 200).map((l) =>
+        `<li><a href="${escAttr(l.path)}" style="color:inherit">${escHtml(l.name)}</a>${l.count ? ` (${l.count})` : ''}</li>`).join('')}</ul>`
+    : '';
+  const itemHtml = list.length
+    ? `<ol style="padding-left:18px">${list.map((it) =>
+        `<li><a href="${escAttr(it.url_path)}" style="color:inherit">${escHtml(it.name)}</a> — Rs. ${fmt(it.price)}</li>`).join('')}</ol>`
+    : '';
+  const bodyContent = `
+<main style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;max-width:960px;margin:32px auto;padding:0 16px;line-height:1.5">
+  <nav aria-label="Breadcrumb" style="font-size:13px;opacity:.7;margin-bottom:12px">${trail}</nav>
+  <h1 style="font-size:26px;margin:0 0 6px">${escHtml(cat.heading)}</h1>
+  <p style="opacity:.8;margin:0 0 16px">${escHtml(cat.description)}</p>
+  ${linkHtml}
+  ${itemHtml}
+</main>`;
+  return {
+    title: cat.title,
+    description: cat.description,
+    url: cat.path,
+    image: firstImage ? absImg(firstImage) : DEFAULT_OG_IMAGE,
+    ogType: 'website',
+    jsonLd,
+    bodyContent,
+    noindex: !cat.indexable,
+  };
+}
+
 // ── Output: full page for bots ────────────────────────────────
 export function buildHTML(m) {
   const canonical = `${SITE}${m.url}`;
@@ -269,7 +329,7 @@ export function buildHTML(m) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escHtml(m.title)}</title>
   <meta name="description" content="${escAttr(m.description)}" />
-  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="robots" content="${m.noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'}" />
   <link rel="canonical" href="${canonical}" />
 
   <meta property="og:type" content="${m.ogType || 'website'}" />
@@ -337,6 +397,7 @@ export function injectMeta(indexHtml, m) {
   h = setTag(h, /<meta\s+name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${title}" />`);
   h = setTag(h, /<meta\s+name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${desc}" />`);
   h = setTag(h, /<meta\s+name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${image}" />`);
+  if (m.noindex) h = setTag(h, /<meta\s+name="robots"[^>]*>/i, `<meta name="robots" content="noindex, follow" />`);
   // Page-specific structured data replaces the homepage-only blocks (FAQ, business info)
   h = stripJsonLd(h);
   const ld = (m.jsonLd || []).map(o => `<script type="application/ld+json">${safeJson(o)}</script>`).join('\n');

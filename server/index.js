@@ -1,4 +1,4 @@
-// build trigger 2026-03-08
+﻿// build trigger 2026-03-08
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -16,6 +16,7 @@ import {
   productMeta, sparePartMeta, shopItemMeta,
 } from './botRenderer.js';
 import { Storage } from '@google-cloud/storage';
+import { registerCatalogRoutes } from './catalog/routes.js';
 
 dotenv.config();
 
@@ -38,16 +39,16 @@ app.use(express.static(distPath));
 
 const SITE = 'https://appletechstore.pk';
 
-// ── Public config (frontend fetches this to get runtime env vars) ────
+// â”€â”€ Public config (frontend fetches this to get runtime env vars) â”€â”€â”€â”€
 app.get('/api/config', (req, res) => {
   res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
   });
 });
 
-// ── Image upload (base64 JSON → local filesystem) ────────────
+// â”€â”€ Image upload (base64 JSON â†’ local filesystem) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Bucket name maps to subfolder under project-root /images/
-// NOTE: On Cloud Run the filesystem is ephemeral — images survive until
+// NOTE: On Cloud Run the filesystem is ephemeral â€” images survive until
 // the next deployment/restart.  Migrate to GCS for permanent storage.
 app.post('/api/upload-image', async (req, res) => {
   try {
@@ -56,7 +57,7 @@ app.post('/api/upload-image', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: base64, fileName' });
     }
 
-    // Sanitise filename — allow alphanum, dash, underscore, dot only
+    // Sanitise filename â€” allow alphanum, dash, underscore, dot only
     const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200);
     if (!safeName) return res.status(400).json({ error: 'Invalid fileName' });
 
@@ -70,7 +71,7 @@ app.post('/api/upload-image', async (req, res) => {
     const buffer = Buffer.from(base64, 'base64');
     await fsPromises.writeFile(join(imagesDir, safeName), buffer);
 
-    // Return relative path — getImageUrl() in the frontend adds the leading slash
+    // Return relative path â€” getImageUrl() in the frontend adds the leading slash
     res.json({ path: `images/${subfolder}/${safeName}` });
   } catch (err) {
     console.error('[upload-image] error:', err.message);
@@ -78,9 +79,9 @@ app.post('/api/upload-image', async (req, res) => {
   }
 });
 
-// ── Admin: missing images + permanent GCS upload ─────────────
+// â”€â”€ Admin: missing images + permanent GCS upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Images uploaded here go to the public GCS bucket (permanent) and the URL
-// is written straight into the item's images[] column — so they survive
+// is written straight into the item's images[] column â€” so they survive
 // deploys and are reused everywhere the item renders.
 const GCS_BUCKET = 'dilbar-product-images';
 let gcsBucket = null;
@@ -133,7 +134,7 @@ app.post('/api/admin/upload-image-gcs', async (req, res) => {
     });
     const url = `https://storage.googleapis.com/${GCS_BUCKET}/${destination}`;
 
-    // Drop any empty strings, then append the new URL → guarantees images[0] is real
+    // Drop any empty strings, then append the new URL â†’ guarantees images[0] is real
     const upd = await pool.query(
       `UPDATE ${table}
          SET images = array_append(
@@ -146,6 +147,7 @@ app.post('/api/admin/upload-image-gcs', async (req, res) => {
     );
     if (upd.rowCount === 0) return res.status(404).json({ error: 'Item not found' });
 
+    onCatalogSourceChange(table);   // new image â†’ category pages show it
     res.json({ url, images: upd.rows[0].images });
   } catch (err) {
     console.error('[upload-image-gcs] error:', err.message);
@@ -153,7 +155,7 @@ app.post('/api/admin/upload-image-gcs', async (req, res) => {
   }
 });
 
-// ── DB diagnostic (temporary) ─────────────────────────────────
+// â”€â”€ DB diagnostic (temporary) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/db-test', async (req, res) => {
   const results = {
     connection_mode: process.env.CLOUD_SQL_CONNECTION_NAME
@@ -183,7 +185,7 @@ app.get('/api/db-test', async (req, res) => {
   res.json(results);
 });
 
-// ── robots.txt ────────────────────────────────────────────────
+// â”€â”€ robots.txt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(
 `User-agent: *
@@ -204,7 +206,7 @@ Sitemap: ${SITE}/sitemap-parts.xml
 `);
 });
 
-// ── sitemap-index ─────────────────────────────────────────────
+// â”€â”€ sitemap-index â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/sitemap.xml', (req, res) => {
   const now = new Date().toISOString().split('T')[0];
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
@@ -212,10 +214,11 @@ app.get('/sitemap.xml', (req, res) => {
   <sitemap><loc>${SITE}/sitemap-pages.xml</loc><lastmod>${now}</lastmod></sitemap>
   <sitemap><loc>${SITE}/sitemap-products.xml</loc><lastmod>${now}</lastmod></sitemap>
   <sitemap><loc>${SITE}/sitemap-parts.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-categories.xml</loc><lastmod>${now}</lastmod></sitemap>
 </sitemapindex>`);
 });
 
-// ── sitemap-pages.xml (static pages) ─────────────────────────
+// â”€â”€ sitemap-pages.xml (static pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/sitemap-pages.xml', (req, res) => {
   const now = new Date().toISOString().split('T')[0];
   const pages = ['/', '/shop', '/phones', '/laptops', '/accessories', '/spare-parts', '/book-repair', '/request-part'];
@@ -226,7 +229,7 @@ ${urls}
 </urlset>`);
 });
 
-// ── sitemap-products.xml (all products from DB) ───────────────
+// â”€â”€ sitemap-products.xml (all products from DB) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/sitemap-products.xml', async (req, res) => {
   try {
     // Try with slug column; fall back to id-only if migration hasn't run yet.
@@ -238,7 +241,7 @@ app.get('/sitemap-products.xml', async (req, res) => {
          ORDER BY updated_at DESC LIMIT 50000`
       ));
     } catch (colErr) {
-      // slug column missing — use id only until migration runs
+      // slug column missing â€” use id only until migration runs
       ({ rows } = await pool.query(
         `SELECT id, NULL AS slug, updated_at FROM products
          WHERE images IS NOT NULL AND array_length(images,1) > 0
@@ -264,7 +267,7 @@ ${urls}
   }
 });
 
-// ── sitemap-parts.xml (spare parts) ──────────────────────────
+// â”€â”€ sitemap-parts.xml (spare parts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/sitemap-parts.xml', async (req, res) => {
   try {
     // Try with visible filter; fall back to no filter if column missing.
@@ -297,7 +300,7 @@ ${urls}
   }
 });
 
-// ── Dynamic rendering for bots ────────────────────────────────
+// â”€â”€ Dynamic rendering for bots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Sets headers required for dynamic rendering to work correctly behind CDNs/proxies.
@@ -342,13 +345,13 @@ function sendNotFound(req, res) {
   res.status(404).type('html').send(injectBasic(base, { path: req.path, noindex: true }));
 }
 
-// Permanent redirect, keeping any tracking query string (?utm_…, ?fbclid…)
+// Permanent redirect, keeping any tracking query string (?utm_â€¦, ?fbclidâ€¦)
 function redirect301(req, res, path) {
   const q = req.originalUrl.indexOf('?');
   res.redirect(301, path + (q >= 0 ? req.originalUrl.slice(q) : ''));
 }
 
-// Category slugs rarely change — cache them instead of querying on every page view
+// Category slugs rarely change â€” cache them instead of querying on every page view
 const categorySlugCache = new Map();
 async function categorySlugFor(categoryName) {
   if (!categoryName) return null;
@@ -374,10 +377,10 @@ app.get('/product/:idOrSlug', async (req, res, next) => {
       [key]
     ));
 
-    // Old UUID link → its slug URL (rankings and shared links carry over)
+    // Old UUID link â†’ its slug URL (rankings and shared links carry over)
     if (product && col === 'p.id' && product.slug) return redirect301(req, res, `/product/${product.slug}`);
 
-    // Unknown slug, but the 8-char id suffix matches → product was renamed
+    // Unknown slug, but the 8-char id suffix matches â†’ product was renamed
     if (!product && col === 'p.slug') {
       const m = key.match(/-([0-9a-f]{8})$/i);
       if (m) {
@@ -406,10 +409,10 @@ app.get('/spare-part/:id', async (req, res, next) => {
       `SELECT * FROM spare_parts WHERE ${isUuid ? 'id' : 'slug'} = $1`, [key]
     ));
 
-    // Old UUID link → its slug URL
+    // Old UUID link â†’ its slug URL
     if (part && isUuid && part.slug) return redirect301(req, res, `/spare-part/${part.slug}`);
 
-    // Unknown slug, but the 8-char id suffix matches → part was renamed
+    // Unknown slug, but the 8-char id suffix matches â†’ part was renamed
     if (!part && !isUuid) {
       const m = key.match(/-([0-9a-f]{8})$/i);
       if (m) {
@@ -443,7 +446,11 @@ app.get('/shop-item/:id', async (req, res, next) => {
   sendPage(req, res, shopItemMeta(item));
 });
 
-// ── SEO debug endpoint ────────────────────────────────────────
+// â”€â”€ Category layer: /brands/â€¦, /parts/â€¦, /phones/price/â€¦ (+ API, sitemap) â”€â”€
+// Additive: existing product/spare-part URLs, canonicals and sitemaps are untouched.
+const catalog = registerCatalogRoutes(app, { pool, sendPage, sendNotFound, verifyToken });
+
+// â”€â”€ SEO debug endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /api/seo-debug?url=/product/some-slug
 // Returns what headers + bot-detection result the server would use for a given path.
 app.get('/api/seo-debug', (req, res) => {
@@ -467,7 +474,7 @@ app.get('/api/seo-debug', (req, res) => {
   });
 });
 
-// ── Auth middleware ──────────────────────────────────────────
+// â”€â”€ Auth middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function verifyToken(req) {
   const auth = req.headers.authorization || '';
   const token = auth.replace('Bearer ', '').trim();
@@ -475,7 +482,7 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-// ── Auth routes ──────────────────────────────────────────────
+// â”€â”€ Auth routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // POST /auth/v1/signup
 app.post('/auth/v1/signup', async (req, res) => {
@@ -499,7 +506,7 @@ app.post('/auth/v1/signup', async (req, res) => {
     );
     const user = result.rows[0];
 
-    // Create profile — non-fatal if table missing
+    // Create profile â€” non-fatal if table missing
     try {
       await pool.query(
         `INSERT INTO profiles (id, full_name, phone) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
@@ -509,7 +516,7 @@ app.post('/auth/v1/signup', async (req, res) => {
       console.warn('profiles insert skipped:', profileErr.message);
     }
 
-    // Assign customer role — non-fatal
+    // Assign customer role â€” non-fatal
     try {
       await pool.query(
         `INSERT INTO user_roles (user_id, role) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
@@ -568,7 +575,7 @@ app.post('/auth/v1/token', async (req, res) => {
   }
 });
 
-// POST /auth/v1/admin-token  (admin sign-in — checks user_roles for 'admin')
+// POST /auth/v1/admin-token  (admin sign-in â€” checks user_roles for 'admin')
 app.post('/auth/v1/admin-token', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -600,7 +607,7 @@ app.post('/auth/v1/admin-token', async (req, res) => {
   }
 });
 
-// POST /auth/v1/google  (Google Sign-In — verify ID token, find/create user)
+// POST /auth/v1/google  (Google Sign-In â€” verify ID token, find/create user)
 app.post('/auth/v1/google', async (req, res) => {
   try {
     const { id_token } = req.body;
@@ -644,7 +651,7 @@ app.post('/auth/v1/google', async (req, res) => {
   }
 });
 
-// POST /auth/v1/admin-google  (Google Sign-In for admin — must have admin role)
+// POST /auth/v1/admin-google  (Google Sign-In for admin â€” must have admin role)
 app.post('/auth/v1/admin-google', async (req, res) => {
   try {
     const { id_token } = req.body;
@@ -697,7 +704,7 @@ app.get('/auth/v1/user', async (req, res) => {
   res.json({ data: { user: formatUser(result.rows[0]) }, error: null });
 });
 
-// ── Simple in-memory query cache (TTL: 60s for lists, 300s for static tables) ──
+// â”€â”€ Simple in-memory query cache (TTL: 60s for lists, 300s for static tables) â”€â”€
 const queryCache = new Map();
 const CACHE_TTL = {
   products:        60_000,
@@ -722,11 +729,19 @@ function invalidateTable(table) {
   for (const key of queryCache.keys()) {
     if (key.startsWith(`${table}:`)) queryCache.delete(key);
   }
+  onCatalogSourceChange(table);
 }
 
-// ── Data routes ──────────────────────────────────────────────
+// Products / spare parts changed â†’ refresh the category layer in the background
+// (debounced: many quick edits trigger one rebuild ~2 minutes after the last change)
+const CATALOG_SOURCE_TABLES = new Set(['products', 'spare_parts', 'shop_items', 'categories', 'part_categories']);
+function onCatalogSourceChange(table) {
+  if (CATALOG_SOURCE_TABLES.has(table)) catalog.scheduleRebuild();
+}
 
-// GET /rest/v1/:table — SELECT
+// â”€â”€ Data routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// GET /rest/v1/:table â€” SELECT
 app.get('/rest/v1/:table', async (req, res) => {
   try {
     const { table } = req.params;
@@ -748,7 +763,7 @@ app.get('/rest/v1/:table', async (req, res) => {
     const selectClause = buildSelectSQL(table, selectAST);
     const whereClause  = buildWhereSQL(rawFilters ? JSON.parse(rawFilters) : [], params);
     const userOrder    = buildOrderSQL(rawOrder ? JSON.parse(rawOrder) : []);
-    // Cap at 1000 rows to prevent OOM — callers must use limit+offset for pagination
+    // Cap at 1000 rows to prevent OOM â€” callers must use limit+offset for pagination
     const MAX_ROWS = 1000;
     const requestedLimit = limit ? parseInt(limit) : null;
     const effectiveLimit = requestedLimit ? Math.min(requestedLimit, MAX_ROWS) : MAX_ROWS;
@@ -783,7 +798,7 @@ app.get('/rest/v1/:table', async (req, res) => {
   }
 });
 
-// POST /rest/v1/:table — INSERT
+// POST /rest/v1/:table â€” INSERT
 app.post('/rest/v1/:table', async (req, res) => {
   try {
     const { table } = req.params;
@@ -822,7 +837,7 @@ app.post('/rest/v1/:table', async (req, res) => {
   }
 });
 
-// PATCH /rest/v1/:table — UPDATE
+// PATCH /rest/v1/:table â€” UPDATE
 app.patch('/rest/v1/:table', async (req, res) => {
   try {
     const { table } = req.params;
@@ -849,7 +864,7 @@ app.patch('/rest/v1/:table', async (req, res) => {
   }
 });
 
-// DELETE /rest/v1/:table — DELETE
+// DELETE /rest/v1/:table â€” DELETE
 app.delete('/rest/v1/:table', async (req, res) => {
   try {
     const { table } = req.params;
@@ -862,6 +877,7 @@ app.delete('/rest/v1/:table', async (req, res) => {
     const sql = `DELETE FROM ${table} t ${whereClause} RETURNING t.*`;
     const result = await pool.query(sql, params);
 
+    onCatalogSourceChange(table);
     res.json({ data: result.rows, error: null });
   } catch (err) {
     console.error(`DELETE /rest/v1/${req.params.table} error:`, err.message);
@@ -869,8 +885,8 @@ app.delete('/rest/v1/:table', async (req, res) => {
   }
 });
 
-// ── Admin cleanup ────────────────────────────────────────────
-// POST /admin/clear-test-data — deletes all orders+repairs before March 12, 2026
+// â”€â”€ Admin cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /admin/clear-test-data â€” deletes all orders+repairs before March 12, 2026
 app.post('/admin/clear-test-data', async (req, res) => {
   try {
     const cutoff = '2026-03-12T00:00:00Z';
@@ -913,9 +929,9 @@ app.post('/admin/clear-test-data', async (req, res) => {
   }
 });
 
-// ── Edge functions ───────────────────────────────────────────
+// â”€â”€ Edge functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// POST /functions/v1/create-order — local replacement for Supabase edge function
+// POST /functions/v1/create-order â€” local replacement for Supabase edge function
 app.post('/functions/v1/create-order', async (req, res) => {
   try {
     const {
@@ -967,7 +983,7 @@ app.post('/functions/v1/create-order', async (req, res) => {
       [order.id]
     );
 
-    // Send emails (fire-and-forget — don't block the response)
+    // Send emails (fire-and-forget â€” don't block the response)
     sendOrderEmails(order, savedItems.rows).catch(err =>
       console.error('[email] sendOrderEmails failed:', err.message)
     );
@@ -979,7 +995,7 @@ app.post('/functions/v1/create-order', async (req, res) => {
   }
 });
 
-// POST /functions/v1/send-order-email — real email dispatcher
+// POST /functions/v1/send-order-email â€” real email dispatcher
 app.post('/functions/v1/send-order-email', async (req, res) => {
   const { type, orderId, repairId, newStatus, declineReason, visitDate, customNote } = req.body;
 
@@ -1031,7 +1047,7 @@ app.post('/functions/v1/send-order-email', async (req, res) => {
       newStatus, declineReason, visitDate, customNote,
     });
 
-    console.log(`[send-order-email] ${type} → success`);
+    console.log(`[send-order-email] ${type} â†’ success`);
     res.json({ success: true });
   } catch (err) {
     console.error(`[send-order-email] ${type} failed:`, err.message);
@@ -1039,7 +1055,7 @@ app.post('/functions/v1/send-order-email', async (req, res) => {
   }
 });
 
-// POST /functions/v1/send-part-request-email — part request notifications
+// POST /functions/v1/send-part-request-email â€” part request notifications
 app.post('/functions/v1/send-part-request-email', async (req, res) => {
   const { type, requestId, newStatus, adminNotes,
           customerName, customerEmail, customerPhone,
@@ -1073,7 +1089,7 @@ app.post('/functions/v1/send-part-request-email', async (req, res) => {
 
     await sendPartRequestEmail(type, { request, newStatus, adminNotes });
 
-    console.log(`[send-part-request-email] ${type} → success`);
+    console.log(`[send-part-request-email] ${type} â†’ success`);
     res.json({ success: true });
   } catch (err) {
     console.error(`[send-part-request-email] ${type} failed:`, err.message);
@@ -1081,14 +1097,14 @@ app.post('/functions/v1/send-part-request-email', async (req, res) => {
   }
 });
 
-// POST /functions/v1/* — no-op stub for any other edge functions
+// POST /functions/v1/* â€” no-op stub for any other edge functions
 app.post('/functions/v1/:name', (req, res) => {
   const { name } = req.params;
   console.log(`[functions stub] ${name} called (no-op in local dev)`);
   res.json({ success: true, message: `${name} is a no-op in local development` });
 });
 
-// ── Health check ─────────────────────────────────────────────
+// â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -1098,7 +1114,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// ── Helpers ──────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatUser(user) {
   const meta = typeof user.raw_user_meta_data === 'string'
     ? JSON.parse(user.raw_user_meta_data || '{}')
@@ -1122,7 +1138,7 @@ function buildSession(token, user) {
   };
 }
 
-// ── SPA fallback — must be LAST route ─────────────────────────
+// â”€â”€ SPA fallback â€” must be LAST route â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Serves index.html for any non-API route so React Router works
 // Private pages get noindex; every page gets a canonical pointing at itself
 // (index.html hard-codes the homepage canonical, which made every page look
@@ -1140,14 +1156,28 @@ app.get('*splat', (req, res) => {
   }));
 });
 
-// ── Start ─────────────────────────────────────────────────────
+// â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Run migrations on startup
 pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ")
   .then(() => console.log('[migration] orders.due_date column ready'))
   .catch(err => console.warn('[migration] orders.due_date:', err.message));
 
+// Build the category layer on startup if it's missing or older than 6 hours
+// (runs in the background; the site serves normally meanwhile)
+setTimeout(async () => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT (SELECT COUNT(*) FROM catalog_items)::int AS n, (SELECT MAX(updated_at) FROM catalog_items) AS t`);
+    const stale = !rows[0].n || !rows[0].t || Date.now() - new Date(rows[0].t).getTime() > 6 * 3600 * 1000;
+    if (stale) await catalog.rebuildNow();
+  } catch {
+    // tables don't exist yet â†’ first build creates them
+    catalog.rebuildNow().catch((e) => console.error('[catalog] initial build failed:', e.message));
+  }
+}, 20000);
+
 app.listen(PORT, () => {
-  console.log(`\n✅ Local API server running at http://localhost:${PORT}`);
+  console.log(`\nâœ… Local API server running at http://localhost:${PORT}`);
   console.log(`   Auth:  POST http://localhost:${PORT}/auth/v1/signup`);
   console.log(`   Auth:  POST http://localhost:${PORT}/auth/v1/token`);
   console.log(`   Data:  GET  http://localhost:${PORT}/rest/v1/:table`);

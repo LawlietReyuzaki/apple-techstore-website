@@ -43,6 +43,7 @@ import Laptops from "./pages/Laptops";
 import Accessories from "./pages/Accessories";
 import RequestPart from "./pages/RequestPart";
 import RequestPartThankYou from "./pages/RequestPartThankYou";
+import CatalogPage from "./pages/CatalogPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,10 @@ const App = () => (
           <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/shop" element={<Shop />} />
+          {["/brands", "/brands/:brand", "/brands/:brand/:model", "/parts", "/parts/:part",
+            "/parts/:part/:brand", "/phones/price/:band"].map((p) => (
+            <Route key={p} path={p} element={<CatalogPage />} />
+          ))}
           <Route path="/phones" element={<UsedPhones />} />
           <Route path="/laptops" element={<Laptops />} />
           <Route path="/accessories" element={<Accessories />} />
