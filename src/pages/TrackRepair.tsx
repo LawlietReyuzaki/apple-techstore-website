@@ -279,12 +279,12 @@ const TrackRepair = () => {
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground mb-2">Need assistance?</p>
             <div className="flex justify-center gap-4">
-              <a href="tel:+923001234567" className="text-primary hover:underline">
-                Call: +92 300 1234567
+              <a href="tel:+923342228141" className="text-primary hover:underline">
+                Call: +92 334 2228141
               </a>
               <span className="text-muted-foreground">|</span>
               <a
-                href="https://wa.me/923001234567"
+                href="https://wa.me/923342228141"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"

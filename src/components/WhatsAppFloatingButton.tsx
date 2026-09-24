@@ -64,11 +64,16 @@ export const WhatsAppFloatingButton = () => {
               </button>
             </div>
             <p className="text-foreground text-center text-lg">
-              For WhatsApp contact on this number:
+              Chat with us on WhatsApp:
             </p>
-            <p className="text-center text-xl font-bold mt-2" style={{ color: '#25D366' }}>
-              +92 334 2228141
-            </p>
+            <div className="mt-3 space-y-2">
+              <a href="https://wa.me/923342228141" target="_blank" rel="noopener noreferrer" className="block text-center text-xl font-bold hover:underline" style={{ color: '#25D366' }}>
+                +92 334 2228141
+              </a>
+              <a href="https://wa.me/923200450584" target="_blank" rel="noopener noreferrer" className="block text-center text-xl font-bold hover:underline" style={{ color: '#25D366' }}>
+                +92 320 0450584
+              </a>
+            </div>
           </div>
         </div>
       )}

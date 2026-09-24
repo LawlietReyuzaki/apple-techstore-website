@@ -740,7 +740,8 @@ const Index = () => {
               <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Contact</h4>
               <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
                 <li>Bahria Phase 7, Rawalpindi</li>
-                <li>Phone: +92 XXX XXXXXXX</li>
+                <li>Phone: +92 334 2228141</li>
+                <li>WhatsApp: +92 320 0450584</li>
                 <li>Email: info@dilbarmart.pk</li>
                 <li>Mon-Sat: 10AM - 10PM</li>
               </ul>

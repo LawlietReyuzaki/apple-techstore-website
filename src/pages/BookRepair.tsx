@@ -360,14 +360,14 @@ const BookRepair = () => {
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <a 
-                  href="tel:+923001234567" 
+                  href="tel:+923342228141"
                   className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-full font-medium hover:scale-105 hover:shadow-lg transition-all duration-300 inline-flex items-center gap-2"
                 >
                   <Phone className="h-4 w-4" />
-                  Call: +92 300 1234567
+                  Call: +92 334 2228141
                 </a>
                 <a
-                  href="https://wa.me/923001234567"
+                  href="https://wa.me/923342228141"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-6 py-3 glass-effect border border-primary/30 rounded-full font-medium hover:scale-105 hover:border-primary/50 hover:shadow-lg transition-all duration-300 inline-flex items-center gap-2"

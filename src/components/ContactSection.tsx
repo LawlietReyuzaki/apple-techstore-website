@@ -47,7 +47,8 @@ export const ContactSection = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Contact</h3>
                   <p className="text-sm text-muted-foreground">
-                    +92 XXX XXXXXXX<br />
+                    +92 334 2228141<br />
+                    +92 320 0450584<br />
                     WhatsApp Available
                   </p>
                 </div>
