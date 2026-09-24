@@ -27,6 +27,7 @@ interface ShopItem {
     name: string;
   } | null;
   _type?: 'shop_item' | 'product' | 'spare_part';
+  slug?: string | null;
 }
 
 interface ShopItemCardProps {
@@ -71,7 +72,7 @@ export function ShopItemCard({ item }: ShopItemCardProps) {
   const getItemLink = () => {
     switch (item._type) {
       case 'product':
-        return `/product/${item.id}`;
+        return `/product/${item.slug || item.id}`;
       case 'spare_part':
         return `/spare-part/${item.id}`;
       case 'shop_item':

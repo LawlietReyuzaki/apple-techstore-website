@@ -6,12 +6,15 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { promises as fsPromises } from 'fs';
+import { promises as fsPromises, readFileSync } from 'fs';
 import { OAuth2Client } from 'google-auth-library';
 import pool from './db.js';
 import { parseSelect, buildSelectSQL, buildWhereSQL, buildOrderSQL } from './queryBuilder.js';
 import { sendOrderEmails, sendEmailForType, sendPartRequestEmail } from './emailService.js';
-import { isBot, renderProduct, renderSparePart, renderShopItem } from './botRenderer.js';
+import {
+  isBot, buildHTML, injectMeta, injectBasic, notFoundHtml,
+  productMeta, sparePartMeta, shopItemMeta,
+} from './botRenderer.js';
 import { Storage } from '@google-cloud/storage';
 
 dotenv.config();
@@ -307,42 +310,122 @@ function setBotHeaders(res) {
   res.set('X-Robots-Tag', 'index, follow');
 }
 
-app.get('/product/:idOrSlug', async (req, res, next) => {
-  if (!isBot(req.headers['user-agent'])) return next();
+// The built React shell, read once per deploy
+let _indexHtml = null;
+function getIndexHtml() {
+  if (_indexHtml === null) {
+    try { _indexHtml = readFileSync(join(distPath, 'index.html'), 'utf8'); }
+    catch { _indexHtml = ''; } // local dev without a build: fall back to sendFile
+  }
+  return _indexHtml;
+}
+
+// Bots get the full server-rendered page; people get the React app with the
+// same per-page title/canonical/OG/JSON-LD already in the HTML.
+function sendPage(req, res, meta, status = 200) {
+  if (isBot(req.headers['user-agent'])) {
+    setBotHeaders(res);
+    return res.status(status).type('html').send(buildHTML(meta));
+  }
+  const base = getIndexHtml();
+  res.set('Cache-Control', 'no-cache');
+  if (!base) return res.status(status).sendFile(join(distPath, 'index.html'));
+  res.status(status).type('html').send(injectMeta(base, meta));
+}
+
+// Real HTTP 404 (not a "soft 404"); people still see the app's not-found screen
+function sendNotFound(req, res) {
+  res.set('X-Robots-Tag', 'noindex');
+  if (isBot(req.headers['user-agent'])) return res.status(404).type('html').send(notFoundHtml());
+  const base = getIndexHtml();
+  res.set('Cache-Control', 'no-cache');
+  if (!base) return res.status(404).sendFile(join(distPath, 'index.html'));
+  res.status(404).type('html').send(injectBasic(base, { path: req.path, noindex: true }));
+}
+
+// Permanent redirect, keeping any tracking query string (?utm_…, ?fbclid…)
+function redirect301(req, res, path) {
+  const q = req.originalUrl.indexOf('?');
+  res.redirect(301, path + (q >= 0 ? req.originalUrl.slice(q) : ''));
+}
+
+// Category slugs rarely change — cache them instead of querying on every page view
+const categorySlugCache = new Map();
+async function categorySlugFor(categoryName) {
+  if (!categoryName) return null;
+  if (categorySlugCache.has(categoryName)) return categorySlugCache.get(categoryName);
   try {
-    const { idOrSlug } = req.params;
-    const col = UUID_RE.test(idOrSlug) ? 'p.id' : 'p.slug';
-    const { rows } = await pool.query(
+    const { rows } = await pool.query('SELECT slug FROM shop_categories WHERE name = $1 LIMIT 1', [categoryName]);
+    const slug = rows[0]?.slug || null;
+    categorySlugCache.set(categoryName, slug);
+    return slug;
+  } catch { return null; } // breadcrumb just falls back to /shop
+}
+
+app.get('/product/:idOrSlug', async (req, res, next) => {
+  const key = req.params.idOrSlug;
+  let product;
+  try {
+    const col = UUID_RE.test(key) ? 'p.id' : 'p.slug';
+    ({ rows: [product] } = await pool.query(
       `SELECT p.*, c.name AS category_name
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
        WHERE ${col} = $1`,
-      [idOrSlug]
-    );
-    if (!rows[0]) return next();
-    setBotHeaders(res);
-    res.send(renderProduct(rows[0], rows[0].category_name));
-  } catch { next(); }
+      [key]
+    ));
+
+    // Old UUID link → its slug URL (rankings and shared links carry over)
+    if (product && col === 'p.id' && product.slug) return redirect301(req, res, `/product/${product.slug}`);
+
+    // Unknown slug, but the 8-char id suffix matches → product was renamed
+    if (!product && col === 'p.slug') {
+      const m = key.match(/-([0-9a-f]{8})$/i);
+      if (m) {
+        const { rows } = await pool.query(
+          `SELECT slug FROM products WHERE id::text LIKE $1 AND slug IS NOT NULL LIMIT 2`,
+          [`${m[1].toLowerCase()}%`]
+        );
+        if (rows.length === 1) return redirect301(req, res, `/product/${rows[0].slug}`);
+      }
+    }
+  } catch (err) {
+    console.error('[product page] lookup failed:', err.message);
+    return next(); // DB trouble: serve the normal app, never a false 404
+  }
+  if (!product) return sendNotFound(req, res);
+  product.category_slug = await categorySlugFor(product.category_name);
+  sendPage(req, res, productMeta(product));
 });
 
 app.get('/spare-part/:id', async (req, res, next) => {
-  if (!isBot(req.headers['user-agent'])) return next();
+  const key = req.params.id;
+  let part;
   try {
-    const { rows } = await pool.query('SELECT * FROM spare_parts WHERE id = $1', [req.params.id]);
-    if (!rows[0]) return next();
-    setBotHeaders(res);
-    res.send(renderSparePart(rows[0]));
-  } catch { next(); }
+    if (UUID_RE.test(key)) {
+      ({ rows: [part] } = await pool.query('SELECT * FROM spare_parts WHERE id = $1', [key]));
+    }
+  } catch (err) {
+    console.error('[spare-part page] lookup failed:', err.message);
+    return next();
+  }
+  if (!part) return sendNotFound(req, res);
+  sendPage(req, res, sparePartMeta(part));
 });
 
 app.get('/shop-item/:id', async (req, res, next) => {
-  if (!isBot(req.headers['user-agent'])) return next();
+  const key = req.params.id;
+  let item;
   try {
-    const { rows } = await pool.query('SELECT * FROM shop_items WHERE id = $1', [req.params.id]);
-    if (!rows[0]) return next();
-    setBotHeaders(res);
-    res.send(renderShopItem(rows[0]));
-  } catch { next(); }
+    if (UUID_RE.test(key)) {
+      ({ rows: [item] } = await pool.query('SELECT * FROM shop_items WHERE id = $1', [key]));
+    }
+  } catch (err) {
+    console.error('[shop-item page] lookup failed:', err.message);
+    return next();
+  }
+  if (!item) return sendNotFound(req, res);
+  sendPage(req, res, shopItemMeta(item));
 });
 
 // ── SEO debug endpoint ────────────────────────────────────────
@@ -1026,8 +1109,20 @@ function buildSession(token, user) {
 
 // ── SPA fallback — must be LAST route ─────────────────────────
 // Serves index.html for any non-API route so React Router works
+// Private pages get noindex; every page gets a canonical pointing at itself
+// (index.html hard-codes the homepage canonical, which made every page look
+// like a duplicate of the homepage to crawlers that don't run JavaScript).
+const PRIVATE_ROUTE_RE = /^\/(admin|admin-login|account|cart|checkout|payment-submission|wishlist|login|signup)(\/|$)/i;
 app.get('*splat', (req, res) => {
-  res.sendFile(join(distPath, 'index.html'));
+  const base = getIndexHtml();
+  if (!base) return res.sendFile(join(distPath, 'index.html'));
+  const q = req.originalUrl.indexOf('?');
+  res.set('Cache-Control', 'no-cache');
+  res.type('html').send(injectBasic(base, {
+    path: req.path,
+    search: q >= 0 ? req.originalUrl.slice(q + 1) : '',
+    noindex: PRIVATE_ROUTE_RE.test(req.path),
+  }));
 });
 
 // ── Start ─────────────────────────────────────────────────────

@@ -1,110 +1,23 @@
 # AppleTechStore Robots.txt
 # https://appletechstore.pk
+#
+# One group for every crawler (search engines, AI crawlers, social previews).
+# Do not add per-bot groups here: a crawler with its own group ignores this one,
+# which would silently drop the Disallow rules below for that crawler.
 
-# Allow all search engine and AI crawlers
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /account/
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
 Disallow: /checkout
 Disallow: /payment-submission
+Disallow: /wishlist
+Disallow: /login
+Disallow: /signup
 
-# Specifically allow major search engines
-User-agent: Googlebot
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Slurp
-Allow: /
-
-User-agent: Yandex
-Allow: /
-
-User-agent: YandexBot
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-User-agent: Baiduspider
-Allow: /
-
-# Allow AI crawlers - OpenAI/ChatGPT
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-# Allow AI crawlers - Anthropic/Claude
-User-agent: Claude-Web
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Anthropic-AI
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-# Allow AI crawlers - Google
-User-agent: Google-Extended
-Allow: /
-
-# Allow AI crawlers - Perplexity
-User-agent: PerplexityBot
-Allow: /
-
-# Allow AI crawlers - Meta
-User-agent: FacebookBot
-Allow: /
-
-User-agent: meta-externalagent
-Allow: /
-
-# Allow AI crawlers - Cohere
-User-agent: cohere-ai
-Allow: /
-
-# Allow AI crawlers - Common Crawl
-User-agent: CCBot
-Allow: /
-
-# Allow AI crawlers - Apple
-User-agent: Applebot
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
-
-# Allow AI crawlers - ByteDance
-User-agent: Bytespider
-Allow: /
-
-# Social media crawlers
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: LinkedInBot
-Allow: /
-
-# Sitemap location (dynamic - fetches from database)
+# Sitemaps (generated from the database)
 Sitemap: https://appletechstore.pk/sitemap.xml
-Sitemap: https://appletechstore.pk/sitemap-products.xml
-Sitemap: https://appletechstore.pk/sitemap-parts.xml
 
 # LLMs.txt - Machine-readable information for AI assistants
 # https://appletechstore.pk/llms.txt

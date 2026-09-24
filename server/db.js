@@ -4,6 +4,11 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Postgres NUMERIC (OID 1700) arrives as a string by default ("3999.0"), which
+// made every `price.toLocaleString()` render unformatted. Parse it to a JS number
+// so prices format as "3,999" everywhere (cards, product pages, cart, checkout).
+pg.types.setTypeParser(1700, (v) => (v === null ? null : parseFloat(v)));
+
 // Use DATABASE_URL if set (Cloud Run / production).
 // Fall back to individual env vars for local development.
 const pool = process.env.DATABASE_URL
