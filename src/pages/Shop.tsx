@@ -388,6 +388,7 @@ export default function Shop() {
     () =>
       filteredSpareParts.map(part => ({
         id:            part.id,
+        slug:          part.slug,
         name:          part.name,
         description:   part.description,
         price:         part.price,

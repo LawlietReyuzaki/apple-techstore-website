@@ -360,7 +360,7 @@ export const SparePartsSection = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
             {filteredParts.map((part) => (
-              <Link key={part.id} to={`/spare-part/${part.id}`}>
+              <Link key={part.id} to={`/spare-part/${part.slug || part.id}`}>
                 <Card className="group hover:shadow-lg transition-all duration-300 h-full flex flex-col overflow-hidden border-border/50">
                   <div className="relative overflow-hidden bg-muted/30">
                     <img

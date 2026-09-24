@@ -268,23 +268,22 @@ ${urls}
 app.get('/sitemap-parts.xml', async (req, res) => {
   try {
     // Try with visible filter; fall back to no filter if column missing.
+    // Prefer slug URLs; fall back gracefully if a column is missing.
     let rows;
-    try {
-      ({ rows } = await pool.query(
-        `SELECT id, updated_at FROM spare_parts
-         WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`
-      ));
-    } catch (colErr) {
-      ({ rows } = await pool.query(
-        `SELECT id, updated_at FROM spare_parts
-         ORDER BY updated_at DESC LIMIT 50000`
-      ));
+    const attempts = [
+      `SELECT id, slug, updated_at FROM spare_parts WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`,
+      `SELECT id, NULL AS slug, updated_at FROM spare_parts WHERE visible = true ORDER BY updated_at DESC LIMIT 50000`,
+      `SELECT id, NULL AS slug, updated_at FROM spare_parts ORDER BY updated_at DESC LIMIT 50000`,
+    ];
+    for (const sql of attempts) {
+      try { ({ rows } = await pool.query(sql)); break; } catch { /* try next */ }
     }
+    rows = rows || [];
 
     const today = new Date().toISOString().split('T')[0];
     const urls = rows.map(r => {
       const lastmod = r.updated_at ? new Date(r.updated_at).toISOString().split('T')[0] : today;
-      return `  <url><loc>${SITE}/spare-part/${r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`;
+      return `  <url><loc>${SITE}/spare-part/${r.slug || r.id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`;
     }).join('\n');
 
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
@@ -402,12 +401,28 @@ app.get('/spare-part/:id', async (req, res, next) => {
   const key = req.params.id;
   let part;
   try {
-    if (UUID_RE.test(key)) {
-      ({ rows: [part] } = await pool.query('SELECT * FROM spare_parts WHERE id = $1', [key]));
+    const isUuid = UUID_RE.test(key);
+    ({ rows: [part] } = await pool.query(
+      `SELECT * FROM spare_parts WHERE ${isUuid ? 'id' : 'slug'} = $1`, [key]
+    ));
+
+    // Old UUID link → its slug URL
+    if (part && isUuid && part.slug) return redirect301(req, res, `/spare-part/${part.slug}`);
+
+    // Unknown slug, but the 8-char id suffix matches → part was renamed
+    if (!part && !isUuid) {
+      const m = key.match(/-([0-9a-f]{8})$/i);
+      if (m) {
+        const { rows } = await pool.query(
+          `SELECT slug FROM spare_parts WHERE id::text LIKE $1 AND slug IS NOT NULL LIMIT 2`,
+          [`${m[1].toLowerCase()}%`]
+        );
+        if (rows.length === 1) return redirect301(req, res, `/spare-part/${rows[0].slug}`);
+      }
     }
   } catch (err) {
     console.error('[spare-part page] lookup failed:', err.message);
-    return next();
+    return next(); // DB trouble: serve the normal app, never a false 404
   }
   if (!part) return sendNotFound(req, res);
   sendPage(req, res, sparePartMeta(part));

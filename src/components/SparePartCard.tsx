@@ -9,6 +9,7 @@ import { getImageUrl } from "@/lib/imageUrl";
 
 interface SparePart {
   id: string;
+  slug?: string | null;
   name: string;
   price: number;
   stock: number;
@@ -82,7 +83,7 @@ export const SparePartCard = ({ part }: SparePartCardProps) => {
     : '/placeholder.svg';
 
   return (
-    <Link to={`/spare-part/${part.id}`}>
+    <Link to={`/spare-part/${part.slug || part.id}`}>
       <Card className="group hover:shadow-lg transition-all duration-300 h-full flex flex-col overflow-hidden border-border/50">
         <div className="relative overflow-hidden bg-muted/30">
           <img
