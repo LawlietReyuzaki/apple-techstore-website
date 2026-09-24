@@ -92,7 +92,7 @@ const SparePartsSection = () => {
   return (
     <section 
       ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-white via-purple-50 to-blue-50"
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/5"
     >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -194,7 +194,7 @@ const OurProductsSection = memo(({
   return (
     <section 
       ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50"
+      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-accent/5 via-background to-primary/5"
     >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -671,12 +671,6 @@ const Index = () => {
       {/* Promo Section with Repair & Parts Banners */}
       <PromoSection />
 
-      {/* Trust Bar */}
-      <TrustBar />
-
-      {/* Brand Section */}
-      <BrandSection />
-
       {/* DYNAMIC CATEGORIES SECTION - Shop by Category */}
       <DynamicCategoriesSection />
 
@@ -701,6 +695,12 @@ const Index = () => {
 
       {/* OUR SERVICES - Dark Background */}
       <OurServicesSection />
+
+      {/* Trust Bar (delivery / wholesale / quality) — moved to the bottom */}
+      <TrustBar />
+
+      {/* Brand Section ("All Major Brands Available") — moved to the bottom */}
+      <BrandSection />
 
       {/* Contact Section */}
       <ContactSection />

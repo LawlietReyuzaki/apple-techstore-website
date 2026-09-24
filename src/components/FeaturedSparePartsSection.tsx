@@ -6,31 +6,51 @@ import { Link } from "react-router-dom";
 import { Wrench, ArrowRight } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 
+const SECTION_SIZE = 9;
+const PART_SELECT = `
+  *,
+  phone_models (
+    name,
+    spare_parts_brands (
+      name
+    )
+  ),
+  part_categories (
+    name
+  )
+`;
+
 export const FeaturedSparePartsSection = () => {
   const { data: spareParts, isLoading } = useQuery({
-    queryKey: ['featured-spare-parts'],
+    queryKey: ['featured-spare-parts', SECTION_SIZE],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Featured parts first…
+      const { data: featured, error } = await supabase
         .from('spare_parts')
-        .select(`
-          *,
-          phone_models (
-            name,
-            spare_parts_brands (
-              name
-            )
-          ),
-          part_categories (
-            name
-          )
-        `)
+        .select(PART_SELECT)
         .eq('visible', true)
         .eq('featured', true)
         .order('created_at', { ascending: false })
-        .limit(6);
-
+        .limit(SECTION_SIZE);
       if (error) throw error;
-      return data || [];
+
+      const list = featured || [];
+      if (list.length >= SECTION_SIZE) return list;
+
+      // …then fill the section with the newest parts (the API already ranks
+      // parts that have a photo ahead of ones without)
+      const { data: latest } = await supabase
+        .from('spare_parts')
+        .select(PART_SELECT)
+        .eq('visible', true)
+        .order('created_at', { ascending: false })
+        .limit(SECTION_SIZE * 2);
+      const seen = new Set(list.map((p: any) => p.id));
+      for (const p of latest || []) {
+        if (list.length >= SECTION_SIZE) break;
+        if (!seen.has(p.id)) list.push(p);
+      }
+      return list;
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -74,7 +94,9 @@ export const FeaturedSparePartsSection = () => {
               <p className="text-muted-foreground mt-1">High-quality replacement parts for your devices</p>
             </div>
           </div>
-          <Link to="/shop?category=spare-parts">
+          {/* The shop's spare-parts category slug is "mobile-spare-parts" —
+              "spare-parts" matched nothing and showed an empty catalog */}
+          <Link to="/shop?category=mobile-spare-parts">
             <Button variant="outline" className="gap-2">
               View All
               <ArrowRight className="h-4 w-4" />
