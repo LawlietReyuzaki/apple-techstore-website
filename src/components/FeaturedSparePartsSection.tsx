@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SparePartCard } from "./SparePartCard";
-import { Button } from "./ui/button";
-import { Link } from "react-router-dom";
-import { Wrench, ArrowRight } from "lucide-react";
+import { SectionHeader } from "./SectionHeader";
+import { Wrench } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 
-const SECTION_SIZE = 9;
+const SECTION_SIZE = 8;
 const PART_SELECT = `
   *,
   phone_models (
@@ -34,7 +33,9 @@ export const FeaturedSparePartsSection = () => {
         .limit(SECTION_SIZE);
       if (error) throw error;
 
-      const list = featured || [];
+      // Only show parts whose photo is on the cloud bucket (local-disk paths are lost on redeploy)
+      const hasPhoto = (p: any) => Array.isArray(p.images) && p.images.some((i: string) => /^https?:\/\//.test(i));
+      const list = (featured || []).filter(hasPhoto);
       if (list.length >= SECTION_SIZE) return list;
 
       // …then fill the section with the newest parts (the API already ranks
@@ -48,7 +49,7 @@ export const FeaturedSparePartsSection = () => {
       const seen = new Set(list.map((p: any) => p.id));
       for (const p of latest || []) {
         if (list.length >= SECTION_SIZE) break;
-        if (!seen.has(p.id)) list.push(p);
+        if (!seen.has(p.id) && hasPhoto(p)) list.push(p);
       }
       return list;
     },
@@ -57,21 +58,13 @@ export const FeaturedSparePartsSection = () => {
 
   if (isLoading) {
     return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-64 w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] w-full rounded-xl" />)}
         </div>
       </section>
     );
@@ -82,33 +75,13 @@ export const FeaturedSparePartsSection = () => {
   }
 
   return (
-    <section className="py-16 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8 animate-fade-in">
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-              <Wrench className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold">Spare Parts & Repair Parts</h2>
-              <p className="text-muted-foreground mt-1">High-quality replacement parts for your devices</p>
-            </div>
-          </div>
-          {/* The shop's spare-parts category slug is "mobile-spare-parts" —
-              "spare-parts" matched nothing and showed an empty catalog */}
-          <Link to="/shop?category=mobile-spare-parts">
-            <Button variant="outline" className="gap-2">
-              View All
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          {spareParts.map((part) => (
-            <SparePartCard key={part.id} part={part} />
-          ))}
-        </div>
+    <section>
+      <SectionHeader icon={Wrench} title="Spare Parts & Repair Parts" subtitle="Genuine replacement parts for all major brands"
+        to="/parts" cta="All part types" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        {spareParts.map((part) => (
+          <SparePartCard key={part.id} part={part} />
+        ))}
       </div>
     </section>
   );

@@ -1143,7 +1143,7 @@ function buildSession(token, user) {
 // Private pages get noindex; every page gets a canonical pointing at itself
 // (index.html hard-codes the homepage canonical, which made every page look
 // like a duplicate of the homepage to crawlers that don't run JavaScript).
-const PRIVATE_ROUTE_RE = /^\/(admin|admin-login|account|cart|checkout|payment-submission|wishlist|login|signup)(\/|$)/i;
+const PRIVATE_ROUTE_RE = /^\/(admin|admin-login|account|cart|checkout|payment-submission|wishlist|login|signup|search)(\/|$)/i;
 app.get('*splat', (req, res) => {
   const base = getIndexHtml();
   if (!base) return res.sendFile(join(distPath, 'index.html'));

@@ -19,10 +19,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
-import { ProductCartButton } from "@/components/ProductCartButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import shopHeroBg from "@/assets/shop-hero-bg.png";
 import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
+import { StoreHeader } from "@/components/StoreHeader";
+import { CatalogSidebar, MobileSidebar } from "@/components/CatalogSidebar";
 
 // Map category names to icons
 const getCategoryIcon = (name: string) => {
@@ -486,27 +487,11 @@ export default function Shop() {
         <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
       </div>
 
-      {/* Minimal Header */}
-      <header className="bg-background/80 backdrop-blur-lg border-b border-border/50 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold text-foreground hover:text-primary transition-colors">
-            AppleTechStore
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
-              <Link to="/shop" className="text-primary">Shop</Link>
-              <Link to="/brands" className="text-muted-foreground hover:text-foreground transition-colors">Shop by Brand</Link>
-              <Link to="/parts" className="text-muted-foreground hover:text-foreground transition-colors">Shop by Part</Link>
-              <Link to="/book-repair" className="text-muted-foreground hover:text-foreground transition-colors">Repair</Link>
-              <Link to="/track-repair" className="text-muted-foreground hover:text-foreground transition-colors">Track</Link>
-            </nav>
-            <ProductCartButton />
-          </div>
-        </div>
-      </header>
+      <StoreHeader />
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <div className="container mx-auto px-4 py-6 relative z-10 flex gap-6 items-start">
+        <CatalogSidebar />
+        <div className="flex-1 min-w-0">
         {/* Compact Hero Section */}
         <div className="mb-10 text-center relative rounded-2xl overflow-hidden group animate-fade-in">
           <div
@@ -514,11 +499,11 @@ export default function Shop() {
             style={{ backgroundImage: `url(${shopHeroBg})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
-          <div className="relative z-10 py-16 px-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md mb-5 border border-white/20">
-              <CurrentIcon className="h-8 w-8 text-white" />
+          <div className="relative z-10 py-8 px-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md mb-3 border border-white/20">
+              <CurrentIcon className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-3 text-white tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-white tracking-tight">
               {category === "all" ? "All Products" : currentCategory?.name || "Shop"}
             </h1>
             <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
@@ -579,13 +564,14 @@ export default function Shop() {
           )}
         </div>
 
+        <div className="lg:hidden mb-3 flex justify-end"><MobileSidebar label="Browse brands & parts" /></div>
         {/* Search & Filters Row */}
         <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-4 mb-8 animate-fade-in" style={{ animationDelay: "0.15s" }}>
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
+                placeholder="Filter within this category…"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10 h-10 bg-background border-border/50 focus:border-primary/50"
@@ -711,6 +697,7 @@ export default function Shop() {
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

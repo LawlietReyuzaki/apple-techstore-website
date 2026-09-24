@@ -50,7 +50,7 @@ export const HeroCarousel = () => {
   const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
 
   return (
-    <div className="relative h-[400px] sm:h-[500px] md:h-[600px] overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl">
+    <div className="relative h-[220px] sm:h-[300px] md:h-[380px] overflow-hidden rounded-xl sm:rounded-2xl shadow-lg">
       {slides.map((slide, index) => {
         const Icon = slide.icon;
         return (
@@ -74,7 +74,7 @@ export const HeroCarousel = () => {
                 <div className="absolute inset-0 bg-black/40" />
                 <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
                   <div className="container text-center text-white max-w-4xl">
-                    <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-lg">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 drop-shadow-lg">
                       {slide.title}
                     </h2>
                     <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-6 md:mb-8 text-white/90 max-w-2xl mx-auto drop-shadow-md">
@@ -102,7 +102,7 @@ export const HeroCarousel = () => {
                   <div className="mb-4 sm:mb-6 inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/20 backdrop-blur-sm">
                     <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
-                  <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-lg">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 drop-shadow-lg">
                     {slide.title}
                   </h2>
                   <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-6 md:mb-8 text-white/90 max-w-2xl mx-auto">

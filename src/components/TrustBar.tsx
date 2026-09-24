@@ -36,7 +36,7 @@ export const TrustBar = () => {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
 
   return (
-    <div ref={ref} className="relative py-12 md:py-16 overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/50">
+    <div ref={ref} className="relative py-8 md:py-10 overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/50">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-float" />

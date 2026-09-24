@@ -6,6 +6,7 @@
 import { rebuildCatalog, scheduleCatalogRebuild, bandLabel } from './rebuild.js';
 import { partPlural, PRICE_BANDS } from './classify.js';
 import { categoryMeta } from '../botRenderer.js';
+import { getSearchIndex, search, markSearchStale } from './search.js';
 
 const SITE = 'https://appletechstore.pk';
 const PAGE_SIZE = 48;
@@ -30,7 +31,7 @@ async function cached(key, fn) {
   if (cache.size > 2000) cache.delete(cache.keys().next().value);
   return v;
 }
-export const clearCatalogCache = () => cache.clear();
+export const clearCatalogCache = () => { cache.clear(); markSearchStale(); };
 
 // ── Data access ───────────────────────────────────────────────────────────
 export async function getCategory(pool, path) {
@@ -49,7 +50,7 @@ function baseFilter(cat) {
   }
 }
 
-export async function getItems(pool, cat, { part, brand, price, sort, offset = 0, limit = PAGE_SIZE } = {}) {
+export async function getItems(pool, cat, { part, brand, price, stock, sort, offset = 0, limit = PAGE_SIZE } = {}) {
   const f = baseFilter(cat);
   if (!f) return { items: [], total: 0 };
   const where = [...f.where], params = [...f.params];
@@ -57,10 +58,11 @@ export async function getItems(pool, cat, { part, brand, price, sort, offset = 0
   if (part && SLUG_RE.test(part)) add('part_type_slug = ?', part);
   if (brand && SLUG_RE.test(brand)) add('brand_slug = ?', brand);
   if (price && SLUG_RE.test(price)) add('price_band_slug = ?', price);
+  if (stock === 'in') where.push('in_stock');
   const order = SORTS[sort] || SORTS.default;
   const lim = Math.min(Math.max(parseInt(limit) || PAGE_SIZE, 1), 96);
   const off = Math.max(parseInt(offset) || 0, 0);
-  const key = `items:${cat.path}:${part}:${brand}:${price}:${sort}:${off}:${lim}`;
+  const key = `items:${cat.path}:${part}:${brand}:${price}:${stock}:${sort}:${off}:${lim}`;
   return cached(key, async () => {
     const w = where.join(' AND ');
     const [{ rows: items }, { rows: [{ n }] }] = await Promise.all([
@@ -181,6 +183,22 @@ export function registerCatalogRoutes(app, { pool, sendPage, sendNotFound, verif
     } catch (err) {
       console.error('[catalog/page]', err.message);
       res.status(503).json({ error: 'Catalog temporarily unavailable' });
+    }
+  });
+
+  // Smart search: typeahead (default) or full results (full=1 with offset/limit)
+  app.get('/api/catalog/search', async (req, res) => {
+    try {
+      const ix = await getSearchIndex(pool);
+      const full = req.query.full === '1';
+      const out = search(ix, req.query.q, {
+        full, limit: req.query.limit || (full ? 48 : 8), offset: req.query.offset || 0,
+      });
+      res.set('Cache-Control', 'public, max-age=60');
+      res.json(out);
+    } catch (err) {
+      console.error('[catalog/search]', err.message);
+      res.status(503).json({ error: 'Search temporarily unavailable' });
     }
   });
 

@@ -1,761 +1,154 @@
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CartDrawer } from "@/components/CartDrawer";
-import { ProductCartButton } from "@/components/ProductCartButton";
-import { AuthButton } from "@/components/AuthButton";
+import { Card } from "@/components/ui/card";
+import { StoreHeader } from "@/components/StoreHeader";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { TrustBar } from "@/components/TrustBar";
 import { BrandSection } from "@/components/BrandSection";
-import { ProductFilters } from "@/components/ProductFilters";
 import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
-import { NotificationBell } from "@/components/NotificationBell";
 import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
 import { FeaturedSparePartsSection } from "@/components/FeaturedSparePartsSection";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
-import { FeaturesStrip } from "@/components/FeaturesStrip";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
-import { DeviceCard } from "@/components/DeviceCard";
-import { DynamicCategoriesSection } from "@/components/DynamicCategoriesSection";
-import { ShopCategoryShowcase } from "@/components/ShopCategoryShowcase";
-import { CatalogShortcuts } from "@/components/CatalogShortcuts";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
-import { LoadingScreen } from "@/components/LoadingScreen";
-import { useAuth } from "@/hooks/useAuth";
-import { storefrontApiRequest, GET_PRODUCTS_QUERY, ShopifyProduct } from "@/lib/shopify";
-import { useCartStore } from "@/stores/cartStore";
+import { CategoryRow } from "@/components/CategoryRow";
+import { CatalogSidebar, MobileSidebar } from "@/components/CatalogSidebar";
+import { SectionHeader } from "@/components/SectionHeader";
+import { TrustIndicators } from "@/components/TrustIndicators";
 import { supabase } from "@/integrations/supabase/client";
-import { devices, Device } from "@/data/devices";
-import { toast } from "sonner";
-import { Phone, ShoppingBag, Search, Menu, Wrench, Filter, ArrowRight, Sparkles, Zap, Smartphone, Laptop, Headphones, X } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+import { Phone, ShoppingBag, Wrench, Sparkles } from "lucide-react";
 
-// Session storage key for loading screen - ensures smooth UX on first visit
-const LOADING_SHOWN_KEY = "appletechstore_loading_shown";
+const PRODUCT_COLS = "id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale";
 
-import { useInView } from 'react-intersection-observer';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
+// ── Compact homepage sections ─────────────────────────────────────────────
 
-// Section Components with Scroll Animations
-
-const LimitedTimeOffersSection = () => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
-  
+const FeaturedDeals = memo(({ products }: { products: any[] }) => {
+  if (products.length === 0) return null;
   return (
-    <section 
-      ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black"
-    >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="container relative z-10">
-        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-6 animate-pulse-slow border border-primary/30">
-            <Zap className="h-5 w-5 text-primary animate-glow" />
-            <span className="text-white font-semibold">Limited Time Offers!</span>
-            <Sparkles className="h-5 w-5 text-accent animate-glow" />
-          </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white animate-shimmer bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent bg-[length:200%_100%]">
-            Flash Sale
-          </h2>
-          <p className="text-white/80 text-xl max-w-2xl mx-auto">
-            Don't miss out on unbeatable deals - limited stock available!
-          </p>
-        </div>
-
-        <div className={`transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <FlashSaleSection />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const SparePartsSection = () => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
-  
-  return (
-    <section 
-      ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/5"
-    >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 right-1/3 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }} />
-      </div>
-
-      <div className="container relative z-10">
-        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 mb-6 border border-primary/20">
-            <Wrench className="h-5 w-5 text-primary" />
-            <span className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Spare Parts & Repair Parts
-            </span>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Quality Parts
-          </h2>
-          <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
-            Genuine replacement parts for all major brands
-          </p>
-        </div>
-
-        <div className={`transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <FeaturedSparePartsSection />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const FeaturedDealsSection = memo(({ localProducts }: { localProducts: any[] }) => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
-  
-  if (localProducts.length === 0) return null;
-
-  return (
-    <section 
-      ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900"
-    >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
-      </div>
-
-      <div className="container relative z-10">
-        <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4 transition-all duration-1000 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}`}>
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-4 border border-primary/30">
-              <Sparkles className="h-5 w-5 text-white" />
-              <span className="text-white font-semibold">Featured Deals</span>
-            </div>
-            <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white">
-              Premium Picks
-            </h2>
-            <p className="text-white/80 text-xl">
-              Wholesale prices on flagship smartphones
-            </p>
-          </div>
-          <Link to="/shop">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-glow"
-            >
-              View All <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
-        
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          {localProducts.map((product, index) => (
-            <div 
-              key={product.id}
-              className="animate-scale-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+    <section className="rounded-2xl bg-gradient-to-br from-neutral-900 to-black p-4 md:p-5">
+      <SectionHeader light icon={Sparkles} title="Featured Deals" subtitle="Wholesale prices on flagship phones" to="/shop" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        {products.map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
     </section>
   );
 });
 
-const OurProductsSection = memo(({ 
-  displayedProducts, 
-  filters, 
-  setFilters 
-}: { 
-  displayedProducts: any[]; 
-  filters: any; 
-  setFilters: (filters: any) => void;
-}) => {
-  const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
-  
-  return (
-    <section 
-      ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-accent/5 via-background to-primary/5"
-    >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+const LatestProducts = memo(({ products }: { products: any[] }) => (
+  <section>
+    <SectionHeader icon={Phone} title="Latest Products" subtitle="Recently added to the store" to="/shop" cta="Full catalog" />
+    {products.length === 0 ? (
+      <p className="text-sm text-muted-foreground">Loading products…</p>
+    ) : (
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        {products.map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
+    )}
+  </section>
+));
 
-      <div className="container relative z-10">
-        <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-12 gap-4 transition-all duration-1000 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'}`}>
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 mb-4 border border-primary/20">
-              <Phone className="h-5 w-5 text-primary" />
-              <span className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Our Products
-              </span>
-            </div>
-            <h2 className="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              Full Catalog
-            </h2>
-            <p className="text-muted-foreground text-xl">
-              {displayedProducts.length} premium devices with competitive pricing
-            </p>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="lg" className="flex-1 sm:flex-initial md:hidden glass-effect border-primary/20">
-                  <Filter className="h-5 w-5 mr-2" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[300px] glass-effect">
-                <SheetHeader>
-                  <SheetTitle>Filter Products</SheetTitle>
-                  <SheetDescription>
-                    Refine your search by brand, availability, and price range
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <ProductFilters filters={filters} onFilterChange={setFilters} />
-                </div>
-              </SheetContent>
-            </Sheet>
-            <Link to="/shop" className="flex-1 sm:flex-initial">
-              <Button size="lg" className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg">
-                View All <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+const SERVICES = [
+  { icon: Phone, title: "Wholesale Phones", text: "New, used and refurbished phones from all major brands at wholesale prices.", to: "/phones", cta: "Shop phones" },
+  { icon: Wrench, title: "Expert Repairs", text: "Professional repairs with quick turnaround and a 90-day warranty.", to: "/book-repair", cta: "Book a repair" },
+  { icon: ShoppingBag, title: "Request a Part", text: "Can't find what you need? We source parts and accessories for any model.", to: "/request-part", cta: "Request a part" },
+];
 
-        <div className={`grid md:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          {/* Desktop Filters */}
-          <div className="hidden md:block">
-            <div className="glass-effect p-6 rounded-2xl border border-primary/20 sticky top-24">
-              <ProductFilters filters={filters} onFilterChange={setFilters} />
-            </div>
-          </div>
-
-          {/* Products Grid */}
-          <div className="md:col-span-3">
-            {displayedProducts.length === 0 ? (
-              <Card className="glass-card p-12 text-center border-primary/20">
-                <Phone className="h-16 w-16 mx-auto mb-4 text-primary animate-pulse-slow" />
-                <h3 className="text-2xl font-bold mb-2">No Products Found</h3>
-                <p className="text-muted-foreground mb-6">
-                  Try adjusting your filters to see more products
-                </p>
-                <Button 
-                  onClick={() => setFilters({
-                    brands: [],
-                    availability: "all",
-                    priceRange: [0, 500000]
-                  })}
-                  className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-                >
-                  Reset Filters
-                </Button>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayedProducts.map((product, index) => (
-                  <div 
-                    key={product.id}
-                    className="animate-scale-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <ProductCard product={product} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-});
-
-const OurServicesSection = () => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
-  
-  return (
-    <section 
-      ref={ref}
-      className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black"
-    >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="container relative z-10">
-        <div className={`text-center mb-12 transition-all duration-1000 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-sm mb-6 border border-primary/30">
-            <ShoppingBag className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold">Our Services</span>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-white animate-shimmer bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent bg-[length:200%_100%]">
-            More Than Phones
-          </h2>
-          <p className="text-white/80 text-xl max-w-2xl mx-auto">
-            Complete solutions for all your mobile needs
-          </p>
-        </div>
-        
-        <div className={`grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto transition-all duration-1000 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 group bg-white/5 backdrop-blur-xl animate-slide-in-left">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
-              <Phone className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-black">Wholesale Phones</h3>
-            <p className="text-black/80 mb-6 leading-relaxed">
-              New, used, and refurbished phones from all major brands at unbeatable wholesale prices.
-            </p>
-            <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
-              Shop Now
-            </Button>
-          </Card>
-
-          <Link to="/book-repair" className="group">
-            <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 h-full flex flex-col items-center justify-center bg-white/5 backdrop-blur-xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
-                <Wrench className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-black">Expert Repairs</h3>
-              <p className="text-black/80 mb-6 leading-relaxed">
-                Professional repairs, quick turnaround, and warranty included on all services.
-              </p>
-              <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
-                Book Repair
-              </Button>
-            </Card>
-          </Link>
-
-          <Card className="glass-effect text-center p-8 hover:scale-105 transition-all duration-300 border-primary/30 group bg-white/5 backdrop-blur-xl sm:col-span-2 md:col-span-1 animate-slide-in-right" style={{ animationDelay: '0.4s' }}>
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 animate-glow">
-              <ShoppingBag className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-black">Sell Your Phone</h3>
-            <p className="text-black/80 mb-6 leading-relaxed">
-              Get instant cash for your old phone. Fair prices and quick transactions guaranteed.
-            </p>
-            <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 w-full">
-              Get Quote
-            </Button>
-          </Card>
-        </div>
-      </div>
-    </section>
-  );
-};
+const ServicesSection = () => (
+  <section>
+    <SectionHeader icon={Wrench} title="Our Services" subtitle="More than phones" />
+    <div className="grid sm:grid-cols-3 gap-3 md:gap-4">
+      {SERVICES.map((s) => (
+        <Card key={s.title} className="p-5 flex flex-col gap-3 border-border/60">
+          <span className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><s.icon className="h-5 w-5 text-primary" /></span>
+          <h3 className="font-semibold text-foreground">{s.title}</h3>
+          <p className="text-sm text-muted-foreground flex-1">{s.text}</p>
+          <Link to={s.to}><Button size="sm" variant="outline" className="w-full">{s.cta}</Button></Link>
+        </Card>
+      ))}
+    </div>
+  </section>
+);
 
 const Index = () => {
-  const { user } = useAuth();
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
-  const [localProducts, setLocalProducts] = useState<any[]>([]);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [displayedDevices, setDisplayedDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    brands: [] as string[],
-    availability: "all" as "all" | "available" | "coming-soon",
-    priceRange: [0, 500000] as [number, number],
-  });
-  const addItem = useCartStore(state => state.addItem);
-
-  // Shuffle array function
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
+  const [featured, setFeatured] = useState<any[]>([]);
+  const [latest, setLatest] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchProducts();
-    fetchLocalProducts();
-    fetchAllProducts();
-    // Initialize with randomized devices
-    setDisplayedDevices(shuffleArray(devices).slice(0, 6));
-  }, []);
-
-  // Derive filtered products synchronously — no extra state or useEffect needed
-  const displayedProducts = useMemo(() => {
-    let filtered = [...allProducts];
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter(p => filters.brands.includes(p.brand));
-    }
-    if (filters.availability === "available") {
-      filtered = filtered.filter(p => p.stock > 0);
-    } else if (filters.availability === "coming-soon") {
-      filtered = filtered.filter(p => p.stock <= 0);
-    }
-    return filtered.filter(p =>
-      p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
-    );
-  }, [filters, allProducts]);
-
-  const fetchAllProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale")
-        .order('created_at', { ascending: false })
-        .limit(12);
-
-      if (error) throw error;
-      setAllProducts(data || []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-
-  const fetchLocalProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,brand,price,sale_price,wholesale_price,stock,images,featured,on_sale")
-        .eq("featured", true)
-        .limit(4);
-
-      if (error) throw error;
-      setLocalProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching local products:', error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const data = await storefrontApiRequest(GET_PRODUCTS_QUERY, { first: 20 });
-      if (data?.data?.products?.edges) {
-        setProducts(data.data.products.edges);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddToCart = (product: ShopifyProduct) => {
-    const variant = product.node.variants.edges[0]?.node;
-    if (!variant) return;
-
-    const cartItem = {
-      product,
-      variantId: variant.id,
-      variantTitle: variant.title,
-      price: variant.price,
-      quantity: 1,
-      selectedOptions: variant.selectedOptions || []
-    };
-    
-    addItem(cartItem);
-    toast.success("Added to cart!", {
-      description: `${product.node.title} has been added to your cart`,
-    });
-  };
-
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.node.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const price = parseFloat(product.node.priceRange.minVariantPrice.amount);
-    const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1];
-    
-    return matchesSearch && matchesPrice;
-  });
-
-  // Loading screen state - show only once per session
-  const [showLoading, setShowLoading] = useState(() => {
-    return !sessionStorage.getItem(LOADING_SHOWN_KEY);
-  });
-
-  // Logo popup state
-  const [showLogoPopup, setShowLogoPopup] = useState(false);
-
-  const handleLoadingComplete = useCallback(() => {
-    sessionStorage.setItem(LOADING_SHOWN_KEY, "true");
-    setShowLoading(false);
+    supabase.from("products").select(PRODUCT_COLS).order("created_at", { ascending: false }).limit(8)
+      .then(({ data, error }: any) => { if (!error) setLatest(data || []); });
+    supabase.from("products").select(PRODUCT_COLS).eq("featured", true).limit(4)
+      .then(({ data, error }: any) => { if (!error) setFeatured(data || []); });
   }, []);
 
   return (
-    <>
-      {/* Loading Screen - shows only once per session */}
-      {showLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
+    <div className="min-h-screen bg-background">
+      <StoreHeader />
 
-      {/* Logo Popup Modal */}
-      {showLogoPopup && (
-        <div 
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowLogoPopup(false)}
-        >
-          <div className="relative animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowLogoPopup(false)}
-              className="absolute -top-4 -right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-colors"
-            >
-              <X className="h-6 w-6 text-white" />
-            </button>
-            <img 
-              src={logo} 
-              alt="AppleTechStore" 
-              className="max-w-[80vw] max-h-[80vh] rounded-2xl shadow-2xl border-2 border-white/20"
-            />
+      {/* Small, scrollable category icons */}
+      <CategoryRow />
+
+      {/* Left pane + main content */}
+      <div className="container flex gap-6 items-start pb-10">
+        <CatalogSidebar />
+        <div className="flex-1 min-w-0 space-y-8 md:space-y-10">
+          <div className="flex items-center justify-between lg:hidden -mb-4">
+            <span className="text-sm text-muted-foreground">Browse by brand, part or price</span>
+            <MobileSidebar label="Browse" />
           </div>
+
+          {/* Hero: carousel + stacked promo tiles */}
+          <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
+            <div className="lg:col-span-2 min-w-0"><HeroCarousel /></div>
+            <PromoSection stacked />
+          </div>
+
+          <FlashSaleSection />
+          <FeaturedSparePartsSection />
+          <WholesaleBanner />
+          <FeaturedDeals products={featured} />
+          <LatestProducts products={latest} />
+          <ServicesSection />
         </div>
-      )}
-      
-      <div className="min-h-screen bg-background">
-        {/* Top Bar */}
-        <div className="bg-black text-white py-2 border-b border-gray-800">
-          <div className="container flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
-            <span className="truncate">🎉 Welcome to AppleTechStore - Wholesale Rates & Expert Repairs</span>
-            <span className="hidden sm:block truncate">📞 Free Home Delivery in Bahria Phase 7</span>
-          </div>
-        </div>
-
-      {/* Header */}
-       <header className="sticky top-0 z-50 glass-effect border-b shadow-lg">
-         <div className="container h-18 sm:h-24 flex items-center justify-between gap-2 sm:gap-4">
-           <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
-             <img 
-               src={logo} 
-               alt="AppleTechStore" 
-               className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0 rounded-xl cursor-pointer" 
-               onClick={(e) => {
-                 e.preventDefault();
-                 setShowLogoPopup(true);
-               }}
-             />
-             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
-                AppleTechStore
-              </h1>
-              <p className="text-[10px] sm:text-xs text-primary truncate">Your Destination for Innovation</p>
-            </div>
-          </Link>
-          
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search phones, brands, models..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <Link to="/shop" className="hidden lg:block">
-              <Button variant="outline" size="sm">
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Shop
-              </Button>
-            </Link>
-            <Link to="/brands" className="hidden lg:block">
-              <Button variant="ghost" size="sm">Shop by Brand</Button>
-            </Link>
-            <Link to="/parts" className="hidden lg:block">
-              <Button variant="ghost" size="sm">
-                <Wrench className="h-4 w-4 mr-2" />
-                Shop by Part
-              </Button>
-            </Link>
-            <Link to="/phones" className="hidden xl:block">
-              <Button variant="ghost" size="sm">
-                <Smartphone className="h-4 w-4 mr-2" />
-                Used Phones
-              </Button>
-            </Link>
-            <Link to="/laptops" className="hidden xl:block">
-              <Button variant="ghost" size="sm">
-                <Laptop className="h-4 w-4 mr-2" />
-                Laptops
-              </Button>
-            </Link>
-            <Link to="/accessories" className="hidden xl:block">
-              <Button variant="ghost" size="sm">
-                <Headphones className="h-4 w-4 mr-2" />
-                Accessories
-              </Button>
-            </Link>
-            <Link to="/book-repair" className="hidden lg:block">
-              <Button variant="outline" size="sm">
-                <Wrench className="h-4 w-4 mr-2" />
-                Repairs
-              </Button>
-            </Link>
-            <NotificationBell userId={user?.id} />
-            <AuthButton />
-            <CartDrawer />
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  <Input
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Link to="/shop" className="block">
-                    <Button className="w-full" variant="outline">
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      Shop
-                    </Button>
-                  </Link>
-                  <Link to="/brands" className="block">
-                    <Button className="w-full" variant="outline">Shop by Brand</Button>
-                  </Link>
-                  <Link to="/parts" className="block">
-                    <Button className="w-full" variant="outline">
-                      <Wrench className="h-4 w-4 mr-2" />
-                      Shop by Part
-                    </Button>
-                  </Link>
-                  <Link to="/phones" className="block">
-                    <Button className="w-full" variant="outline">
-                      <Smartphone className="h-4 w-4 mr-2" />
-                      Used Phones
-                    </Button>
-                  </Link>
-                  <Link to="/laptops" className="block">
-                    <Button className="w-full" variant="outline">
-                      <Laptop className="h-4 w-4 mr-2" />
-                      Laptops
-                    </Button>
-                  </Link>
-                  <Link to="/accessories" className="block">
-                    <Button className="w-full" variant="outline">
-                      <Headphones className="h-4 w-4 mr-2" />
-                      Accessories
-                    </Button>
-                  </Link>
-                  <Link to="/book-repair" className="block">
-                    <Button className="w-full" variant="outline">
-                      <Wrench className="h-4 w-4 mr-2" />
-                      Book Repair
-                    </Button>
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
-
-      {/* Wholesale Hero Banner */}
-      <WholesaleBanner />
-
-      {/* Features Strip */}
-      <FeaturesStrip />
-
-      {/* Hero Carousel */}
-      <div className="container py-4 sm:py-6">
-        <HeroCarousel />
       </div>
 
-      {/* Shop by Brand / Part / Phone price — new category pages */}
-      <CatalogShortcuts />
-
-      {/* Promo Section with Repair & Parts Banners */}
-      <PromoSection />
-
-      {/* DYNAMIC CATEGORIES SECTION - Shop by Category */}
-      <DynamicCategoriesSection />
-
-      {/* LIMITED TIME OFFERS - Dark Background */}
-      <LimitedTimeOffersSection />
-
-      {/* SPARE PARTS & REPAIR PARTS - Bright Background */}
-      <SparePartsSection />
-
-      {/* FEATURED DEALS - Dark Background */}
-      <FeaturedDealsSection localProducts={localProducts} />
-
-      {/* OUR PRODUCTS - Bright Background */}
-      <OurProductsSection 
-        displayedProducts={displayedProducts}
-        filters={filters}
-        setFilters={setFilters}
-      />
-
-      {/* SHOP CATEGORY SHOWCASE - Alternating Dark/Light Sections */}
-      <ShopCategoryShowcase />
-
-      {/* OUR SERVICES - Dark Background */}
-      <OurServicesSection />
-
-      {/* Trust Bar (delivery / wholesale / quality) — moved to the bottom */}
+      {/* Trust / brands / contact — bottom of the page */}
+      <TrustIndicators />
       <TrustBar />
-
-      {/* Brand Section ("All Major Brands Available") — moved to the bottom */}
       <BrandSection />
-
-      {/* Contact Section */}
       <ContactSection />
-
-      {/* Payment Methods */}
       <PaymentMethodsStrip />
 
       {/* Footer */}
-      <footer className="glass-effect border-t py-8 sm:py-12">
+      <footer className="border-t bg-card py-8 sm:py-12">
         <div className="container">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
             <div>
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground">Dilbar Mart</h3>
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground">AppleTechStore</h3>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                Your trusted partner for wholesale phones and professional repairs in Bahria Phase 7.
+                Your trusted partner for wholesale phones, genuine spare parts and professional repairs in Bahria Phase 7.
               </p>
             </div>
             <div>
               <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Shop</h4>
               <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">New Phones</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Used Phones</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Accessories</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Parts</a></li>
+                <li><Link to="/shop" className="hover:text-primary transition-colors">All Products</Link></li>
+                <li><Link to="/brands" className="hover:text-primary transition-colors">Shop by Brand</Link></li>
+                <li><Link to="/parts" className="hover:text-primary transition-colors">Shop by Part</Link></li>
+                <li><Link to="/phones" className="hover:text-primary transition-colors">Used Phones</Link></li>
+                <li><Link to="/accessories" className="hover:text-primary transition-colors">Accessories</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Services</h4>
               <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Phone Repair</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Screen Replacement</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Battery Service</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Sell Your Phone</a></li>
+                <li><Link to="/book-repair" className="hover:text-primary transition-colors">Phone Repair</Link></li>
+                <li><Link to="/parts/lcd-panels" className="hover:text-primary transition-colors">Screen Replacement</Link></li>
+                <li><Link to="/parts/batteries" className="hover:text-primary transition-colors">Battery Service</Link></li>
+                <li><Link to="/request-part" className="hover:text-primary transition-colors">Request a Part</Link></li>
+                <li><Link to="/track-repair" className="hover:text-primary transition-colors">Track Repair</Link></li>
               </ul>
             </div>
             <div>
@@ -775,10 +168,8 @@ const Index = () => {
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
       <WhatsAppFloatingButton />
     </div>
-    </>
   );
 };
 

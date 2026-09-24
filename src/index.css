@@ -194,3 +194,11 @@ All colors MUST be HSL.
     }
   }
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .thin-scrollbar { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  .thin-scrollbar::-webkit-scrollbar { width: 6px; }
+  .thin-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+}

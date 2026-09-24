@@ -58,7 +58,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Link to={`/product/${product.slug || product.id}`}>
-      <Card className="group hover:shadow-lg transition-all duration-200 hover-scale overflow-hidden">
+      <Card className="group h-full flex flex-col overflow-hidden border-border/60 hover:border-primary/40 hover:shadow-lg transition-all duration-200">
         <CardContent className="p-0">
           <div className="relative aspect-square bg-secondary/20 overflow-hidden">
             <div className="absolute top-2 right-2 z-10">
@@ -82,7 +82,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             
             {product.stock <= 0 && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <Badge variant="destructive" className="text-lg">Out of Stock</Badge>
+                <Badge variant="destructive">Out of Stock</Badge>
               </div>
             )}
             
@@ -95,18 +95,18 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             )}
           </div>
           
-          <div className="p-4 space-y-2">
+          <div className="p-3 space-y-1.5">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">{product.brand}</Badge>
               <span className="text-xs text-muted-foreground">{product.stock} in stock</span>
             </div>
             
-            <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm md:text-[15px] leading-snug line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
               {product.name}
             </h3>
             
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold">
+              <span className="text-lg font-bold text-primary">
                 Rs. {displayPrice?.toLocaleString()}
               </span>
               {hasWholesale && (
@@ -118,10 +118,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         </CardContent>
         
-        <CardFooter className="p-4 pt-0">
+        <CardFooter className="p-3 pt-0 mt-auto">
           <Button
             onClick={handleAddToCart}
             className="w-full"
+            size="sm"
             disabled={product.stock <= 0}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />

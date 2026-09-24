@@ -24,7 +24,7 @@ export const BrandSection = () => {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
 
   return (
-    <section ref={ref} className="relative py-16 md:py-20 overflow-hidden bg-black">
+    <section ref={ref} className="relative py-10 md:py-12 overflow-hidden bg-black">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-10 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
