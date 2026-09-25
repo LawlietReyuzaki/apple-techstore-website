@@ -73,10 +73,10 @@ function ExpandableList({ items, active, limit = 10, allTo, allLabel }:
 }
 
 /** Nested tree: groups (e.g. Galaxy A / Galaxy S) that open to reveal their models. */
-function Tree({ tree, active }: { tree: SidebarTree; active?: string }) {
+function Tree({ tree, active, expanded }: { tree: SidebarTree; active?: string; expanded?: boolean }) {
   const activeGroup = tree.groups.findIndex((g) => g.items.some((i) => i.path === active));
   const [open, setOpen] = useState<Record<number, boolean>>({ [activeGroup >= 0 ? activeGroup : 0]: true });
-  if (tree.groups.length === 1) return <ExpandableList items={tree.groups[0].items} active={active} limit={14} />;
+  if (tree.groups.length === 1) return <ExpandableList items={tree.groups[0].items} active={active} limit={expanded ? Infinity : 14} />;
   return (
     <div className="space-y-px">
       {tree.groups.map((g, i) => (
@@ -89,7 +89,7 @@ function Tree({ tree, active }: { tree: SidebarTree; active?: string }) {
             </span>
             <span className="text-[11px] text-muted-foreground">{g.items.length}</span>
           </button>
-          {open[i] && <div className="pl-4 pb-1"><ExpandableList items={g.items} active={active} limit={12} /></div>}
+          {open[i] && <div className="pl-4 pb-1"><ExpandableList items={g.items} active={active} limit={expanded ? Infinity : 12} /></div>}
         </div>
       ))}
     </div>
@@ -134,9 +134,10 @@ const asLinks = (list: MenuEntry[]): TreeLink[] => list.map((e) => ({ name: e.na
 // ── Pane content ──────────────────────────────────────────────────────────
 
 /** The pane's content: filters and the page's own tree first, then Shop by Brand / Part / Price. */
-export function SidebarContent({ active, filters, tree, plain }:
-  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; plain?: boolean }) {
+export function SidebarContent({ active, filters, tree, plain, expanded }:
+  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; plain?: boolean; expanded?: boolean }) {
   const { data, isLoading } = useCatalogMenu();
+  const lim = (n: number) => (expanded ? Infinity : n);
   const hasFilter = filters && Object.values(filters.selected).some(Boolean);
   const contextual = !!(filters || tree);
 
@@ -165,21 +166,21 @@ export function SidebarContent({ active, filters, tree, plain }:
       )}
 
       {tree && tree.groups.length > 0 && (
-        <Section icon={Layers} title={tree.title}><Tree tree={tree} active={active} /></Section>
+        <Section icon={Layers} title={tree.title}><Tree tree={tree} active={active} expanded={expanded} /></Section>
       )}
 
       {isLoading && <div className="space-y-2 py-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-5 w-full" />)}</div>}
 
       {data && (
         <>
-          <Section icon={Tag} title="Shop by Brand" defaultOpen={!contextual}>
-            <ExpandableList items={asLinks(data.brands)} active={active} limit={12} allTo="/brands" allLabel="Browse all brands" />
+          <Section icon={Tag} title="Shop by Brand" defaultOpen={expanded || !contextual}>
+            <ExpandableList items={asLinks(data.brands)} active={active} limit={lim(12)} allTo="/brands" allLabel="Browse all brands" />
           </Section>
-          <Section icon={Wrench} title="Shop by Part" defaultOpen={!contextual}>
-            <ExpandableList items={asLinks(data.parts)} active={active} limit={10} allTo="/parts" allLabel="Browse all part types" />
+          <Section icon={Wrench} title="Shop by Part" defaultOpen={expanded || !contextual}>
+            <ExpandableList items={asLinks(data.parts)} active={active} limit={lim(10)} allTo="/parts" allLabel="Browse all part types" />
           </Section>
-          <Section icon={Smartphone} title="Phones by Price" defaultOpen={!contextual}>
-            <ExpandableList items={asLinks(data.phonePrices).map((e) => ({ ...e, name: e.name.replace(/^Mobile Phones /, "") }))} active={active} limit={8} />
+          <Section icon={Smartphone} title="Phones by Price" defaultOpen={expanded || !contextual}>
+            <ExpandableList items={asLinks(data.phonePrices).map((e) => ({ ...e, name: e.name.replace(/^Mobile Phones /, "") }))} active={active} limit={lim(8)} />
           </Section>
         </>
       )}
@@ -195,14 +196,12 @@ export function SidebarContent({ active, filters, tree, plain }:
   );
 }
 
-/** Desktop: sticky, scrollable left pane. */
-export function CatalogSidebar({ active, filters, tree, stickyTop = "lg:top-[7.5rem]", className }:
-  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; stickyTop?: string; className?: string }) {
+/** Desktop: full-height left pane that scrolls with the page, every list fully expanded. */
+export function CatalogSidebar({ active, filters, tree, className }:
+  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; className?: string }) {
   return (
-    <aside className={cn("hidden lg:block w-64 xl:w-72 shrink-0", className)}>
-      <div className={cn("sticky max-h-[calc(100vh-8.5rem)] overflow-y-auto overscroll-contain thin-scrollbar", stickyTop)}>
-        <SidebarContent active={active} filters={filters} tree={tree} />
-      </div>
+    <aside className={cn("hidden lg:block w-64 xl:w-72 shrink-0 self-start", className)}>
+      <SidebarContent active={active} filters={filters} tree={tree} expanded />
     </aside>
   );
 }
