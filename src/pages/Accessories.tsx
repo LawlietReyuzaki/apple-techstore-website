@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useParams } from "react-router-dom";
@@ -139,35 +141,13 @@ export default function Accessories() {
       />
       <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold">Accessories</h1>
-          </div>
-          <Link to="/cart">
-            <Button variant="outline" size="sm" className="relative">
-              <ShoppingCart className="h-4 w-4" />
-              {cartItemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemsCount}
-                </span>
-              )}
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-green-500/10 to-teal-500/10 py-12">
+      <section className="bg-gradient-to-r from-green-500/10 to-teal-500/10 py-8">
         <div className="container mx-auto px-4 text-center">
           <Headphones className="h-16 w-16 mx-auto mb-4 text-primary" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Accessories</h2>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Accessories</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Complete your tech setup with our wide range of accessories for mobile, laptop, PC, and computers.
           </p>
@@ -236,6 +216,7 @@ export default function Accessories() {
           </div>
         )}
       </section>
+      <SiteFooter />
     </div>
   );
 }

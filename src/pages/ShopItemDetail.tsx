@@ -1,4 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -119,11 +121,7 @@ export default function ShopItemDetail() {
         category={item.shop_categories?.name}
       />
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
@@ -274,6 +272,7 @@ export default function ShopItemDetail() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

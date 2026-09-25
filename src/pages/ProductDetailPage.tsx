@@ -1,4 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +49,7 @@ function FormattedDescription({ text }: { text: string }) {
         if (/^[-*•]/.test(line) || /^\d+\./.test(line)) {
           return (
             <div key={i} className="flex gap-2">
-              <span className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">•</span>
+              <span className="text-primary dark:text-primary mt-0.5 shrink-0">•</span>
               <span>{line.replace(/^[-*•\d.]+\s*/, '')}</span>
             </div>
           );
@@ -70,7 +72,7 @@ function FormattedDescription({ text }: { text: string }) {
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 pb-3.5 mb-4 border-b">
-      <span className="w-1 h-5 rounded bg-blue-600 dark:bg-blue-400" />
+      <span className="w-1 h-5 rounded bg-primary dark:bg-primary" />
       <h2 className="text-lg font-extrabold tracking-tight">{children}</h2>
     </div>
   );
@@ -187,33 +189,17 @@ export default function ProductDetailPage() {
       />
 
       {/* Announcement bar */}
-      <div className="bg-foreground text-background text-xs">
-        <div className="container mx-auto px-4 h-9 flex items-center justify-center gap-5 flex-wrap font-medium">
-          <span className="inline-flex items-center gap-1.5"><IconTruck className="w-3.5 h-3.5" /> Free delivery in Bahria Phase 7</span>
-          <span className="hidden sm:inline-flex items-center gap-1.5"><IconCash className="w-3.5 h-3.5" /> Cash on Delivery nationwide</span>
-          <span className="hidden md:inline-flex items-center gap-1.5"><IconCheck className="w-3.5 h-3.5" /> 100% original stock</span>
-        </div>
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2.5 font-extrabold text-lg tracking-tight">
-            <span className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-blue-500 to-blue-800 text-white grid place-items-center">A</span>
-            AppleTechStore
-          </Link>
-          <WishlistButton productId={product.id} userId={user?.id} />
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-[13px] text-muted-foreground py-4 flex-wrap">
-          <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">Home</Link>
+          <Link to="/" className="hover:text-primary dark:hover:text-primary">Home</Link>
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <Link to="/shop" className="hover:text-blue-600 dark:hover:text-blue-400">Shop</Link>
+          <Link to="/shop" className="hover:text-primary dark:hover:text-primary">Shop</Link>
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
           <span className="text-foreground/80 line-clamp-1">{product.name}</span>
+          <span className="ml-auto"><WishlistButton productId={product.id} userId={user?.id} /></span>
         </nav>
 
         {/* ── Top: gallery + summary ── */}
@@ -238,7 +224,7 @@ export default function ProductDetailPage() {
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`aspect-square rounded-xl overflow-hidden border-[1.5px] bg-card transition-all ${selectedImage === idx ? 'border-blue-600 ring-2 ring-blue-500/25' : 'border-border hover:-translate-y-0.5 hover:border-blue-400'}`}
+                    className={`aspect-square rounded-xl overflow-hidden border-[1.5px] bg-card transition-all ${selectedImage === idx ? 'border-primary ring-2 ring-primary/25' : 'border-border hover:-translate-y-0.5 hover:border-primary'}`}
                   >
                     <img src={getImageUrl(img)} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-contain p-[12%]"
                       onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
@@ -253,7 +239,7 @@ export default function ProductDetailPage() {
             <div>
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-2 font-bold text-[13px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-3 py-1.5 rounded-lg">
+                  <span className="inline-flex items-center gap-2 font-bold text-[13px] text-primary dark:text-primary bg-primary/10 dark:bg-primary/15 px-3 py-1.5 rounded-lg">
                     {product.brand}
                   </span>
                   {product.featured && (
@@ -304,7 +290,7 @@ export default function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2.5">
                   {productColors.map((color) => (
                     <button key={color.id} onClick={() => setSelectedColor(color.id)}
-                      className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-[1.5px] text-sm font-bold transition-all ${selectedColor === color.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' : 'border-border bg-card hover:border-blue-400'}`}>
+                      className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-[1.5px] text-sm font-bold transition-all ${selectedColor === color.id ? 'border-primary bg-primary/10 dark:bg-primary/15 text-primary dark:text-primary' : 'border-border bg-card hover:border-primary'}`}>
                       {color.color_code && <span className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: color.color_code }} />}
                       {color.color_name}
                     </button>
@@ -323,7 +309,7 @@ export default function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2.5">
                   {productPartTypes.map((pt) => (
                     <button key={pt.id} onClick={() => setSelectedPartType(pt.id)}
-                      className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-[1.5px] text-sm font-bold transition-all ${selectedPartType === pt.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' : 'border-border bg-card hover:border-blue-400'}`}>
+                      className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-[1.5px] text-sm font-bold transition-all ${selectedPartType === pt.id ? 'border-primary bg-primary/10 dark:bg-primary/15 text-primary dark:text-primary' : 'border-border bg-card hover:border-primary'}`}>
                       <Wrench className="h-3.5 w-3.5" />{pt.part_type_name}
                     </button>
                   ))}
@@ -339,11 +325,11 @@ export default function ProductDetailPage() {
                 <button className="w-11 h-[54px] text-xl hover:bg-muted disabled:opacity-40" onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} disabled={quantity >= product.stock}>+</button>
               </div>
               <button onClick={handleAddToCart} disabled={product.stock <= 0}
-                className="h-[54px] px-5 rounded-xl border-[1.5px] bg-card font-extrabold inline-flex items-center justify-center gap-2 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50">
+                className="h-[54px] px-5 rounded-xl border-[1.5px] bg-card font-extrabold inline-flex items-center justify-center gap-2 hover:border-primary hover:text-primary dark:hover:text-primary transition-colors disabled:opacity-50">
                 <ShoppingCart className="w-[18px] h-[18px]" /> Add to cart
               </button>
               <button onClick={handleBuyNow} disabled={product.stock <= 0}
-                className="h-[54px] flex-1 min-w-[170px] px-6 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-extrabold inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
+                className="h-[54px] flex-1 min-w-[170px] px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-extrabold inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
                 <IconBolt className="w-[18px] h-[18px]" /> Buy now — COD
               </button>
             </div>
@@ -363,7 +349,7 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 border rounded-2xl overflow-hidden bg-card">
               {TRUST.map(({ Icon, title, sub }, i) => (
                 <div key={i} className="flex flex-col gap-1.5 p-3.5 border-r last:border-r-0 [&:nth-child(2)]:border-r-0 sm:[&:nth-child(2)]:border-r border-border/60">
-                  <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <Icon className="w-6 h-6 text-primary dark:text-primary" />
                   <b className="text-[12.5px] font-bold leading-tight">{title}</b>
                   <span className="text-[11px] text-muted-foreground/80">{sub}</span>
                 </div>
@@ -389,7 +375,7 @@ export default function ProductDetailPage() {
                   <details key={i} className="border-b last:border-b-0 group" open={i === 0}>
                     <summary className="flex items-center justify-between gap-4 py-4 cursor-pointer font-bold text-[14.5px] list-none [&::-webkit-details-marker]:hidden">
                       {f.q}
-                      <ChevronRight className="w-[18px] h-[18px] text-blue-600 dark:text-blue-400 shrink-0 transition-transform group-open:rotate-90" />
+                      <ChevronRight className="w-[18px] h-[18px] text-primary dark:text-primary shrink-0 transition-transform group-open:rotate-90" />
                     </summary>
                     <p className="pb-4 text-sm text-muted-foreground">{f.a}</p>
                   </details>
@@ -419,8 +405,9 @@ export default function ProductDetailPage() {
         <button onClick={handleAddToCart} disabled={product.stock <= 0}
           className="h-11 px-4 rounded-xl border-[1.5px] bg-card font-bold text-sm disabled:opacity-50">Cart</button>
         <button onClick={handleBuyNow} disabled={product.stock <= 0}
-          className="h-11 flex-1 rounded-xl bg-blue-700 text-white font-extrabold text-sm disabled:opacity-50">Buy now</button>
+          className="h-11 flex-1 rounded-xl bg-primary text-white font-extrabold text-sm disabled:opacity-50">Buy now</button>
       </div>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChevronDown, Plus, SlidersHorizontal, Smartphone, Tag, Wrench, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Layers, SlidersHorizontal, Smartphone, Tag, Wrench, X } from "lucide-react";
 import { useCatalogMenu, MenuEntry } from "@/hooks/useCatalogMenu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -15,29 +15,83 @@ export interface SidebarFilters {
   onChange: (key: FilterKey, value: string) => void;
   onClear: () => void;
 }
+export interface TreeLink { name: string; path: string; count: number }
+export interface SidebarTree { title: string; groups: { name: string | null; items: TreeLink[] }[] }
 
-const BRANDS_SHOWN = 12;
-const PARTS_SHOWN = 10;
+// ── Building blocks ───────────────────────────────────────────────────────
 
-function NavRow({ e, active }: { e: MenuEntry; active?: string }) {
-  const isActive = active === e.path || (active?.startsWith(e.path + "/") ?? false);
+/** Collapsible section with a chevron header (the accordion rows of the pane). */
+function Section({ icon: Icon, title, defaultOpen = true, children }:
+  { icon?: typeof Tag; title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <Link to={e.path}
-      className={cn("flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-        isActive ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted")}>
-      <span className="truncate">{e.name}</span>
-      <span className="text-xs text-muted-foreground ml-2 shrink-0">{e.count.toLocaleString()}</span>
+    <div className="border-b border-border/70 last:border-b-0">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="w-full flex items-center justify-between py-3 text-sm font-semibold text-foreground hover:text-primary">
+        <span className="flex items-center gap-2">{Icon && <Icon className="h-4 w-4 text-primary" />}{title}</span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="pb-3 -mt-0.5">{children}</div>}
+    </div>
+  );
+}
+
+function Row({ name, path, count, active }: TreeLink & { active?: string }) {
+  const on = active === path;
+  return (
+    <Link to={path}
+      className={cn("flex items-center justify-between rounded-md px-2 py-[5px] text-[13px] transition-colors",
+        on ? "bg-primary/10 text-primary font-medium" : "text-foreground/90 hover:bg-muted hover:text-primary")}>
+      <span className="truncate">{name}</span>
+      {count > 0 && <span className="text-[11px] text-muted-foreground ml-2 shrink-0">{count.toLocaleString()}</span>}
     </Link>
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: typeof Tag; title: string; children: React.ReactNode }) {
+/** A list that shows the first `limit` rows and expands in place. */
+function ExpandableList({ items, active, limit = 10, allTo, allLabel }:
+  { items: TreeLink[]; active?: string; limit?: number; allTo?: string; allLabel?: string }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? items : items.slice(0, limit);
   return (
-    <div>
-      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 mb-1.5">
-        <Icon className="h-3.5 w-3.5 text-primary" /> {title}
-      </h3>
-      <div className="space-y-0.5">{children}</div>
+    <div className="space-y-px">
+      {shown.map((e) => <Row key={e.path} {...e} active={active} />)}
+      {items.length > limit && (
+        <button type="button" onClick={() => setAll((a) => !a)}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary hover:underline">
+          <ChevronDown className={cn("h-3 w-3 transition-transform", all && "rotate-180")} />
+          {all ? "Show less" : `Show all ${items.length}`}
+        </button>
+      )}
+      {allTo && (
+        <Link to={allTo} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary">
+          {allLabel} <ChevronRight className="h-3 w-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** Nested tree: groups (e.g. Galaxy A / Galaxy S) that open to reveal their models. */
+function Tree({ tree, active }: { tree: SidebarTree; active?: string }) {
+  const activeGroup = tree.groups.findIndex((g) => g.items.some((i) => i.path === active));
+  const [open, setOpen] = useState<Record<number, boolean>>({ [activeGroup >= 0 ? activeGroup : 0]: true });
+  if (tree.groups.length === 1) return <ExpandableList items={tree.groups[0].items} active={active} limit={14} />;
+  return (
+    <div className="space-y-px">
+      {tree.groups.map((g, i) => (
+        <div key={g.name ?? i}>
+          <button type="button" onClick={() => setOpen((o) => ({ ...o, [i]: !o[i] }))}
+            className="w-full flex items-center justify-between rounded-md px-2 py-1.5 text-[13px] font-medium text-foreground hover:bg-muted">
+            <span className="flex items-center gap-1.5">
+              <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", open[i] && "rotate-90")} />
+              {g.name || "Other"}
+            </span>
+            <span className="text-[11px] text-muted-foreground">{g.items.length}</span>
+          </button>
+          {open[i] && <div className="pl-4 pb-1"><ExpandableList items={g.items} active={active} limit={12} /></div>}
+        </div>
+      ))}
     </div>
   );
 }
@@ -45,31 +99,29 @@ function Section({ icon: Icon, title, children }: { icon: typeof Tag; title: str
 function FacetList({ title, options, value, onPick }: { title: string; options: FacetOption[]; value: string; onPick: (v: string) => void }) {
   const [more, setMore] = useState(false);
   if (!options.length && !value) return null;
-  const shown = more ? options : options.slice(0, 8);
+  const shown = more ? options : options.slice(0, 7);
   return (
-    <div>
-      <div className="text-xs font-medium text-muted-foreground px-2 mb-1">{title}</div>
-      <div className="space-y-0.5">
+    <div className="pt-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground px-2 mb-1">{title}</div>
+      <div className="space-y-px">
         {shown.map((o) => {
           const on = value === o.slug;
           return (
             <button key={o.slug} type="button" onClick={() => onPick(on ? "" : o.slug)}
-              className={cn("w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors",
-                on ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground")}>
-              <span className={cn("h-4 w-4 rounded border flex items-center justify-center shrink-0",
-                on ? "bg-primary border-primary text-primary-foreground" : "border-border")}>
-                {on && <Check className="h-3 w-3" />}
+              className={cn("w-full flex items-center gap-2 rounded-md px-2 py-[5px] text-[13px] text-left transition-colors",
+                on ? "text-primary font-medium" : "hover:bg-muted text-foreground/90")}>
+              <span className={cn("h-3.5 w-3.5 rounded-[3px] border flex items-center justify-center shrink-0",
+                on ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/50")}>
+                {on && <Check className="h-2.5 w-2.5" />}
               </span>
               <span className="flex-1 truncate">{o.name}</span>
-              <span className="text-xs text-muted-foreground">{o.count.toLocaleString()}</span>
+              <span className="text-[11px] text-muted-foreground">{o.count.toLocaleString()}</span>
             </button>
           );
         })}
-        {options.length > 8 && (
-          <button type="button" onClick={() => setMore((m) => !m)}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-primary hover:underline">
-            <ChevronDown className={cn("h-3 w-3 transition-transform", more && "rotate-180")} />
-            {more ? "Show less" : `Show all ${options.length}`}
+        {options.length > 7 && (
+          <button type="button" onClick={() => setMore((m) => !m)} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary hover:underline">
+            <ChevronDown className={cn("h-3 w-3 transition-transform", more && "rotate-180")} />{more ? "Show less" : `Show all ${options.length}`}
           </button>
         )}
       </div>
@@ -77,84 +129,87 @@ function FacetList({ title, options, value, onPick }: { title: string; options: 
   );
 }
 
-/** The pane's content: optional filters for the current page, then Shop by Brand / Part / Price. */
-export function SidebarContent({ active, filters }: { active?: string; filters?: SidebarFilters }) {
+const asLinks = (list: MenuEntry[]): TreeLink[] => list.map((e) => ({ name: e.name, path: e.path, count: e.count }));
+
+// ── Pane content ──────────────────────────────────────────────────────────
+
+/** The pane's content: filters and the page's own tree first, then Shop by Brand / Part / Price. */
+export function SidebarContent({ active, filters, tree, plain }:
+  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; plain?: boolean }) {
   const { data, isLoading } = useCatalogMenu();
   const hasFilter = filters && Object.values(filters.selected).some(Boolean);
+  const contextual = !!(filters || tree);
 
   return (
-    <div className="space-y-6">
+    <div className={cn(!plain && "rounded-xl border border-border bg-card px-3")}>
       {filters && (
-        <div className="rounded-xl border border-border/60 bg-card/60 p-2 space-y-3">
-          <div className="flex items-center justify-between px-2 pt-1">
-            <span className="flex items-center gap-2 text-sm font-semibold"><SlidersHorizontal className="h-4 w-4 text-primary" /> Filter</span>
-            {hasFilter && (
-              <button type="button" onClick={filters.onClear} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <X className="h-3 w-3" /> Clear
-              </button>
-            )}
-          </div>
+        <Section icon={SlidersHorizontal} title="Filter">
+          {hasFilter && (
+            <button type="button" onClick={filters.onClear} className="flex items-center gap-1 px-2 pb-1 text-xs font-medium text-primary hover:underline">
+              <X className="h-3 w-3" /> Clear all filters
+            </button>
+          )}
           <button type="button" onClick={() => filters.onChange("stock", filters.selected.stock === "in" ? "" : "in")}
-            className={cn("w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left",
-              filters.selected.stock === "in" ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted")}>
-            <span className={cn("h-4 w-4 rounded border flex items-center justify-center",
-              filters.selected.stock === "in" ? "bg-primary border-primary text-primary-foreground" : "border-border")}>
-              {filters.selected.stock === "in" && <Check className="h-3 w-3" />}
+            className={cn("w-full flex items-center gap-2 rounded-md px-2 py-[5px] text-[13px] text-left",
+              filters.selected.stock === "in" ? "text-primary font-medium" : "hover:bg-muted")}>
+            <span className={cn("h-3.5 w-3.5 rounded-[3px] border flex items-center justify-center",
+              filters.selected.stock === "in" ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/50")}>
+              {filters.selected.stock === "in" && <Check className="h-2.5 w-2.5" />}
             </span>
             In stock only
           </button>
           <FacetList title="Part type" options={filters.facets.parts} value={filters.selected.part} onPick={(v) => filters.onChange("part", v)} />
           <FacetList title="Brand" options={filters.facets.brands} value={filters.selected.brand} onPick={(v) => filters.onChange("brand", v)} />
           <FacetList title="Price" options={filters.facets.prices} value={filters.selected.price} onPick={(v) => filters.onChange("price", v)} />
-        </div>
+        </Section>
       )}
 
-      {isLoading && <div className="space-y-2 px-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>}
+      {tree && tree.groups.length > 0 && (
+        <Section icon={Layers} title={tree.title}><Tree tree={tree} active={active} /></Section>
+      )}
+
+      {isLoading && <div className="space-y-2 py-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-5 w-full" />)}</div>}
 
       {data && (
         <>
-          <Section icon={Tag} title="Shop by Brand">
-            {data.brands.slice(0, BRANDS_SHOWN).map((e) => <NavRow key={e.path} e={e} active={active} />)}
-            <Link to="/brands" className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-primary/5 font-medium">
-              <Plus className="h-4 w-4" /> All {data.brands.length} brands
-            </Link>
+          <Section icon={Tag} title="Shop by Brand" defaultOpen={!contextual}>
+            <ExpandableList items={asLinks(data.brands)} active={active} limit={12} allTo="/brands" allLabel="Browse all brands" />
           </Section>
-          <Section icon={Wrench} title="Shop by Part">
-            {data.parts.slice(0, PARTS_SHOWN).map((e) => <NavRow key={e.path} e={e} active={active} />)}
-            <Link to="/parts" className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-primary/5 font-medium">
-              <Plus className="h-4 w-4" /> All {data.parts.length} part types
-            </Link>
+          <Section icon={Wrench} title="Shop by Part" defaultOpen={!contextual}>
+            <ExpandableList items={asLinks(data.parts)} active={active} limit={10} allTo="/parts" allLabel="Browse all part types" />
           </Section>
-          <Section icon={Smartphone} title="Phones by Price">
-            {data.phonePrices.map((e) => <NavRow key={e.path} e={{ ...e, name: e.name.replace(/^Mobile Phones /, "") }} active={active} />)}
+          <Section icon={Smartphone} title="Phones by Price" defaultOpen={!contextual}>
+            <ExpandableList items={asLinks(data.phonePrices).map((e) => ({ ...e, name: e.name.replace(/^Mobile Phones /, "") }))} active={active} limit={8} />
           </Section>
         </>
       )}
 
-      <Section icon={Wrench} title="Services">
-        <Link to="/book-repair" className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">Book a repair</Link>
-        <Link to="/request-part" className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">Request a part</Link>
-        <Link to="/track-repair" className="block rounded-md px-2 py-1.5 text-sm hover:bg-muted">Track my repair</Link>
+      <Section icon={Wrench} title="Services" defaultOpen={false}>
+        <ExpandableList active={active} items={[
+          { name: "Book a repair", path: "/book-repair", count: 0 },
+          { name: "Track my repair", path: "/track-repair", count: 0 },
+          { name: "Request a part", path: "/request-part", count: 0 },
+        ]} />
       </Section>
     </div>
   );
 }
 
 /** Desktop: sticky, scrollable left pane. */
-export function CatalogSidebar({ active, filters, stickyTop = "lg:top-[7.5rem]", className }:
-  { active?: string; filters?: SidebarFilters; stickyTop?: string; className?: string }) {
+export function CatalogSidebar({ active, filters, tree, stickyTop = "lg:top-[7.5rem]", className }:
+  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; stickyTop?: string; className?: string }) {
   return (
     <aside className={cn("hidden lg:block w-64 xl:w-72 shrink-0", className)}>
-      <div className={cn("sticky max-h-[calc(100vh-8.5rem)] overflow-y-auto overscroll-contain thin-scrollbar rounded-2xl border border-border/60 bg-card p-3", stickyTop)}>
-        <SidebarContent active={active} filters={filters} />
+      <div className={cn("sticky max-h-[calc(100vh-8.5rem)] overflow-y-auto overscroll-contain thin-scrollbar", stickyTop)}>
+        <SidebarContent active={active} filters={filters} tree={tree} />
       </div>
     </aside>
   );
 }
 
 /** Mobile / tablet: the same pane in a left drawer. */
-export function MobileSidebar({ active, filters, label = "Browse & filter" }:
-  { active?: string; filters?: SidebarFilters; label?: string }) {
+export function MobileSidebar({ active, filters, tree, label = "Browse & filter" }:
+  { active?: string; filters?: SidebarFilters; tree?: SidebarTree; label?: string }) {
   const count = filters ? Object.values(filters.selected).filter(Boolean).length : 0;
   return (
     <Sheet>
@@ -163,9 +218,9 @@ export function MobileSidebar({ active, filters, label = "Browse & filter" }:
           <SlidersHorizontal className="h-4 w-4" /> {label}{count > 0 && <span className="rounded-full bg-primary text-primary-foreground text-xs px-1.5">{count}</span>}
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[360px] overflow-y-auto">
-        <SheetHeader><SheetTitle>Browse</SheetTitle></SheetHeader>
-        <div className="mt-4"><SidebarContent active={active} filters={filters} /></div>
+      <SheetContent side="left" className="w-[300px] sm:w-[360px] overflow-y-auto p-4">
+        <SheetHeader className="mb-2"><SheetTitle>Browse</SheetTitle></SheetHeader>
+        <SidebarContent active={active} filters={filters} tree={tree} plain />
       </SheetContent>
     </Sheet>
   );

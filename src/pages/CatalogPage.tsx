@@ -4,7 +4,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { ShopItemCard } from "@/components/ShopItemCard";
 import { StoreHeader } from "@/components/StoreHeader";
-import { CatalogSidebar, MobileSidebar, FilterKey, SidebarFilters } from "@/components/CatalogSidebar";
+import { CatalogSidebar, MobileSidebar, FilterKey, SidebarFilters, SidebarTree } from "@/components/CatalogSidebar";
+import { SiteFooter } from "@/components/SiteFooter";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { PageSEO } from "@/components/PageSEO";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,18 @@ export default function CatalogPage() {
   const filters: SidebarFilters | undefined = first && !isIndex
     ? { facets: first.facets, selected, onChange: setParam, onClear: clearFilters }
     : undefined;
+  // Related pages go in the left pane as a collapsible tree (series → models, brands, price ranges)
+  const tree: SidebarTree | undefined = useMemo(() => {
+    if (!first || !cat || isIndex || !first.links.length) return undefined;
+    const brand = cat.type === "brand" || cat.type === "model" || cat.type === "part_brand" ? cat.brand : null;
+    const strip = (n: string) => (brand && n.startsWith(brand + " ") ? n.slice(brand.length + 1) : n).replace(/^All /, "");
+    const m = new Map<string | null, { name: string; path: string; count: number }[]>();
+    for (const l of first.links) { const g = l.grp || null; if (!m.has(g)) m.set(g, []); m.get(g)!.push({ name: strip(l.name), path: l.path, count: l.count }); }
+    const groups = [...m.entries()].map(([name, items]) => ({ name, items }));
+    const titles: Record<string, string> = { brand: cat.brand + " models & parts", model: "More " + cat.brand + " parts",
+      part: cat.heading + " by brand", part_brand: cat.brand + " models", phones_price: "Other price ranges" };
+    return { title: titles[cat.type] || "Browse", groups };
+  }, [first, cat, isIndex]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,7 +167,7 @@ export default function CatalogPage() {
       <StoreHeader />
 
       <div className="container mx-auto px-4 py-4 md:py-6 flex gap-6 items-start">
-        <CatalogSidebar active={path} filters={filters} />
+        <CatalogSidebar active={path} filters={filters} tree={tree} />
         <main className="flex-1 min-w-0">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground mb-3">
@@ -179,7 +192,7 @@ export default function CatalogPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{cat.heading}</h1>
               <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm md:text-base">{cat.description}</p>
 
-              <div className="mt-5"><LinkGroups links={first.links} isIndex={isIndex} brand={cat.type === "brand" || cat.type === "model" ? cat.brand : null} /></div>
+              {isIndex && <div className="mt-5"><LinkGroups links={first.links} isIndex /></div>}
 
               {!isIndex && (
                 <>
@@ -189,7 +202,7 @@ export default function CatalogPage() {
                       {hasFilters && <button type="button" onClick={clearFilters} className="ml-2 text-primary hover:underline">Clear</button>}
                     </p>
                     <div className="flex items-center gap-2">
-                      <MobileSidebar active={path} filters={filters} label="Filter" />
+                      <MobileSidebar active={path} filters={filters} tree={tree} label="Filter & browse" />
                       <select aria-label="Sort" value={sort} onChange={(e) => setParam("sort", e.target.value)}
                         className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground">
                         {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -226,6 +239,7 @@ export default function CatalogPage() {
           )}
         </main>
       </div>
+      <SiteFooter />
       <WhatsAppFloatingButton />
     </div>
   );

@@ -65,9 +65,13 @@ export async function getItems(pool, cat, { part, brand, price, stock, sort, off
   const key = `items:${cat.path}:${part}:${brand}:${price}:${stock}:${sort}:${off}:${lim}`;
   return cached(key, async () => {
     const w = where.join(' AND ');
+    // The same product can exist in two source tables; a listing shows it once (in-stock / photographed copy first)
     const [{ rows: items }, { rows: [{ n }] }] = await Promise.all([
-      pool.query(`SELECT ${ITEM_FIELDS} FROM catalog_items WHERE ${w} ORDER BY ${order} LIMIT ${lim} OFFSET ${off}`, params),
-      pool.query(`SELECT COUNT(*)::int AS n FROM catalog_items WHERE ${w}`, params),
+      pool.query(`SELECT ${ITEM_FIELDS} FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY lower(name) ORDER BY in_stock DESC, image_count DESC, source_table) AS rn
+                      FROM catalog_items WHERE ${w}) t
+                   WHERE rn = 1 ORDER BY ${order} LIMIT ${lim} OFFSET ${off}`, params),
+      pool.query(`SELECT COUNT(DISTINCT lower(name))::int AS n FROM catalog_items WHERE ${w}`, params),
     ]);
     return { items, total: n };
   });

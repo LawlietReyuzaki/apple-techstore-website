@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SparePartCard } from "@/components/SparePartCard";
@@ -148,21 +150,7 @@ export default function SpareParts() {
       />
       <BreadcrumbSchema items={breadcrumbs} />
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-              <Link to="/shop" className="hover:text-primary transition-colors">Shop</Link>
-              <Link to="/spare-parts" className="text-primary font-medium">Spare Parts</Link>
-              <Link to="/book-repair" className="hover:text-primary transition-colors">Repair</Link>
-              <Link to="/track-repair" className="hover:text-primary transition-colors">Track</Link>
-            </nav>
-            <ProductCartButton />
-          </div>
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
@@ -302,6 +290,7 @@ export default function SpareParts() {
           </div>
         )}
       </div>
+      <SiteFooter />
     </div>
   );
 }

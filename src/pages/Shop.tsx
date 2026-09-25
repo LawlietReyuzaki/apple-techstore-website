@@ -20,9 +20,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import shopHeroBg from "@/assets/shop-hero-bg.png";
 import { PageSEO, CollectionSchema, BreadcrumbSchema } from "@/components/PageSEO";
 import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { CatalogSidebar, MobileSidebar } from "@/components/CatalogSidebar";
 
 // Map category names to icons
@@ -466,7 +466,7 @@ export default function Shop() {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background">
       <PageSEO
         title={pageTitle}
         description={pageDescription}
@@ -481,86 +481,33 @@ export default function Shop() {
       />
       <BreadcrumbSchema items={breadcrumbs} />
 
-      {/* Subtle Animated Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse-slow" />
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
-      </div>
-
       <StoreHeader />
 
       <div className="container mx-auto px-4 py-6 relative z-10 flex gap-6 items-start">
         <CatalogSidebar />
         <div className="flex-1 min-w-0">
-        {/* Compact Hero Section */}
-        <div className="mb-10 text-center relative rounded-2xl overflow-hidden group animate-fade-in">
-          <div
-            className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-700 group-hover:scale-110"
-            style={{ backgroundImage: `url(${shopHeroBg})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
-          <div className="relative z-10 py-8 px-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md mb-3 border border-white/20">
-              <CurrentIcon className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-white tracking-tight">
-              {category === "all" ? "All Products" : currentCategory?.name || "Shop"}
-            </h1>
-            <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
-              {currentCategory?.description || "Browse our curated collection"}
-            </p>
-          </div>
+        {/* Title + category tabs */}
+        <div className="mb-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+            {category === "all" ? "All Products" : currentCategory?.name || "Shop"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{currentCategory?.description || "Phones, spare parts and accessories — cash on delivery nationwide"}</p>
         </div>
-
-        {/* Category Pills */}
-        <div className="flex justify-center mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        <div className="flex gap-1 overflow-x-auto no-scrollbar border-b border-border mb-5">
           {isLoadingCategories ? (
-            <div className="flex gap-2 flex-wrap justify-center">
-              {[1, 2, 3, 4, 5].map(i => (
-                <Skeleton key={i} className="h-10 w-24 rounded-full" />
-              ))}
-            </div>
+            [1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-9 w-24 rounded-md mb-2" />)
           ) : (
-            <div className="flex flex-wrap gap-2 justify-center max-w-4xl">
-              <button
-                onClick={() => {
-                  setCategory("all");
-                  setSearchParams({ category: "all" });
-                  setBrandFilter("all");
-                }}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                  category === "all"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Package className="h-4 w-4" />
-                All
-              </button>
-              {shopCategories.map(cat => {
-                const Icon = getCategoryIcon(cat.name);
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      setCategory(cat.slug);
-                      setSearchParams({ category: cat.slug });
-                      setBrandFilter("all");
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                      category === cat.slug
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
+            [{ id: "all", slug: "all", name: "All" } as any, ...shopCategories].map(cat => {
+              const on = category === cat.slug;
+              return (
+                <button key={cat.id} type="button"
+                  onClick={() => { setCategory(cat.slug); setSearchParams({ category: cat.slug }); setBrandFilter("all"); }}
+                  className={cn("shrink-0 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
+                    on ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+                  {cat.name}
+                </button>
+              );
+            })
           )}
         </div>
 
@@ -699,6 +646,7 @@ export default function Shop() {
         )}
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

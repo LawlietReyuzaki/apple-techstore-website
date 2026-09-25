@@ -11,13 +11,13 @@ All colors MUST be HSL.
     --background: 0 0% 100%;
     --foreground: 0 0% 5%;
 
-    --card: 0 0% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 0 0% 5%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;
 
-    --primary: 280 100% 60%;
+    --primary: 276 82% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 5% 96%;
@@ -34,7 +34,7 @@ All colors MUST be HSL.
 
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 280 100% 60%;
+    --ring: 276 82% 50%;
 
     --radius: 0.75rem;
 

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { StoreHeader } from "@/components/StoreHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -18,11 +19,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/50 backdrop-blur-sm">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-          </div>
-        </header>
+      <StoreHeader />
 
         <div className="container mx-auto px-4 py-16 text-center">
           <ShoppingCart className="h-24 w-24 text-muted-foreground mx-auto mb-4" />
@@ -38,11 +35,7 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">

@@ -1,4 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -165,11 +167,7 @@ export default function SparePartDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <Skeleton className="h-8 w-48" />
-          </div>
-        </header>
+      <StoreHeader />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-10 w-32 mb-8" />
           <div className="grid md:grid-cols-2 gap-8">
@@ -221,11 +219,7 @@ export default function SparePartDetail() {
         category={categoryName}
       />
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb — real links, matches the BreadcrumbList structured data */}
@@ -499,6 +493,7 @@ export default function SparePartDetail() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

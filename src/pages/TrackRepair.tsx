@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,26 +81,7 @@ const TrackRepair = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Phone className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Dilbar Mobiles</h1>
-              <p className="text-xs text-muted-foreground">Repair Shop</p>
-            </div>
-          </Link>
-
-          <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">

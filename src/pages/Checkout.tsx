@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,11 +109,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Link to="/" className="text-2xl font-bold">Dilbar Mobiles</Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-4">Checkout</h1>

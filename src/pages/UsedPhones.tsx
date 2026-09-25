@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -139,34 +141,12 @@ export default function UsedPhones() {
       <BreadcrumbSchema items={breadcrumbs} />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold">Used Phones</h1>
-          </div>
-          <Link to="/cart">
-            <Button variant="outline" size="sm" className="relative">
-              <ShoppingCart className="h-4 w-4" />
-              {cartItemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemsCount}
-                </span>
-              )}
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* Hero */}
-      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12">
+      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-8">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Pre-Owned Mobile Phones</h2>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Pre-Owned Mobile Phones</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Quality checked and certified used phones at unbeatable prices. All devices come with warranty.
           </p>
@@ -267,6 +247,7 @@ export default function UsedPhones() {
           </div>
         )}
       </section>
+      <SiteFooter />
     </div>
   );
 }

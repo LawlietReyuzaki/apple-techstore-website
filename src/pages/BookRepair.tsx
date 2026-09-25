@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { StoreHeader } from "@/components/StoreHeader";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,26 +89,7 @@ const BookRepair = () => {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-effect border-b animate-fade-in">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-glow">
-              <Phone className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Dilbar Mobiles</h1>
-              <p className="text-xs text-muted-foreground">Expert Repair Service</p>
-            </div>
-          </Link>
-
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="group hover:bg-primary/10 transition-all duration-300">
-              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <StoreHeader />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12 relative z-10">

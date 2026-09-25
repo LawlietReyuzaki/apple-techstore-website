@@ -8,7 +8,7 @@ import { TrustBar } from "@/components/TrustBar";
 import { BrandSection } from "@/components/BrandSection";
 import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
-import { PaymentMethodsStrip } from "@/components/PaymentMethodsStrip";
+import { SiteFooter } from "@/components/SiteFooter";
 import { FeaturedSparePartsSection } from "@/components/FeaturedSparePartsSection";
 import { PromoSection } from "@/components/PromoSection";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
@@ -119,54 +119,8 @@ const Index = () => {
       <TrustBar />
       <BrandSection />
       <ContactSection />
-      <PaymentMethodsStrip />
 
-      {/* Footer */}
-      <footer className="border-t bg-card py-8 sm:py-12">
-        <div className="container">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            <div>
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-foreground">AppleTechStore</h3>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                Your trusted partner for wholesale phones, genuine spare parts and professional repairs in Bahria Phase 7.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Shop</h4>
-              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <li><Link to="/shop" className="hover:text-primary transition-colors">All Products</Link></li>
-                <li><Link to="/brands" className="hover:text-primary transition-colors">Shop by Brand</Link></li>
-                <li><Link to="/parts" className="hover:text-primary transition-colors">Shop by Part</Link></li>
-                <li><Link to="/phones" className="hover:text-primary transition-colors">Used Phones</Link></li>
-                <li><Link to="/accessories" className="hover:text-primary transition-colors">Accessories</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Services</h4>
-              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <li><Link to="/book-repair" className="hover:text-primary transition-colors">Phone Repair</Link></li>
-                <li><Link to="/parts/lcd-panels" className="hover:text-primary transition-colors">Screen Replacement</Link></li>
-                <li><Link to="/parts/batteries" className="hover:text-primary transition-colors">Battery Service</Link></li>
-                <li><Link to="/request-part" className="hover:text-primary transition-colors">Request a Part</Link></li>
-                <li><Link to="/track-repair" className="hover:text-primary transition-colors">Track Repair</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Contact</h4>
-              <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
-                <li>Bahria Phase 7, Rawalpindi</li>
-                <li>Phone: +92 334 2228141</li>
-                <li>WhatsApp: +92 320 0450584</li>
-                <li>Email: info@dilbarmart.pk</li>
-                <li>Mon-Sat: 10AM - 10PM</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-border pt-4 sm:pt-6 text-center text-xs sm:text-sm text-muted-foreground">
-            <p>&copy; 2024 AppleTechStore. All rights reserved. • Best repair shop in Bahria Phase 7</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <WhatsAppFloatingButton />
     </div>

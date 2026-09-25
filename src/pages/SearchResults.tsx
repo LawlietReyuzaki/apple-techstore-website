@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { FolderOpen, Loader2, Sparkles } from "lucide-react";
 import { StoreHeader } from "@/components/StoreHeader";
 import { CatalogSidebar, MobileSidebar } from "@/components/CatalogSidebar";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ShopItemCard } from "@/components/ShopItemCard";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { PageSEO } from "@/components/PageSEO";
@@ -113,6 +114,7 @@ export default function SearchResults() {
           )}
         </main>
       </div>
+      <SiteFooter />
       <WhatsAppFloatingButton />
     </div>
   );
