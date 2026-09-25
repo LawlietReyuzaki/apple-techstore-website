@@ -10,7 +10,7 @@ import { ContactSection } from "@/components/ContactSection";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { FeaturedSparePartsSection } from "@/components/FeaturedSparePartsSection";
-import { PromoSection } from "@/components/PromoSection";
+import { PartRequestCard } from "@/components/PartRequestCard";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
@@ -101,8 +101,8 @@ const Index = () => {
 
           {/* Hero: carousel + stacked promo tiles */}
           <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
-            <div className="lg:col-span-2 min-w-0"><HeroCarousel /></div>
-            <PromoSection stacked />
+            <div className="lg:col-span-2 min-w-0 lg:h-full"><HeroCarousel /></div>
+            <PartRequestCard />
           </div>
 
           <FlashSaleSection />
