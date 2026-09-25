@@ -11,6 +11,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { FeaturedSparePartsSection } from "@/components/FeaturedSparePartsSection";
 import { PromoSection } from "@/components/PromoSection";
+import { PartHelpRail } from "@/components/PartHelpRail";
 import { WholesaleBanner } from "@/components/WholesaleBanner";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
@@ -122,6 +123,7 @@ const Index = () => {
 
       <SiteFooter />
 
+      <PartHelpRail />
       <WhatsAppFloatingButton />
     </div>
   );
