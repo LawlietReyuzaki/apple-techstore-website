@@ -46,20 +46,21 @@ export function CategoryRow() {
 
   return (
     <nav aria-label="Shop by category" className="container xl:pr-14 py-3">
-      <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1 no-scrollbar">
+      {/* Phones/tablets: horizontal scroll. Desktop: the tiles spread across the full content width. */}
+      <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-1 no-scrollbar lg:grid lg:grid-cols-9 lg:gap-3 lg:overflow-visible">
         {isLoading
-          ? [...Array(7)].map((_, i) => <Skeleton key={i} className="h-[76px] w-[96px] shrink-0 rounded-xl" />)
+          ? [...Array(9)].map((_, i) => <Skeleton key={i} className="h-[104px] w-[120px] lg:w-auto shrink-0 rounded-xl" />)
           : tiles.map((t) => {
             const Icon = t.icon;
             return (
               <Link key={t.key} to={t.to}
-                className="snap-start shrink-0 w-[96px] sm:w-[110px] rounded-xl border border-border/60 bg-card p-2 flex flex-col items-center gap-1.5 hover:border-primary/50 hover:shadow-md transition-all">
+                className="snap-start shrink-0 w-[120px] lg:w-auto rounded-xl border border-border/60 bg-card px-2 py-3 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:shadow-md transition-all">
                 {t.image ? (
-                  <img src={t.image} alt="" loading="lazy" className="h-9 w-9 rounded-lg object-cover" />
+                  <img src={t.image} alt="" loading="lazy" className="h-12 w-12 rounded-lg object-cover" />
                 ) : (
-                  <span className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></span>
+                  <span className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center"><Icon className="h-6 w-6 text-primary" /></span>
                 )}
-                <span className="text-[11px] leading-tight text-center text-foreground line-clamp-2">{t.label}</span>
+                <span className="text-[13px] md:text-sm font-medium leading-tight text-center text-foreground line-clamp-2">{t.label}</span>
               </Link>
             );
           })}

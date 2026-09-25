@@ -64,7 +64,7 @@ export function StoreHeader({ initialQuery }: { initialQuery?: string }) {
 
       <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
         {/* Main row */}
-        <div className="container flex items-center gap-3 md:gap-5 h-16 md:h-[72px]">
+        <div className="container flex items-center gap-3 md:gap-5 h-[72px] md:h-[84px]">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden -ml-2" aria-label="Menu"><Menu className="h-5 w-5" /></Button>
@@ -81,10 +81,10 @@ export function StoreHeader({ initialQuery }: { initialQuery?: string }) {
           </Sheet>
 
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <img src={logo} alt="AppleTechStore" className="h-10 w-10 md:h-11 md:w-11 rounded-xl" />
+            <img src={logo} alt="AppleTechStore" className="h-12 w-12 md:h-14 md:w-14 rounded-xl" />
             <span className="hidden sm:block leading-tight">
-              <span className="block font-extrabold text-lg tracking-tight text-foreground">AppleTechStore</span>
-              <span className="block text-[11px] text-muted-foreground">Phones · Parts · Repairs</span>
+              <span className="block font-extrabold text-xl md:text-2xl tracking-tight text-foreground">AppleTechStore</span>
+              <span className="block text-xs text-muted-foreground">Phones · Parts · Repairs</span>
             </span>
           </Link>
 
