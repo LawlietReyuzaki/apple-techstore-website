@@ -94,6 +94,12 @@ export function buildIndex(items, cats) {
   const catDocs = cats.map((c) => {
     const label = catLabel(c);
     const tokens = new Set([...tokenize(label), ...tokenize(c.heading)]);
+    // singular forms too, so "battery" finds the "Batteries" category and "panel" finds "LCD Panels"
+    for (const t of [...tokens]) {
+      if (t.endsWith('ies')) tokens.add(t.slice(0, -3) + 'y');
+      else if (t.endsWith('es') && t.length > 4) tokens.add(t.slice(0, -2));
+      if (t.endsWith('s') && t.length > 3) tokens.add(t.slice(0, -1));
+    }
     tokens.forEach((t) => tokenSet.add(t));
     return { ...c, label, labelNorm: norm(label), tokens };
   });
