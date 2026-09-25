@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ProductSEO } from "@/components/ProductSEO";
+import { TrackViewContent } from "@/components/MetaPixel";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { getImageUrls } from "@/lib/imageUrl";
@@ -208,6 +209,7 @@ export default function SparePartDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TrackViewContent id={part.id} name={part.name} price={displayPrice} />
       <ProductSEO
         name={part.name}
         description={part.description}

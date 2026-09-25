@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { ProductSEO } from "@/components/ProductSEO";
+import { TrackViewContent } from "@/components/MetaPixel";
 import { getImageUrl } from "@/lib/imageUrl";
 
 export default function ShopItemDetail() {
@@ -109,6 +110,7 @@ export default function ShopItemDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TrackViewContent id={item.id} name={item.name} price={displayPrice} />
       <ProductSEO
         name={item.name}
         description={item.description}

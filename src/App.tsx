@@ -44,6 +44,7 @@ import Accessories from "./pages/Accessories";
 import RequestPart from "./pages/RequestPart";
 import RequestPartThankYou from "./pages/RequestPartThankYou";
 import CatalogPage from "./pages/CatalogPage";
+import { MetaPixelRouteTracker } from "./components/MetaPixel";
 import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient({
@@ -64,6 +65,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <MetaPixelRouteTracker />
           <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/shop" element={<Shop />} />

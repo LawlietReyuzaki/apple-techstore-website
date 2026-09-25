@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { trackAddToCart } from '@/lib/metaPixel';
 
 export interface CartProduct {
   id: string;
@@ -46,6 +47,9 @@ export const useProductCartStore = create<ProductCartStore>()(
 
       addItem: (product, quantity = 1, selectedColor = null, selectedColorCode = null, selectedPartType = null, selectedVariant = null) => {
         const { items } = get();
+        // Meta Pixel: price the customer pays (wholesale/sale when lower)
+        const paid = product.wholesale_price && product.wholesale_price < product.price ? product.wholesale_price : product.price;
+        trackAddToCart(product.id, paid, quantity);
         const existingItem = items.find(i => 
           i.product.id === product.id && 
           i.selectedColor === selectedColor && 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, FolderOpen, Search, Sparkles, X } from "lucide-react";
 import { getImageUrl } from "@/lib/imageUrl";
+import { trackSearch } from "@/lib/metaPixel";
 import { cn } from "@/lib/utils";
 
 interface Suggestion { text: string; path: string }
@@ -111,6 +112,7 @@ export function SmartSearch({ size = "md", className, placeholder, autoFocus, in
     const query = text.trim();
     if (!query) return;
     pushRecent(query);
+    trackSearch(query);
     setOpen(false);
     navigate(`/search?q=${encodeURIComponent(query)}`);
   }, [navigate]);

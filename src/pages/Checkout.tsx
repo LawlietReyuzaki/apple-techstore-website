@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { StoreHeader } from "@/components/StoreHeader";
+import { TrackInitiateCheckout } from "@/components/MetaPixel";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductCartStore } from "@/stores/productCartStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +111,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-background">
       <StoreHeader />
+      <TrackInitiateCheckout items={items.map(i => ({ id: i.product.id, quantity: i.quantity }))} total={totalPrice} />
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-4">Checkout</h1>

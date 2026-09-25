@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { trackPurchase } from "@/lib/metaPixel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -144,6 +145,9 @@ export default function PaymentSubmission() {
           description: "You will pay cash when your order is delivered. Confirmation email sent!",
         });
 
+        // Meta Pixel: order confirmed (guarded per order id, so a refresh never double-counts)
+        trackPurchase(orderId, ((orderData?.items || orderDetails?.items || []) as any[]).map((i) => ({ id: i.id, quantity: i.quantity })),
+          orderData?.total_amount ?? orderDetails?.total_amount ?? 0);
         navigate("/account/orders");
         return;
       }
@@ -208,6 +212,9 @@ export default function PaymentSubmission() {
         description: "Your payment is being verified by admin. Confirmation email sent!",
       });
 
+      // Meta Pixel: order confirmed (guarded per order id, so a refresh never double-counts)
+      trackPurchase(orderId, ((orderData?.items || orderDetails?.items || []) as any[]).map((i) => ({ id: i.id, quantity: i.quantity })),
+        orderData?.total_amount ?? orderDetails?.total_amount ?? 0);
       navigate("/account/orders");
     } catch (error: any) {
       console.error("Payment submission error:", error);

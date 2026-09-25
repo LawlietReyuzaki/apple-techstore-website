@@ -14,6 +14,7 @@ import { ProductReviews } from "@/components/ProductReviews";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { useAuth } from "@/hooks/useAuth";
 import { ProductSEO } from "@/components/ProductSEO";
+import { TrackViewContent } from "@/components/MetaPixel";
 import { getImageUrl } from "@/lib/imageUrl";
 
 // ── Small inline trust icons (line-drawn, no emoji) ──────────────────────────
@@ -181,6 +182,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24 md:pb-0">
+      <TrackViewContent id={product.id} name={product.name} price={displayPrice} />
       <ProductSEO
         name={product.name} description={product.description} price={product.price}
         salePrice={product.wholesale_price} brand={product.brand} image={product.images?.[0]}
