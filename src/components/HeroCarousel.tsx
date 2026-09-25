@@ -50,7 +50,7 @@ export const HeroCarousel = () => {
   const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
 
   return (
-    <div className="relative h-[220px] sm:h-[300px] md:h-[380px] lg:h-full lg:min-h-[380px] overflow-hidden rounded-xl sm:rounded-2xl shadow-lg">
+    <div className="relative h-[220px] sm:h-[300px] md:h-[380px] overflow-hidden rounded-xl sm:rounded-2xl shadow-lg">
       {slides.map((slide, index) => {
         const Icon = slide.icon;
         return (
