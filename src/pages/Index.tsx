@@ -19,6 +19,7 @@ import { CategoryRow } from "@/components/CategoryRow";
 import { CatalogSidebar, MobileSidebar } from "@/components/CatalogSidebar";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TrustIndicators } from "@/components/TrustIndicators";
+import { UsedPhonesSection } from "@/components/UsedPhonesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { Phone, ShoppingBag, Wrench, Sparkles } from "lucide-react";
 
@@ -111,6 +112,7 @@ const Index = () => {
           <WholesaleBanner />
           <FeaturedDeals products={featured} />
           <LatestProducts products={latest} />
+          <UsedPhonesSection />
           <ServicesSection />
         </div>
       </div>
