@@ -7,6 +7,7 @@ import { rebuildCatalog, scheduleCatalogRebuild, bandLabel } from './rebuild.js'
 import { partPlural, PRICE_BANDS } from './classify.js';
 import { categoryMeta } from '../botRenderer.js';
 import { getSearchIndex, search, markSearchStale } from './search.js';
+import { registerMetaFeedRoutes, markFeedStale } from './metaFeed.js';
 
 const SITE = 'https://appletechstore.pk';
 const PAGE_SIZE = 48;
@@ -31,7 +32,7 @@ async function cached(key, fn) {
   if (cache.size > 2000) cache.delete(cache.keys().next().value);
   return v;
 }
-export const clearCatalogCache = () => { cache.clear(); markSearchStale(); };
+export const clearCatalogCache = () => { cache.clear(); markSearchStale(); markFeedStale(); };
 
 // ── Data access ───────────────────────────────────────────────────────────
 export async function getCategory(pool, path) {
@@ -267,6 +268,9 @@ export function registerCatalogRoutes(app, { pool, sendPage, sendNotFound, verif
     }
     catch (err) { console.error('[catalog] rebuild failed:', err.message); res.status(500).json({ error: err.message }); }
   });
+
+  // Meta (Facebook) catalog feed
+  registerMetaFeedRoutes(app, pool);
 
   // Category sitemap — only pages with 2+ distinct products
   app.get('/sitemap-categories.xml', async (req, res) => {
