@@ -45,7 +45,7 @@ export function CategoryRow() {
   ];
 
   return (
-    <nav aria-label="Shop by category" className="container py-3">
+    <nav aria-label="Shop by category" className="container xl:pr-14 py-3">
       <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1 no-scrollbar">
         {isLoading
           ? [...Array(7)].map((_, i) => <Skeleton key={i} className="h-[76px] w-[96px] shrink-0 rounded-xl" />)

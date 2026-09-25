@@ -92,7 +92,7 @@ const Index = () => {
       <CategoryRow />
 
       {/* Left pane + main content */}
-      <div className="container flex gap-6 items-start pb-10">
+      <div className="container xl:pr-14 flex gap-6 items-start pb-10">
         <CatalogSidebar />
         <div className="flex-1 min-w-0 space-y-8 md:space-y-10">
           <div className="flex items-center justify-between lg:hidden -mb-4">

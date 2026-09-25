@@ -17,16 +17,16 @@ export function PartHelpRail() {
   return (
     <aside aria-label="Need a part?"
       className="hidden xl:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 flex-col items-stretch rounded-l-xl border border-r-0 border-border bg-card shadow-lg overflow-hidden">
-      <div className="[writing-mode:vertical-rl] rotate-180 flex items-center gap-3 px-2 py-4 text-[11.5px]">
+      <div className="[writing-mode:vertical-rl] rotate-180 flex items-center gap-3.5 px-2.5 py-5 text-[14px]">
         <span className="font-semibold text-foreground whitespace-nowrap">Can't find the repair part you're looking for?</span>
         <span className="h-px w-3 bg-border" />
         <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 font-semibold text-foreground whitespace-nowrap hover:text-[#25D366]">
-          <span className="rotate-180 text-[#25D366]"><WhatsAppLogo /></span>0334-2228141
+          <span className="rotate-180 text-[#25D366]"><WhatsAppLogo className="h-[18px] w-[18px]" /></span>0334-2228141
         </a>
         <span className="h-px w-3 bg-border" />
         <Link to="/request-part" className="inline-flex items-center gap-1 font-semibold text-primary whitespace-nowrap hover:underline">
-          Request a part <ArrowUpRight className="h-3.5 w-3.5 rotate-180" />
+          Request a part <ArrowUpRight className="h-4 w-4 rotate-180" />
         </Link>
       </div>
     </aside>
