@@ -173,11 +173,11 @@ export function SidebarContent({ active, filters, tree, plain, expanded }:
 
       {data && (
         <>
-          <Section icon={Tag} title="Shop by Brand" defaultOpen={expanded || !contextual}>
-            <ExpandableList items={asLinks(data.brands)} active={active} limit={lim(12)} allTo="/brands" allLabel="Browse all brands" />
-          </Section>
           <Section icon={Wrench} title="Shop by Part" defaultOpen={expanded || !contextual}>
             <ExpandableList items={asLinks(data.parts)} active={active} limit={lim(10)} allTo="/parts" allLabel="Browse all part types" />
+          </Section>
+          <Section icon={Tag} title="Shop by Brand" defaultOpen={expanded || !contextual}>
+            <ExpandableList items={asLinks(data.brands)} active={active} limit={lim(12)} allTo="/brands" allLabel="Browse all brands" />
           </Section>
           <Section icon={Smartphone} title="Phones by Price" defaultOpen={expanded || !contextual}>
             <ExpandableList items={asLinks(data.phonePrices).map((e) => ({ ...e, name: e.name.replace(/^Mobile Phones /, "") }))} active={active} limit={lim(8)} />
